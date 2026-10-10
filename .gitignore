@@ -1,0 +1,69 @@
+# =============================================================
+# Segredos e credenciais: nunca entram no Git
+# =============================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# =============================================================
+# Terraform
+# =============================================================
+# Pasta de plugins baixados pelo `terraform init` (regenerável)
+.terraform/
+# Estado: registro do que existe na nuvem. Pode conter segredos
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+# Valores de variáveis (podem ter segredos). Versionar só o exemplo
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# Atenção: .terraform.lock.hcl NÃO é ignorado. Ele fixa as versões dos providers
+
+# =============================================================
+# Python
+# =============================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# =============================================================
+# dbt (artefatos gerados a cada execução)
+# =============================================================
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+
+# =============================================================
+# Airflow / Astro
+# =============================================================
+# Connections e variáveis locais (podem conter credenciais)
+airflow/airflow_settings.yaml
+airflow/logs/
+
+# =============================================================
+# Dados locais: o dado mora no S3, não no Git
+# =============================================================
+data/
+*.parquet
+*.csv.gz
+*.zip
+
+# =============================================================
+# Sistema operacional
+# =============================================================
+.DS_Store
