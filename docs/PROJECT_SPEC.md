@@ -787,6 +787,7 @@ rideshare-marketplace-intelligence/
 | 0009 | Fuso horário padrão | A decidir (Fase 2) |
 | 0010 | Interface do agente (CLI × Streamlit) | A decidir (Fase 6) |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
+| 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 

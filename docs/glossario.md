@@ -63,6 +63,45 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Terraform (infraestrutura como código)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **IaC (Infraestrutura como Código)** | Descrever a infraestrutura em arquivos de texto versionados, em vez de criá-la clicando no console | O PBIP/TMDL é "modelo como código"; IaC é a mesma ideia para a nuvem | 0 |
+| **Terraform** | Ferramenta de IaC declarativa: você descreve o resultado desejado e ela cria, altera ou apaga recursos até a nuvem ficar igual ao código | Como o SQL: você diz o *quê*, não o *como*. Rodar duas vezes não cria duas cópias | 0 |
+| **Provider** | Plugin que traduz o código Terraform para a API de uma plataforma (`aws`, `azurerm`, `github`, `fabric`...) | O conector do Power Query | 0 |
+| **Resource** | Bloco que descreve uma coisa a existir na nuvem: `resource "<tipo>" "<apelido>" { ... }` | Uma tabela descrita no TMDL | 0 |
+| **Variável (`variable`)** | Parâmetro do código, com tipo e valor padrão opcional. Usada como `var.nome`; valores em `terraform.tfvars` | Parâmetro do Power Query | 0 |
+| **Referência entre recursos** | Apontar para um atributo de outro recurso (`aws_s3_bucket.datalake.id`). Cria a dependência: o referenciado é criado antes | O `ref()` do dbt; um relacionamento que define a ordem | 0 |
+| **State (estado)** | Arquivo que liga cada bloco do código ao recurso real (ID na AWS). Sem ele, o Terraform "esquece" o que criou | O de-para entre o código e o que existe de verdade | 0 |
+| **Backend** | Onde o estado fica guardado: `local` (a máquina) ou remoto (ex.: `s3`). Não aceita variáveis | Trocar o arquivo local por um no SharePoint | 0 |
+| **Lock (trava de estado)** | Arquivo temporário (`.tflock`) que impede duas operações simultâneas sobre o mesmo estado | "Arquivo em uso por outra pessoa" do Excel no SharePoint | 0 |
+| **Lock file (`.terraform.lock.hcl`)** | Registra a versão exata de cada provider escolhida no `init`. Vai para o Git | Não confundir com a trava de estado: este fixa versões, aquele impede execuções simultâneas | 0 |
+| **`terraform init`** | Prepara a pasta: baixa os providers, cria o lock file e configura o backend | Instalar os conectores antes de abrir o relatório | 0 |
+| **`terraform plan`** | Compara código e realidade e mostra o que faria (`+` criar, `~` alterar, `-` apagar, `-/+` recriar). Não muda nada | A comparação entre estágios do Deployment Pipeline do Fabric | 0 |
+| **`terraform apply`** | Executa o plano e muda a nuvem. Com plano salvo (`-out`), aplica exatamente o que foi lido | O botão "Implantar" | 0 |
+| **Drift (desvio)** | Diferença entre a nuvem e o código, causada por mudança manual fora do Terraform. O próximo `plan` tenta desfazê-la | Alguém editou o relatório publicado direto no Service | 0 |
+| **`prevent_destroy`** | Marca (dentro de `lifecycle`) que faz o Terraform recusar qualquer plano que apague o recurso | Uma tabela marcada como "não excluir" | 0 |
+| **`-migrate-state` × `-reconfigure`** | Flags do `init` ao trocar de backend: a primeira **copia** o estado; a segunda **ignora** o estado antigo | Mover o arquivo para o SharePoint × criar um arquivo novo em branco lá | 0 |
+| **Budget (AWS Budgets)** | Orçamento que envia alertas quando o gasto real (`ACTUAL`) ou previsto (`FORECASTED`) passa de um limite. Só avisa, não bloqueia | Alerta de dados num cartão do Power BI; realizado × projeção de fechamento | 0 |
+
+---
+
+## AWS: armazenamento (S3)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **S3 (armazenamento de objetos)** | Serviço que guarda arquivos de qualquer tipo, encontrados por uma chave. Base dos data lakes na AWS | A área Files do Lakehouse (OneLake). Quebra: o S3 não tem pastas de verdade | 0 |
+| **Bucket** | O contêiner de objetos. Nome único no mundo inteiro, mas mora numa região. Não pode ser renomeado e só pode ser apagado vazio | O Lakehouse | 0 |
+| **Objeto** | Um arquivo guardado no S3, com seus metadados | Um arquivo em Files | 0 |
+| **Chave (key)** | O nome completo do objeto, com barras: `bronze/tlc_hvfhv/year=2024/arquivo.parquet` | O caminho do arquivo | 0 |
+| **Prefixo** | O começo de uma chave (`bronze/`). As "pastas" do console são só prefixos | Um `WHERE chave LIKE 'bronze/%'` | 0 |
+| **Versionamento** | Guarda a versão anterior quando um objeto é sobrescrito ou apagado | O histórico de versões do OneDrive | 0 |
+| **Bloqueio de acesso público** | Quatro travas que impedem o bucket de ficar público, mesmo por engano | Não existir nenhum link "qualquer pessoa com o link" | 0 |
+| **SSE-S3** | Criptografia padrão dos objetos com chaves gerenciadas pela AWS (`AES256`). Ligada por padrão desde 2023 | O disco do notebook criptografado pelo BitLocker | 0 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
