@@ -69,9 +69,27 @@ Fonte: *Data Dictionary – High Volume FHV Trip Records*, versão de 18/03/2025
 4. **Predicate pushdown viável:** os row groups estão em ordem de embarque, com ~1 hora de sobreposição entre blocos vizinhos (ex.: RG 0 vai até 02/01 18:59; RG 1 começa em 02/01 18:00). Um filtro de data pula a maior parte dos blocos.
 5. `cbd_congestion_fee` vai de `-0.0` a `3.0`, sem nulos.
 
-## 5. Pendências desta validação
+## 5. Custo de consulta no Athena (R1: custo)
 
-- [ ] R1 (custo): bytes lidos no Athena — `SELECT *` × uma coluna × com filtro de data (próxima etapa).
+Medido em 12/10/2026 no console, workgroup `rideshare`, tabela externa `bronze.tlc_hvfhv` com 1 partição (2025-01). Consultas em [`scripts/fase-1/medicao_custo_athena.sql`](../../scripts/fase-1/medicao_custo_athena.sql).
+
+| # | Consulta | Data scanned | Tempo | Explicação |
+|---|---|---|---|---|
+| 1 | `count(*)` | **0** | 0,96 s | O número de linhas está no rodapé do Parquet |
+| 2 | `avg(trip_miles)` | **35,98 MB** | 1,43 s | Exatamente o tamanho da coluna `trip_miles` (36,0 MB na inspeção): armazenamento colunar |
+| 3 | `avg(trip_miles)` com `pickup_datetime >= 15/01` | **53,40 MB** | 1,85 s | Sem pushdown seriam ~90 MB (`trip_miles` + `pickup_datetime` inteiras). Leu ~12 de 20 row groups: predicate pushdown |
+| 4 | `max()` das 25 colunas | **468,22 MB** | 7,17 s | O arquivo inteiro |
+| 5 | `avg(trip_miles)` com `year = '2024'` | **0** | 0,71 s | A partição não existe: partition pruning |
+
+**Custo:** a US$ 5/TB (valor dos exemplos da página oficial; ⚠️ preço de `us-east-1` e eventual mínimo por consulta não confirmados), a consulta mais cara custou ~US$ 0,0023.
+
+**Projeção:** ~30 meses × ~470 MB ≈ 14 GB na Bronze. Ler tudo uma vez ≈ US$ 0,07; armazenar ≈ US$ 0,32/mês (a US$ 0,023/GB, ⚠️ não verificado). **O R1 está respondido: o custo é baixo e cabe no budget de US$ 10.**
+
+**Consequência para as próximas fases:** o limite de 1 GiB por consulta do workgroup barra qualquer leitura de mais de ~2 meses inteiros. Ele precisa ser recalibrado antes do backfill completo (Fase 2) e do `dbt build` sobre o período inteiro (Fase 3).
+
+## 6. Pendências desta validação
+
+- [x] R1 (custo): medido (seção 5).
 - [ ] R2: estratégia incremental do dbt-athena com Iceberg.
 - [ ] R3: Power BI conectado ao Athena; atualização no Service.
 - [x] Spec atualizada (seções 2.3, 2.4, 2.5 e 3.1) com estas evidências, sem ADR novo: nenhuma decisão mudou.
