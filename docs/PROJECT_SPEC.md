@@ -176,7 +176,7 @@ O fluxo é este:
 ### 2.3 Persona e contexto
 
 - **Persona:** time de Marketplace da **Lyft** em Nova York.
-- **Benchmark competitivo:** Uber. As duas operadoras aparecem identificadas no dado pelo código de licença (⚠️ A VALIDAR: HV0003 = Uber, HV0005 = Lyft, conferir no dicionário oficial).
+- **Benchmark competitivo:** Uber. As duas operadoras aparecem identificadas no dado pelo código de licença (✅ VERIFICADO no dicionário oficial de 18/03/2025: HV0003 = Uber, HV0005 = Lyft; ver `docs/validacao/fase-1.md`).
 
 ### 2.4 Perguntas de negócio (o que o projeto responde)
 
@@ -185,7 +185,7 @@ O fluxo é este:
    - **Ação:** reposicionar motoristas ou ativar incentivos.
 2. **Como evolui a economia unitária?**
    - **Métricas:** take rate, receita por milha e por minuto, repasse por hora de corrida.
-3. **Qual foi o impacto da taxa de congestionamento de Manhattan** (Congestion Relief Zone, em vigor desde jan/2025)?
+3. **Qual foi o impacto da taxa de congestionamento de Manhattan** (Congestion Relief Zone, em vigor desde **05/01/2025**, ✅ VERIFICADO no dicionário oficial)?
    - **Comparação:** antes e depois, em volume, tarifa e destino das corridas que entram no centro (CBD).
    - Funciona como experimento natural.
 4. **Qual é o share da Lyft versus a Uber por zona**, e onde estamos perdendo terreno?
@@ -197,13 +197,13 @@ O fluxo é este:
 | Métrica | Definição | Cuidado (pegadinha) |
 |---|---|---|
 | **Corridas válidas** | Contagem de corridas com `is_valid = true` | Inválidas ficam na Silver com o motivo, mas não entram na Gold |
-| **Tempo de espera (s)** | `pickup_datetime − request_datetime` | **Não usar `on_scene_datetime`**: só é preenchido para veículos acessíveis (✅ VERIFICADO no dicionário oficial) |
+| **Tempo de espera (s)** | `pickup_datetime − request_datetime` | **Não usar `on_scene_datetime`**: o dicionário diz "só veículos acessíveis", mas nos dados de 2025-01 está preenchido em 100% das corridas da Uber e em 0,3% das da Lyft. Usá-lo mediria só a Uber (✅ VERIFICADO nos dados; ver `docs/validacao/fase-1.md`) |
 | **Espera P50 / P90** | Percentis do tempo de espera | **Percentil não soma nem tira média entre zonas.** Por isso a Gold guarda um histograma de faixas de espera (ver 6.4) |
 | **Take rate** | `(base_passenger_fare − driver_pay) / base_passenger_fare` | `driver_pay` exclui pedágios e gorjetas e é líquido de comissão, sobretaxas e impostos (✅ VERIFICADO). Impostos e taxas são repassados e ficam fora |
 | **Receita por milha** | `base_passenger_fare / trip_miles` | Excluir `trip_miles = 0` (já marcado como inválido na Silver) |
 | **Repasse por hora de corrida** | `driver_pay / (trip_time / 3600)` | **Não é o ganho por hora do motorista**: o dado não tem tempo ocioso nem identificador de motorista |
 | **Share da operadora** | Corridas da operadora / corridas totais (mesmo recorte) | Calcular sobre o mesmo recorte de zona e período |
-| **Corrida com destino no CBD** | `DOLocationID` dentro da lista de zonas do CBD (seed) | **Não usar `cbd_congestion_fee > 0`** para comparar antes e depois: a coluna só existe a partir de 2025 (✅ VERIFICADO) |
+| **Corrida com destino no CBD** | `DOLocationID` dentro da lista de zonas do CBD (seed) | **Não usar `cbd_congestion_fee > 0`** para comparar antes e depois: a coluna só existe a partir de 2025 (✅ VERIFICADO). O corte de antes × depois é **05/01/2025**: os dias 1 a 4 de janeiro de 2025 ainda são "antes" |
 
 ### 2.6 Fora do escopo da v1
 
@@ -227,9 +227,9 @@ O fluxo é este:
 | **Último mês disponível em 03/10/2026** | ago/2026 (✅ VERIFICADO) |
 | **Republicação** | A TLC já republicou arquivos antigos (seção "Errata" da página) → **a ingestão precisa detectar arquivos alterados** (✅ VERIFICADO) |
 | **Schema drift** | `cbd_congestion_fee` adicionada a partir de 2025. A TLC também avisa sobre possíveis padronizações de schema (✅ VERIFICADO) |
-| **Volume** | ⚠️ A VALIDAR na Fase 1: estimativa de dezenas de milhões de linhas e centenas de MB por mês |
+| **Volume** | ✅ VERIFICADO (12/10/2026): ~20 milhões de linhas e ~450–480 MB por mês (2025-01: 20.405.666 linhas, 468 MB, 20 row groups, ZSTD) |
 
-**Colunas esperadas** (⚠️ A VALIDAR contra o arquivo real na Fase 1):
+**Colunas esperadas** (✅ VERIFICADO em 12/10/2026 contra 2024-01 e 2025-01: as 25 existem com estes nomes; `cbd_congestion_fee` só a partir de 2025; nenhuma mudança de tipo entre os dois meses):
 
 - **Identificação:** `hvfhs_license_num`, `dispatching_base_num`, `originating_base_num`
 - **Tempo:** `request_datetime`, `on_scene_datetime`, `pickup_datetime`, `dropoff_datetime`

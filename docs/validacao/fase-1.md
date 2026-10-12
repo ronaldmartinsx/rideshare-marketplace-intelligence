@@ -74,4 +74,4 @@ Fonte: *Data Dictionary – High Volume FHV Trip Records*, versão de 18/03/2025
 - [ ] R1 (custo): bytes lidos no Athena — `SELECT *` × uma coluna × com filtro de data (próxima etapa).
 - [ ] R2: estratégia incremental do dbt-athena com Iceberg.
 - [ ] R3: Power BI conectado ao Athena; atualização no Service.
-- [ ] Atualizar a Seção 3 e a 2.5 da spec com estas evidências (aguardando OK).
+- [x] Spec atualizada (seções 2.3, 2.4, 2.5 e 3.1) com estas evidências, sem ADR novo: nenhuma decisão mudou.
