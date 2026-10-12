@@ -164,6 +164,25 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Arquivos e formatos de dados
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Armazenamento colunar** | Guardar uma tabela coluna por coluna, e não linha por linha. Ler uma coluna não obriga a ler as outras; valores parecidos juntos comprimem muito | O VertiPaq do Power BI | 1 |
+| **Parquet** | Formato de arquivo colunar, comprimido, com tipos preservados e um rodapé com schema e estatísticas. Não pode ser editado: mudar uma linha exige reescrever o arquivo | As tabelas Delta do Lakehouse no Fabric são pastas de arquivos Parquet + um log | 1 |
+| **Row group** | Bloco de linhas dentro de um arquivo Parquet; cada coluna do bloco é guardada e comprimida separadamente, com seu min/max | Um capítulo do livro, com o resumo do capítulo | 1 |
+| **Footer (rodapé)** | Final do arquivo Parquet com o schema, a lista de row groups e as estatísticas de cada coluna. É lido primeiro | O sumário do livro | 1 |
+| **Predicate pushdown** | O motor usa as estatísticas (min/max) para pular row groups que com certeza não atendem ao `WHERE`. Pula quando o intervalo [min, max] inteiro fica fora do filtro. Só é eficaz se os dados estiverem minimamente ordenados | Pular os capítulos que o sumário prova não ter o que você procura | 1 |
+| **Dictionary encoding** | Compressão que guarda cada texto distinto uma vez e substitui as repetições por números | "Manhattan" guardado uma vez; as linhas guardam só o código 1 | 1 |
+| **Small files problem** | Muitos arquivos pequenos deixam a leitura lenta e cara: cada arquivo exige abrir o rodapé e uma requisição ao S3 | Mil envelopes de uma folha × um fichário | 1 |
+| **CSV** | Texto separado por vírgulas: sem tipos, sem compressão inteligente, guardado por linha | Planilha exportada como texto | 1 |
+| **DuckDB** | Motor SQL que roda localmente e lê Parquet direto (inclusive pela internet). Usado só para inspeção; não faz parte da arquitetura | Um "Athena de bolso" | 1 |
+| **HEAD (requisição HTTP)** | Pede só os cabeçalhos de um arquivo (tamanho, data, ETag), sem baixar o conteúdo | Perguntar o peso da encomenda sem abrir a caixa | 1 |
+| **ETag / Last-Modified** | Cabeçalhos que identificam a versão de um arquivo na web. Se mudam, o arquivo mudou. Com sufixo `-N`, o ETag veio de upload em N partes e não é um hash do conteúdo | O número do lote impresso na embalagem | 1 |
+| **Hash (SHA-256)** | "Impressão digital" de um arquivo, calculada do conteúdo: qualquer byte diferente gera um hash totalmente diferente | O número do chassi: identifica aquele exato veículo | 1 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
