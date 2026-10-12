@@ -127,6 +127,43 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Docker e rede local
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Docker** | Ferramenta que empacota um programa com tudo de que ele precisa (sistema, bibliotecas, configuração) para rodar isolado e igual em qualquer máquina. No Mac, roda dentro de uma máquina virtual Linux | Um contêiner de navio: vai lacrado e funciona igual em qualquer porto | 0 |
+| **Dockerfile** | Arquivo de texto com as instruções para montar uma imagem | A receita escrita | 0 |
+| **Imagem** | Pacote congelado e somente leitura, montado a partir do Dockerfile | A marmita pronta no congelador; um `.pbit` (template) | 0 |
+| **Contêiner** | Uma imagem em execução. Dá para ter vários da mesma imagem. Mudanças dentro dele somem quando ele é apagado | A marmita aquecida e servida; um relatório aberto a partir do `.pbit` | 0 |
+| **Volume** | Pasta persistente "emprestada" a um contêiner; sobrevive quando o contêiner é recriado | Um HD externo que você pluga em qualquer computador | 0 |
+| **Porta** | Número que identifica um serviço numa máquina (`8080` = UI do Airflow, `5432` = Postgres). Dois serviços não podem usar a mesma porta | O ramal de um telefone: mesmo número da empresa, ramais diferentes | 0 |
+| **localhost / 127.0.0.1** | O endereço da própria máquina | "Eu mesmo" | 0 |
+| **DNS** | Sistema que traduz nomes (`airflow.localhost`) em endereços numéricos (`127.0.0.1`). O Safari pergunta ao macOS; Chrome e `curl` resolvem `*.localhost` sozinhos | A lista telefônica: nome → número | 0 |
+
+---
+
+## Airflow (orquestração)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Apache Airflow** | Orquestrador: define quais tarefas existem, em que ordem e quando rodam, com retry e histórico. Escrito em Python. Por princípio, manda outros processarem; não processa dados pesados | O Data Factory/pipeline do Fabric, só que em código | 0 |
+| **DAG** | Fluxograma de tarefas sem ciclos, definido num arquivo Python | Um pipeline do Fabric | 0 |
+| **Task** | Uma etapa da DAG | Uma atividade do pipeline | 0 |
+| **Schedule** | Quando a DAG roda (`@daily`, cron, ou por Asset) | Gatilho de agendamento | 0 |
+| **Asset** (no Airflow 2: Dataset) | Representa um dado. Uma task "publica" o Asset ao terminar, e outras DAGs podem rodar quando ele é atualizado | "Executar quando o arquivo chegar" | 0 |
+| **DAG pausada** | Estado inicial de toda DAG nova: não roda até ser ligada (toggle) | Pipeline criado mas com o gatilho desativado | 0 |
+| **Dynamic task mapping** | Uma task que vira N instâncias em tempo de execução, uma por item de uma lista (`map_index` 0, 1, 2...) | O `for_each` do Terraform, só que decidido na hora de rodar | 0 |
+| **Scheduler** | Componente que decide quando cada task está pronta para rodar | O gerente de pátio com o cronograma | 0 |
+| **DAG processor** | Componente que lê os arquivos Python das DAGs. Código solto no arquivo roda a cada leitura | O planejador que lê as ordens de serviço | 0 |
+| **Executor** | Define onde e como as tasks rodam. `LocalExecutor`: no próprio scheduler. Celery/Kubernetes: em workers separados | O modelo de oficina: um mecânico só ou uma equipe | 0 |
+| **Banco de metadados** | Banco (Postgres) onde o Airflow guarda tudo: execuções, estados, histórico. Tabelas como `dag_run` e `task_instance` | O livro de registro da oficina | 0 |
+| **API server** (no Airflow 2: webserver) | Componente que serve a interface web e a API REST | O painel do escritório | 0 |
+| **Triggerer** | Componente que cuida de tarefas que ficam esperando um evento, sem ocupar um worker | O porteiro que avisa quando o caminhão chegar | 0 |
+| **Astro Runtime** | Imagem Docker do Airflow empacotada pela Astronomer (ex.: `runtime:3.3-9` = Airflow 3.3) | A distribuição "pronta para usar" do Airflow | 0 |
+| **Astro CLI** | Ferramenta que cria o projeto (`astro dev init`) e sobe o Airflow local em contêineres (`astro dev start`). `astro dev stop` preserva os dados; `astro dev kill` apaga os volumes | O instalador e o painel de liga/desliga do Airflow local | 0 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
