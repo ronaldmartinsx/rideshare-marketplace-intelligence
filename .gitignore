@@ -17,6 +17,8 @@
 *.tfstate.*
 crash.log
 crash.*.log
+# Plano salvo (-out): guarda os valores das variáveis, inclusive os sensíveis
+*.tfplan
 # Valores de variáveis (podem ter segredos). Versionar só o exemplo
 *.tfvars
 *.tfvars.json

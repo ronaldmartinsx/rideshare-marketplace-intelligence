@@ -291,7 +291,7 @@ O fluxo é este:
 | **API de LLM** (ex.: Claude) | Agente NL2SQL e resumo mensal | Uso com métrica de avaliação | — |
 | **GitHub Actions** | CI: testes de dbt, validação do Terraform | Grátis para repositório público | — |
 
-⚠️ A VALIDAR na Fase 0: versão do Airflow (2.x ou 3.x) do runtime atual do Astro. No Airflow 3, "Datasets" passou a se chamar "Assets". Confirmar também a compatibilidade com o Cosmos.
+✅ VERIFICADO (12/10/2026): Astro Runtime 3.3 (imagem `runtime:3.3-9`, Airflow 3.3, suporte até jul/2028), Astro CLI 1.46.0. O Cosmos 1.15.1 (04/08/2026) é testado com o Airflow 3.3. No Airflow 3, "Datasets" passou a se chamar "Assets" e o webserver virou "api-server". Atenção para a Fase 3: o Cosmos documenta conflitos de dependência entre dbt e Airflow; provável instalar o dbt num ambiente Python separado dentro da imagem.
 
 ---
 
@@ -766,7 +766,7 @@ rideshare-marketplace-intelligence/
 | R5 | Fuso horário dos timestamps | 2 | Confirmar no guia oficial da TLC; ADR |
 | R6 | Códigos de licença das operadoras | 1 | Conferir no dicionário oficial |
 | R7 | Lista de zonas do CBD | 3 | Montar a partir da definição oficial da MTA; documentar a fonte |
-| R8 | Versão do Airflow (2.x × 3.x) e compatibilidade com o Cosmos | 0 | Fixar versões no `requirements.txt` |
+| R8 | Versão do Airflow (2.x × 3.x) e compatibilidade com o Cosmos | 0 | ✅ Resolvido: Airflow 3.3 (Runtime 3.3-9, fixado no `Dockerfile`) + Cosmos 1.15.x |
 | R9 | Endpoint, limites e licença do Open-Meteo | 2 | Conferir a documentação oficial |
 | R10 | O forecast não vencer o baseline | 5 | Reportar com honestidade; isso também é resultado |
 
@@ -787,6 +787,8 @@ rideshare-marketplace-intelligence/
 | 0009 | Fuso horário padrão | A decidir (Fase 2) |
 | 0010 | Interface do agente (CLI × Streamlit) | A decidir (Fase 6) |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
+| 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
+| 0013 | Layout de dev no S3: prefixo `dev/` no mesmo bucket; dev lê a Bronze de prod | Decidido |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 
