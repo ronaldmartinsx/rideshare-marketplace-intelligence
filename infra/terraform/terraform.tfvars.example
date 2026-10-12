@@ -3,6 +3,7 @@
 # e preencha. O terraform.tfvars fica fora do Git (.gitignore).
 
 email_alertas = "seu-email@exemplo.com"
+prefixo       = "seu-prefixo"
 
 # Opcional (padrão: 10)
 # budget_limite_usd = 10
