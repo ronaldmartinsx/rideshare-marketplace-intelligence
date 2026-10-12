@@ -73,6 +73,9 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Resource** | Bloco que descreve uma coisa a existir na nuvem: `resource "<tipo>" "<apelido>" { ... }` | Uma tabela descrita no TMDL | 0 |
 | **Variável (`variable`)** | Parâmetro do código, com tipo e valor padrão opcional. Usada como `var.nome`; valores em `terraform.tfvars` | Parâmetro do Power Query | 0 |
 | **Referência entre recursos** | Apontar para um atributo de outro recurso (`aws_s3_bucket.datalake.id`). Cria a dependência: o referenciado é criado antes | O `ref()` do dbt; um relacionamento que define a ordem | 0 |
+| **`locals`** | Valores calculados dentro do código, derivados de outros valores. Ninguém os passa de fora (diferente de `variable`) | Uma etapa intermediária de uma consulta do Power Query | 0 |
+| **`for_each`** | Cria um recurso para cada item de um conjunto ou mapa; dentro do bloco, `each.key` é o item da vez. Registra cada um pelo nome (`camadas["bronze"]`) | Uma coluna calculada: a mesma fórmula aplicada a cada linha | 0 |
+| **`terraform console`** | Terminal interativo para testar expressões do Terraform (`local.x`, funções) sem criar nada | Testar uma fórmula DAX numa consulta no DAX Studio | 0 |
 | **State (estado)** | Arquivo que liga cada bloco do código ao recurso real (ID na AWS). Sem ele, o Terraform "esquece" o que criou | O de-para entre o código e o que existe de verdade | 0 |
 | **Backend** | Onde o estado fica guardado: `local` (a máquina) ou remoto (ex.: `s3`). Não aceita variáveis | Trocar o arquivo local por um no SharePoint | 0 |
 | **Lock (trava de estado)** | Arquivo temporário (`.tflock`) que impede duas operações simultâneas sobre o mesmo estado | "Arquivo em uso por outra pessoa" do Excel no SharePoint | 0 |
@@ -99,6 +102,23 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Versionamento** | Guarda a versão anterior quando um objeto é sobrescrito ou apagado | O histórico de versões do OneDrive | 0 |
 | **Bloqueio de acesso público** | Quatro travas que impedem o bucket de ficar público, mesmo por engano | Não existir nenhum link "qualquer pessoa com o link" | 0 |
 | **SSE-S3** | Criptografia padrão dos objetos com chaves gerenciadas pela AWS (`AES256`). Ligada por padrão desde 2023 | O disco do notebook criptografado pelo BitLocker | 0 |
+| **Regra de ciclo de vida (lifecycle rule)** | Regra do bucket que apaga ou move objetos automaticamente após N dias. Não confundir com o bloco `lifecycle` do Terraform | Política de retenção: "arquivos temporários somem em 7 dias" | 0 |
+| **Multipart upload** | Envio de arquivos grandes em pedaços. Pedaços de envios interrompidos ficam invisíveis no console e são cobrados até serem limpos | Uma mudança que parou no meio: caixas largadas no corredor | 0 |
+
+---
+
+## AWS: catálogo e consulta (Glue e Athena)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Lakehouse desagregado** | Arquitetura em que armazenamento (S3), catálogo (Glue) e motor SQL (Athena) são serviços separados e trocáveis | No SQL Server, os três vêm na mesma caixa; o Fabric separa por baixo, mas esconde | 0 |
+| **Metadados** | Dados sobre os dados: nome da tabela, colunas, tipos, formato, localização | O `INFORMATION_SCHEMA` de um banco SQL | 0 |
+| **Glue Data Catalog** | Catálogo de metadados da AWS: diz que o prefixo X no S3 é a tabela Y, com tais colunas. Não guarda dados. "Glue" também nomeia Jobs e Crawlers, que não usamos | O modelo semântico dando nome e forma a arquivos | 0 |
+| **Database (Glue)** | Agrupamento lógico de tabelas no catálogo; equivale a um schema do SQL. Não há servidor | Um schema (`bronze`, `silver`, `gold`) | 0 |
+| **Amazon Athena** | Motor SQL sem servidor que lê arquivos no S3 usando as definições do Glue. Cobra por dado lido. Usa o Trino por baixo | O endpoint de análise SQL do Lakehouse; quebra: sem capacidade fixa, paga por consulta | 0 |
+| **Trino (antigo Presto)** | Motor SQL distribuído open source, que roda por baixo do Athena | O motor por trás do endpoint | 0 |
+| **Workgroup (Athena)** | Conjunto de regras para consultas: onde gravar resultados, limite de bytes por consulta, versão do motor | Um workspace com capacidade dedicada: quem consulta por ele herda as regras | 0 |
+| **Bytes scanned cutoff** | Limite de bytes lidos por consulta num workgroup. Acima dele, a consulta é cancelada | O freio de mão contra um `SELECT *` caro | 0 |
 
 ---
 
