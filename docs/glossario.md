@@ -124,6 +124,13 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Trino (antigo Presto)** | Motor SQL distribuído open source, que roda por baixo do Athena | O motor por trás do endpoint | 0 |
 | **Workgroup (Athena)** | Conjunto de regras para consultas: onde gravar resultados, limite de bytes por consulta, versão do motor | Um workspace com capacidade dedicada: quem consulta por ele herda as regras | 0 |
 | **Bytes scanned cutoff** | Limite de bytes lidos por consulta num workgroup. Acima dele, a consulta é cancelada | O freio de mão contra um `SELECT *` caro | 0 |
+| **Particionamento estilo Hive** | Organizar os arquivos em prefixos `coluna=valor` (`year=2025/month=01/`) para o motor ler só as pastas que interessam. Cada partição deve ter dezenas a centenas de MB | A atualização incremental do Power BI (partições por período); o arquivo morto com uma pasta por mês | 1 |
+| **Coluna de partição** | Coluna que não existe dentro do arquivo: o motor a lê do caminho (`year`, `month`, `ingest_ts`) | A etiqueta da pasta, não o conteúdo da folha | 1 |
+| **Partition pruning** | O motor pula pastas inteiras olhando só o caminho, sem abrir arquivos. Só acontece com filtro na coluna de partição | Ir direto à estante certa | 1 |
+| **Registro de partição** | O Glue precisa saber que uma pasta nova existe: `ALTER TABLE ADD PARTITION` (à mão), `MSCK REPAIR TABLE` (varre as pastas) ou partition projection (o Athena deduz o padrão). Sem isso, a pasta é invisível | Cadastrar a pasta nova no índice do arquivo morto | 1 |
+| **Tabela externa** | O catálogo só aponta para arquivos geridos por outra pessoa/processo. `DROP TABLE` apaga só a definição. Usada na Bronze | Files e shortcuts do Lakehouse | 1 |
+| **Tabela gerenciada** | O motor/formato de tabela é dono dos arquivos: cria, reescreve e apaga. `DROP TABLE` apaga os dados. Usada na Silver e na Gold (Iceberg) | Tables (Delta) do Lakehouse | 1 |
+| **Schema-on-read** | A definição da tabela é aplicada na hora da leitura: um tipo errado no `CREATE` só dá erro no primeiro `SELECT` | Um rótulo colado na caixa: só ao abrir você descobre se bate com o conteúdo | 1 |
 
 ---
 
