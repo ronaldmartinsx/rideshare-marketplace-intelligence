@@ -190,6 +190,25 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Iceberg (formato de tabela)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Formato de tabela (table format)** | Camada de metadados sobre arquivos (ex.: Parquet) que os transforma numa tabela com transações, versões e schema controlado. Exemplos: Iceberg, Delta, Hudi | A lista oficial da frota sobre os carros | 1 |
+| **Apache Iceberg** | Formato de tabela aberto e neutro de fornecedor, lido por Athena, Spark, Trino, Snowflake etc. Usado na Silver e na Gold (ADR 0002). No Athena é tabela gerenciada: `DROP TABLE` apaga os dados | A tabela Delta do Fabric (concorrente com a mesma proposta) | 1 |
+| **Metadados do Iceberg** | `metadata.json` (schema, partições, histórico), manifest list (arquivos de um snapshot) e manifestos (arquivos + min/max). O catálogo guarda só o ponteiro para o `metadata.json` vigente | O `_delta_log` do Delta | 1 |
+| **Snapshot** | Uma versão da tabela, criada a cada escrita (commit) | A lista da frota de uma data | 1 |
+| **Transação ACID / commit atômico** | Cada escrita é "tudo ou nada": quem lê vê a versão anterior inteira ou a nova inteira, nunca a metade. O commit é a troca atômica do ponteiro no catálogo | Trocar a lista do quadro de avisos num gesto só | 1 |
+| **Time travel** | Consultar uma versão antiga da tabela (`FOR TIMESTAMP AS OF` / `FOR VERSION AS OF`). Só lê; não restaura | Ler a lista antiga no arquivo morto | 1 |
+| **Rollback** | Tornar vigente de novo uma versão antiga. Diferente de time travel | Recolocar a lista antiga no quadro | 1 |
+| **Evolução de schema** | Acrescentar, renomear ou remover colunas sem reescrever os arquivos antigos (colunas identificadas por ID, não por nome) | Renomear uma coluna no modelo sem reimportar os dados | 1 |
+| **Partição oculta (hidden partitioning)** | Particionar por uma transformação (`month(pickup_datetime)`): quem consulta filtra a coluna normal e a poda acontece sozinha | O motor sabe que a pasta "janeiro" corresponde às datas de janeiro | 1 |
+| **Sobrescrita por partição** | Substituir atomicamente só uma partição (ex.: `source_month=2025-01`). Base do reprocessamento idempotente | Atualização incremental do Power BI refazendo só um período | 1 |
+| **OPTIMIZE (compactação)** | Junta arquivos pequenos de uma tabela Iceberg em arquivos maiores | Juntar folhas avulsas num fichário | 1 |
+| **VACUUM (expiração de snapshots)** | Expira snapshots antigos e apaga os arquivos que nenhuma versão vigente usa. Depois disso, aquele passado não existe mais | Descartar listas antigas do arquivo morto e os carros que só elas citavam | 1 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
