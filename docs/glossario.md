@@ -209,6 +209,32 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## dbt (transformação)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **ELT** | Extrair e carregar o dado bruto primeiro (Bronze), transformar depois, dentro do warehouse. O dbt é o "T" | Carregar a fonte no Power BI e transformar no Power Query | 1 |
+| **dbt (data build tool)** | Ferramenta em que cada transformação é um `SELECT` num arquivo; o dbt monta o SQL completo, manda o Athena executar e cuida da ordem, dos testes e da documentação. Não processa dados nem agenda nada | O Power Query escrito em SQL e versionado no Git | 1 |
+| **Projeto dbt (`dbt_project.yml`)** | Arquivo que define o projeto: nome, pastas e configurações padrão por pasta | As configurações do arquivo PBIP | 1 |
+| **`profiles.yml` e target** | Como o dbt se conecta ao warehouse. Cada target (`dev`, `prod`) aponta para bancos diferentes | Trocar a fonte de dados entre homologação e produção | 1 |
+| **Adaptador (dbt-athena)** | Plugin que traduz o dbt para um warehouse específico (Athena, BigQuery, Databricks, Fabric...) | O conector do Power Query | 1 |
+| **Source** | Tabela que vem de fora do dbt, declarada em YAML e usada com `{{ source('tlc', 'hvfhv') }}`. Fica na fronteira | A fonte de dados de uma consulta | 1 |
+| **Model** | Um arquivo `.sql` com um `SELECT`. O nome do arquivo vira o nome da tabela; o dbt escreve o `CREATE` | Uma consulta do Power Query | 1 |
+| **`ref()`** | Referência a outro model: define a ordem (DAG), troca o banco conforme o ambiente e registra a linhagem | "Referência" no Power Query | 1 |
+| **Jinja e compilação** | O `{{ }}` é Jinja (modelo de texto). O dbt compila para SQL puro antes de executar; o resultado fica em `target/compiled/`. Erro de Jinja falha antes de chegar ao Athena | Uma fórmula com parâmetros que vira o valor final | 1 |
+| **Materialização** | Como o resultado do model existe: `view` (consulta salva, recalcula a cada leitura), `table` (reconstruída inteira), `incremental` (só o novo), `ephemeral` (vira CTE) | "Habilitar carga", atualização completa e incremental do Power BI | 1 |
+| **`is_incremental()`** | Macro que diz se o model está rodando em modo incremental; usada para filtrar só o dado novo | O filtro `RangeStart`/`RangeEnd` da atualização incremental | 1 |
+| **Estratégia incremental** | Como o pedaço novo entra na tabela: `insert_overwrite` (substitui partições), `append` (só acrescenta; pode duplicar), `merge` (linha a linha pela `unique_key`; só Iceberg) | — | 1 |
+| **Idempotência** | Rodar o mesmo processamento duas vezes dá o mesmo resultado, sem duplicar | Apertar o botão do elevador duas vezes não chama dois elevadores | 1 |
+| **`--full-refresh`** | Reconstrói um model incremental do zero | Atualização completa de uma tabela com atualização incremental | 1 |
+| **Seed** | CSV pequeno e versionado dentro do projeto, transformado em tabela pelo dbt (`seed_operadoras.csv`) | "Inserir dados" no Power BI, só que no Git | 1 |
+| **Teste genérico** | Teste declarado em YAML: `unique`, `not_null`, `accepted_values`, `relationships`. Por baixo, é um `SELECT` que procura problemas | Relacionamento válido e coluna sem vazios no modelo semântico | 1 |
+| **Teste singular** | Arquivo `.sql` que devolve as linhas problemáticas; zero linhas = passou | Uma consulta de auditoria que deveria voltar vazia | 1 |
+| **`dbt build`** | Roda seeds, models e testes na ordem do grafo; se o teste de um model falha, os dependentes são pulados | Uma atualização que para se a validação falhar | 1 |
+| **Macro** | Função em Jinja reutilizável (ex.: `generate_schema_name`, que decide o nome do banco) | Uma função personalizada do Power Query | 1 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
