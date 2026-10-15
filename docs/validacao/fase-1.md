@@ -96,11 +96,33 @@ Invalid incremental strategy provided: insert_overwrite
 Incremental models on Iceberg tables only work with 'append', 'microbatch' or 'merge' (v3 only) strategy.
 ```
 
-Decisão: `append` + `pre_hook` que apaga o mês processado ([ADR 0014](../adr/0014-estrategia-incremental-silver.md)). Teste de idempotência (duas execuções do mesmo mês devem dar a mesma contagem) e local dos arquivos: a seguir.
+Decisão: `append` + `pre_hook` que apaga o mês processado ([ADR 0014](../adr/0014-estrategia-incremental-silver.md)).
+
+**Teste de idempotência (15/10/2026 UTC), target `dev`:**
+
+| Execução | Modo | Resultado dbt | Linhas em `dev_silver.stg_tlc__hvfhv_trips` |
+|---|---|---|---|
+| 1 | Tabela inexistente → build completo | `OK 20405666` em 26 s | 20.405.666 (= Bronze) |
+| 2 | Incremental, `--vars '{"source_month": "2025-01"}'` | `OK 20405666` em 57 s | **20.405.666 (não duplicou)** |
+
+Snapshots Iceberg (`"dev_silver"."stg_tlc__hvfhv_trips$snapshots"`):
+
+| committed_at (UTC) | operation | added | deleted | total |
+|---|---|---|---|---|
+| 03:04:36 | append | 20.405.666 | — | 20.405.666 |
+| 03:05:30 | delete | — | 20.405.666 | **0** |
+| 03:06:16 | append | 20.405.666 | — | 20.405.666 |
+
+**Conclusões:**
+- ✅ **Idempotente:** a segunda execução do mesmo mês manteve a contagem. R2 resolvido com a estratégia do ADR 0014.
+- ✅ **Arquivos no lugar certo:** `s3://rmartins-rideshare-lake/dev_silver/stg_tlc__hvfhv_trips/` (`data/source_month=2025-01/` + `metadata/`). Nada foi gravado no bucket de resultados, apesar do aviso da documentação do dbt-athena sobre workgroups com local de saída.
+- ⚠️ **A janela sem o mês foi medida:** **46 segundos** entre o `delete` e o `append`. O time travel confirma: `FOR TIMESTAMP AS OF TIMESTAMP '2026-10-15 03:05:45 UTC'` devolve 0 linhas.
+- ✅ **Time travel funciona no Athena** com a sintaxe `FOR TIMESTAMP AS OF TIMESTAMP '...'`.
+- ⚠️ **Os arquivos antigos continuam no S3:** a pasta `data/` passou de 499 MB para 1.015,6 MB (os do primeiro snapshot ainda são referenciados pelo histórico). Exige `VACUUM` periódico (Fase 3).
 
 ## 7. Pendências desta validação
 
 - [x] R1 (custo): medido (seção 5).
-- [ ] R2: estratégia incremental do dbt-athena com Iceberg.
+- [x] R2: estratégia incremental com Iceberg validada (seção 6).
 - [ ] R3: Power BI conectado ao Athena; atualização no Service.
 - [x] Spec atualizada (seções 2.3, 2.4, 2.5 e 3.1) com estas evidências, sem ADR novo: nenhuma decisão mudou.

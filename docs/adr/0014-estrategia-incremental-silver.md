@@ -1,6 +1,6 @@
 # ADR 0014: Estratégia incremental da Silver (append + delete do mês)
 
-- **Status:** Decidido (validação prática em andamento na Fase 1)
+- **Status:** Decidido e validado na Fase 1 (idempotência confirmada; janela sem o mês medida em 46 s; ver `docs/validacao/fase-1.md`, seção 6)
 - **Data:** 14/10/2026
 - **Fase:** 1
 

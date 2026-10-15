@@ -760,7 +760,7 @@ rideshare-marketplace-intelligence/
 | # | Risco ou hipótese | Fase | Mitigação |
 |---|---|---|---|
 | R1 | Volume e custo mensal maiores que o estimado | 1 | Medir na fatia vertical; reduzir o recorte se necessário |
-| R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | ⚠️ Confirmado: sem `insert_overwrite` em Iceberg. Adotado `append` + delete do mês (ADR 0014); teste de idempotência em andamento |
+| R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | ⚠️ Confirmado: sem `insert_overwrite` em Iceberg. ✅ Resolvido: `append` + delete do mês (ADR 0014), idempotência validada em 15/10/2026 |
 | R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | Plano B: `.pbix` + prints + vídeo |
 | R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | Contrato de schema na ingestão + ADR |
 | R5 | Fuso horário dos timestamps | 2 | Confirmar no guia oficial da TLC; ADR |
@@ -789,7 +789,7 @@ rideshare-marketplace-intelligence/
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
 | 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado na Fase 1) |
-| 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido (validar na Fase 1) |
+| 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 
