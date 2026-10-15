@@ -231,6 +231,9 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Teste genérico** | Teste declarado em YAML: `unique`, `not_null`, `accepted_values`, `relationships`. Por baixo, é um `SELECT` que procura problemas | Relacionamento válido e coluna sem vazios no modelo semântico | 1 |
 | **Teste singular** | Arquivo `.sql` que devolve as linhas problemáticas; zero linhas = passou | Uma consulta de auditoria que deveria voltar vazia | 1 |
 | **`dbt build`** | Roda seeds, models e testes na ordem do grafo; se o teste de um model falha, os dependentes são pulados | Uma atualização que para se a validação falhar | 1 |
+| **Grão** | O que exatamente uma linha de uma tabela representa (ex.: hora × zona × operadora). Primeira decisão de qualquer tabela fato; vira o `GROUP BY` | A granularidade da tabela fato no modelo estrela do Power BI | 1 |
+| **Métrica aditiva** | Pode ser somada em qualquer nível (somas, contagens). Médias e percentis não são aditivos: guarde soma e contagem e divida no consumo | `DIVIDE(SUM(...), SUM(...))` em vez de `AVERAGE` sobre valores já agregados | 1 |
+| **Reconciliação** | Conferir que totais batem entre camadas (ex.: soma de corridas na Gold = corridas na Silver) | Conferir o total do relatório contra o sistema de origem | 1 |
 | **Macro** | Função em Jinja reutilizável (ex.: `generate_schema_name`, que decide o nome do banco) | Uma função personalizada do Power Query | 1 |
 
 ---
@@ -239,4 +242,12 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 | Termo | O que é | Analogia / ponte | Fase |
 |---|---|---|---|
+| **ODBC** | Padrão antigo (anos 90) para programas conversarem com bancos; um driver instalado traduz para o banco específico. Precisa estar em toda máquina que conecta | Um adaptador de tomada | 1 |
+| **Driver ODBC da Athena** | O "tradutor" ODBC → API do Athena, instalado no Windows. Exigido pelo conector do Athena no Power BI | O conector instalado à parte | 1 |
+| **DSN (Data Source Name)** | Configuração de conexão ODBC salva com nome: driver, região, workgroup, autenticação. **User DSN** vale para um usuário; **System DSN**, para a máquina (exigido pelo gateway) | O perfil da AWS CLI, só que para o ODBC | 1 |
+| **Conector Amazon Athena** | Conector do Power BI feito pela Amazon, que usa o DSN por baixo. Modos Import e DirectQuery | O conector do SQL Server, mas dependente de driver | 1 |
+| **Browser SSO OIDC** | Autenticação do driver ODBC 2.x com o IAM Identity Center: abre o navegador, login + MFA, credencial temporária. Exige uma pessoa | "Entrar com conta organizacional", contra a AWS | 1 |
+| **Import × DirectQuery (com Athena)** | Import consulta o Athena só na atualização; DirectQuery consulta a cada interação (custo por clique, latência de segundos, sujeito ao limite do workgroup) | O mesmo trade-off do Power BI, agravado pela cobrança por dado lido | 1 |
+| **On-premises data gateway** | Serviço Windows que deixa o Power BI Service usar fontes que exigem software local (como um driver ODBC). Para o Athena, exige driver + System DSN + identidade de máquina | A ponte entre a nuvem da Microsoft e a sua máquina | 1 |
+| **Identidade de máquina** | Credencial que se autentica sozinha (ex.: usuário IAM com chave somente leitura), para processos sem pessoa na frente da tela, como uma atualização agendada | Um service principal | 1 |
 | **PBIP (Power BI Project)** | Formato do Power BI que salva relatório e modelo semântico em arquivos de texto, permitindo ao Git comparar as mudanças linha a linha | O `.pbix` desmontado em peças etiquetadas, em vez de uma caixa lacrada | 0 |
