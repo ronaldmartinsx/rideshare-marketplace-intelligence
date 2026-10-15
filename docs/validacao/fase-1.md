@@ -87,7 +87,18 @@ Medido em 12/10/2026 no console, workgroup `rideshare`, tabela externa `bronze.t
 
 **Consequência para as próximas fases:** o limite de 1 GiB por consulta do workgroup barra qualquer leitura de mais de ~2 meses inteiros. Ele precisa ser recalibrado antes do backfill completo (Fase 2) e do `dbt build` sobre o período inteiro (Fase 3).
 
-## 6. Pendências desta validação
+## 6. Estratégia incremental com Iceberg (R2)
+
+Evidência de 14/10/2026 (dbt-core 1.12.5, dbt-athena 1.11.1): o `dbt build` do `stg_tlc__hvfhv_trips` com `incremental_strategy='insert_overwrite'` falhou na compilação, sem tocar na AWS:
+
+```
+Invalid incremental strategy provided: insert_overwrite
+Incremental models on Iceberg tables only work with 'append', 'microbatch' or 'merge' (v3 only) strategy.
+```
+
+Decisão: `append` + `pre_hook` que apaga o mês processado ([ADR 0014](../adr/0014-estrategia-incremental-silver.md)). Teste de idempotência (duas execuções do mesmo mês devem dar a mesma contagem) e local dos arquivos: a seguir.
+
+## 7. Pendências desta validação
 
 - [x] R1 (custo): medido (seção 5).
 - [ ] R2: estratégia incremental do dbt-athena com Iceberg.
