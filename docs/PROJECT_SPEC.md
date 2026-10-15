@@ -788,7 +788,7 @@ rideshare-marketplace-intelligence/
 | 0010 | Interface do agente (CLI × Streamlit) | A decidir (Fase 6) |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
-| 0013 | Layout de dev no S3: prefixo `dev/` no mesmo bucket; dev lê a Bronze de prod | Decidido |
+| 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado na Fase 1) |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 
