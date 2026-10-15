@@ -120,7 +120,29 @@ Snapshots Iceberg (`"dev_silver"."stg_tlc__hvfhv_trips$snapshots"`):
 - ✅ **Time travel funciona no Athena** com a sintaxe `FOR TIMESTAMP AS OF TIMESTAMP '...'`.
 - ⚠️ **Os arquivos antigos continuam no S3:** a pasta `data/` passou de 499 MB para 1.015,6 MB (os do primeiro snapshot ainda são referenciados pelo histórico). Exige `VACUUM` periódico (Fase 3).
 
-## 7. Pendências desta validação
+## 7. Gold mínima: `fct_demanda_zona_hora`
+
+Model escrito pelo Ronald (grão: hora de embarque × zona de origem × operadora; só somas e contagens). Build em `dev_gold` em 14 s.
+
+| Verificação | Resultado |
+|---|---|
+| Linhas | **364.630** (teto estimado: 744 h × ~262 zonas × 2 operadoras ≈ 390 mil) |
+| Grão único | 364.630 linhas = 364.630 combinações distintas ✅ |
+| Cobertura | 262 zonas, 2 operadoras, de 01/01 00h a 31/01 23h |
+| Tamanho | ~7,7 MB (3 Parquet) contra ~468 MB da Silver: cerca de 60× menor |
+| Reconciliação Silver × Gold | Corridas (20.405.666), milhas, tarifa, repasse e compartilhadas **idênticos** ✅ |
+| Local | `lake/dev_gold/fct_demanda_zona_hora/<id único>/` |
+
+**Ajuste de configuração:** a materialização `table` em Iceberg exige caminho único por versão (o dbt-athena cria a tabela nova e troca o nome, sem janela sem dados). A pasta `marts` usa `s3_data_naming: schema_table_unique`; a Silver incremental continua com `schema_table`.
+
+**Primeira leitura de negócio (preliminar):** inclui corridas que a Silver ainda não marca como inválidas (o `is_valid` entra na Fase 3); portanto, é só um teste de sanidade, não um resultado.
+
+| Operadora | Corridas | Share | Take rate | Receita/milha | Repasse/hora de corrida |
+|---|---|---|---|---|---|
+| HV0003 (Uber) | 15.356.455 | 75,3% | 23,3% | US$ 4,98 | US$ 61,96 |
+| HV0005 (Lyft) | 5.049.211 | 24,7% | 22,5% | US$ 5,08 | US$ 59,64 |
+
+## 8. Pendências desta validação
 
 - [x] R1 (custo): medido (seção 5).
 - [x] R2: estratégia incremental com Iceberg validada (seção 6).

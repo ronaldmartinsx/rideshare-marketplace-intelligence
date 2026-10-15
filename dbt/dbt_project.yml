@@ -29,3 +29,7 @@ models:
     marts:
       +schema: gold
       +materialized: table
+      # Materialização table em Iceberg: o dbt-athena cria a tabela nova ao lado e troca
+      # o nome (rename), sem janela sem dados. Exige um caminho único por versão.
+      # Resultado: lake/<banco>/<tabela>/<id único>/ (ainda dentro do prefixo do banco).
+      +s3_data_naming: schema_table_unique
