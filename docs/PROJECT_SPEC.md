@@ -785,7 +785,7 @@ rideshare-marketplace-intelligence/
 | 0007 | CBD definido por lista de zonas, e não pela taxa | Decidido |
 | 0008 | Airflow local (Astro) em vez de serviço gerenciado | Decidido |
 | 0009 | Fuso horário padrão | A decidir (Fase 2) |
-| 0010 | Interface do agente (CLI × Streamlit) | A decidir (Fase 6) |
+| 0010 | Interface do agente (CLI × Streamlit) | Decidido: Streamlit (antecipado em 15/10/2026; o Power BI segue como dashboard de negócio). Escrever o ADR na Fase 6 |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
 | 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado na Fase 1) |
