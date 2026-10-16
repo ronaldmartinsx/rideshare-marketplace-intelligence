@@ -1,0 +1,35 @@
+name: rideshare
+version: "0.1.0"
+config-version: 2
+
+# Qual bloco do profiles.yml usar
+profile: rideshare
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  rideshare:
+    # Padrão do projeto: tabelas Iceberg (o padrão do dbt-athena seria Hive)
+    +table_type: iceberg
+    +format: parquet
+
+    # A pasta decide a camada (spec, seção 5). O nome final do banco
+    # (silver ou dev_silver) é montado pela macro generate_schema_name.
+    staging:
+      +schema: silver
+      +materialized: view
+    intermediate:
+      +schema: silver
+      +materialized: view
+    marts:
+      +schema: gold
+      +materialized: table
+      # Materialização table em Iceberg: o dbt-athena cria a tabela nova ao lado e troca
+      # o nome (rename), sem janela sem dados. Exige um caminho único por versão.
+      # Resultado: lake/<banco>/<tabela>/<id único>/ (ainda dentro do prefixo do banco).
+      +s3_data_naming: schema_table_unique

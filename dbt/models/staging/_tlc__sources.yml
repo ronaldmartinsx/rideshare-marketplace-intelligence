@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: tlc
+    description: "Dados brutos da TLC na Bronze (tabelas externas sobre Parquet; criadas fora do dbt)."
+    schema: bronze
+    tables:
+      - name: hvfhv
+        identifier: tlc_hvfhv
+        description: >
+          Corridas High Volume FHV (Uber, Lyft), um arquivo por mês de embarque.
+          Particionada por year, month e ingest_ts (versão da ingestão; Bronze imutável).
+          Na Fase 1 há uma única ingestão; a seleção da versão vigente pelo manifesto entra na Fase 2.

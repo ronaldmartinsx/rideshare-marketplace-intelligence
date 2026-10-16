@@ -176,7 +176,7 @@ O fluxo é este:
 ### 2.3 Persona e contexto
 
 - **Persona:** time de Marketplace da **Lyft** em Nova York.
-- **Benchmark competitivo:** Uber. As duas operadoras aparecem identificadas no dado pelo código de licença (⚠️ A VALIDAR: HV0003 = Uber, HV0005 = Lyft, conferir no dicionário oficial).
+- **Benchmark competitivo:** Uber. As duas operadoras aparecem identificadas no dado pelo código de licença (✅ VERIFICADO no dicionário oficial de 18/03/2025: HV0003 = Uber, HV0005 = Lyft; ver `docs/validacao/fase-1.md`).
 
 ### 2.4 Perguntas de negócio (o que o projeto responde)
 
@@ -185,7 +185,7 @@ O fluxo é este:
    - **Ação:** reposicionar motoristas ou ativar incentivos.
 2. **Como evolui a economia unitária?**
    - **Métricas:** take rate, receita por milha e por minuto, repasse por hora de corrida.
-3. **Qual foi o impacto da taxa de congestionamento de Manhattan** (Congestion Relief Zone, em vigor desde jan/2025)?
+3. **Qual foi o impacto da taxa de congestionamento de Manhattan** (Congestion Relief Zone, em vigor desde **05/01/2025**, ✅ VERIFICADO no dicionário oficial)?
    - **Comparação:** antes e depois, em volume, tarifa e destino das corridas que entram no centro (CBD).
    - Funciona como experimento natural.
 4. **Qual é o share da Lyft versus a Uber por zona**, e onde estamos perdendo terreno?
@@ -197,13 +197,13 @@ O fluxo é este:
 | Métrica | Definição | Cuidado (pegadinha) |
 |---|---|---|
 | **Corridas válidas** | Contagem de corridas com `is_valid = true` | Inválidas ficam na Silver com o motivo, mas não entram na Gold |
-| **Tempo de espera (s)** | `pickup_datetime − request_datetime` | **Não usar `on_scene_datetime`**: só é preenchido para veículos acessíveis (✅ VERIFICADO no dicionário oficial) |
+| **Tempo de espera (s)** | `pickup_datetime − request_datetime` | **Não usar `on_scene_datetime`**: o dicionário diz "só veículos acessíveis", mas nos dados de 2025-01 está preenchido em 100% das corridas da Uber e em 0,3% das da Lyft. Usá-lo mediria só a Uber (✅ VERIFICADO nos dados; ver `docs/validacao/fase-1.md`) |
 | **Espera P50 / P90** | Percentis do tempo de espera | **Percentil não soma nem tira média entre zonas.** Por isso a Gold guarda um histograma de faixas de espera (ver 6.4) |
 | **Take rate** | `(base_passenger_fare − driver_pay) / base_passenger_fare` | `driver_pay` exclui pedágios e gorjetas e é líquido de comissão, sobretaxas e impostos (✅ VERIFICADO). Impostos e taxas são repassados e ficam fora |
 | **Receita por milha** | `base_passenger_fare / trip_miles` | Excluir `trip_miles = 0` (já marcado como inválido na Silver) |
 | **Repasse por hora de corrida** | `driver_pay / (trip_time / 3600)` | **Não é o ganho por hora do motorista**: o dado não tem tempo ocioso nem identificador de motorista |
 | **Share da operadora** | Corridas da operadora / corridas totais (mesmo recorte) | Calcular sobre o mesmo recorte de zona e período |
-| **Corrida com destino no CBD** | `DOLocationID` dentro da lista de zonas do CBD (seed) | **Não usar `cbd_congestion_fee > 0`** para comparar antes e depois: a coluna só existe a partir de 2025 (✅ VERIFICADO) |
+| **Corrida com destino no CBD** | `DOLocationID` dentro da lista de zonas do CBD (seed) | **Não usar `cbd_congestion_fee > 0`** para comparar antes e depois: a coluna só existe a partir de 2025 (✅ VERIFICADO). O corte de antes × depois é **05/01/2025**: os dias 1 a 4 de janeiro de 2025 ainda são "antes" |
 
 ### 2.6 Fora do escopo da v1
 
@@ -227,9 +227,9 @@ O fluxo é este:
 | **Último mês disponível em 03/10/2026** | ago/2026 (✅ VERIFICADO) |
 | **Republicação** | A TLC já republicou arquivos antigos (seção "Errata" da página) → **a ingestão precisa detectar arquivos alterados** (✅ VERIFICADO) |
 | **Schema drift** | `cbd_congestion_fee` adicionada a partir de 2025. A TLC também avisa sobre possíveis padronizações de schema (✅ VERIFICADO) |
-| **Volume** | ⚠️ A VALIDAR na Fase 1: estimativa de dezenas de milhões de linhas e centenas de MB por mês |
+| **Volume** | ✅ VERIFICADO (12/10/2026): ~20 milhões de linhas e ~450–480 MB por mês (2025-01: 20.405.666 linhas, 468 MB, 20 row groups, ZSTD) |
 
-**Colunas esperadas** (⚠️ A VALIDAR contra o arquivo real na Fase 1):
+**Colunas esperadas** (✅ VERIFICADO em 12/10/2026 contra 2024-01 e 2025-01: as 25 existem com estes nomes; `cbd_congestion_fee` só a partir de 2025; nenhuma mudança de tipo entre os dois meses):
 
 - **Identificação:** `hvfhs_license_num`, `dispatching_base_num`, `originating_base_num`
 - **Tempo:** `request_datetime`, `on_scene_datetime`, `pickup_datetime`, `dropoff_datetime`
@@ -398,8 +398,8 @@ flowchart TD
    - zona inexistente.
 3. **Incremental idempotente por partição.**
    - A tabela Iceberg é particionada por **`source_month`**, e não pelo mês do embarque, porque corridas na virada do mês e dados ruins podem cair fora do mês do arquivo.
-   - Estratégia: `insert_overwrite` (ou `merge`) por partição. Reprocessar um mês substitui só aquele mês.
-   - ⚠️ A VALIDAR: quais estratégias incrementais o dbt-athena suporta para Iceberg na versão instalada.
+   - Estratégia: `append` + `pre_hook` que apaga o `source_month` processado (ADR 0014). Reprocessar um mês substitui só aquele mês.
+   - ✅ VERIFICADO (14/10/2026): o dbt-athena 1.11.1 não aceita `insert_overwrite` em Iceberg (só `append`, `microbatch` e `merge`).
 
 ### 6.4 Gold
 
@@ -524,7 +524,7 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 4. **Taxa de congestionamento:** antes e depois, CBD versus não-CBD (com comparação de tendências).
 5. **Forecast × realizado:** com o WAPE do modelo e do baseline.
 
-**Publicação:** ⚠️ A VALIDAR se a atualização no Service exige gateway. Plano B: o `.pbix` no repositório, com prints e um vídeo curto no README.
+**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). Fica fora da v1. Plano B: o projeto do Power BI no repositório, com prints e um vídeo curto no README.
 
 ---
 
@@ -760,8 +760,8 @@ rideshare-marketplace-intelligence/
 | # | Risco ou hipótese | Fase | Mitigação |
 |---|---|---|---|
 | R1 | Volume e custo mensal maiores que o estimado | 1 | Medir na fatia vertical; reduzir o recorte se necessário |
-| R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | Testar cedo; alternativa `merge`, ou overwrite de partição via macro |
-| R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | Plano B: `.pbix` + prints + vídeo |
+| R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | ⚠️ Confirmado: sem `insert_overwrite` em Iceberg. ✅ Resolvido: `append` + delete do mês (ADR 0014), idempotência validada em 15/10/2026 |
+| R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | ✅ Respondido em 15/10/2026: Desktop conecta (ODBC 2.4 + Browser SSO OIDC, Import) e reproduz a Gold exatamente. ⚠️ Confirmado na documentação: o Service exige on-premises data gateway com System DSN. Plano B: PBIP + prints + vídeo |
 | R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | Contrato de schema na ingestão + ADR |
 | R5 | Fuso horário dos timestamps | 2 | Confirmar no guia oficial da TLC; ADR |
 | R6 | Códigos de licença das operadoras | 1 | Conferir no dicionário oficial |
@@ -777,7 +777,7 @@ rideshare-marketplace-intelligence/
 | ADR | Decisão | Status |
 |---|---|---|
 | 0001 | AWS (S3 + Glue + Athena) como plataforma | Decidido |
-| 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido |
+| 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido e validado (Fase 1; ADR escrito em 15/10/2026) |
 | 0003 | Bronze imutável e versionada por `ingest_ts` | Decidido |
 | 0004 | Chave surrogate por hash e política de duplicatas | A decidir (Fase 3) |
 | 0005 | Partição da Silver por `source_month` | Decidido (validar na Fase 1) |
@@ -785,10 +785,11 @@ rideshare-marketplace-intelligence/
 | 0007 | CBD definido por lista de zonas, e não pela taxa | Decidido |
 | 0008 | Airflow local (Astro) em vez de serviço gerenciado | Decidido |
 | 0009 | Fuso horário padrão | A decidir (Fase 2) |
-| 0010 | Interface do agente (CLI × Streamlit) | A decidir (Fase 6) |
+| 0010 | Interface do agente (CLI × Streamlit) | Decidido: Streamlit (antecipado em 15/10/2026; o Power BI segue como dashboard de negócio). Escrever o ADR na Fase 6 |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
-| 0013 | Layout de dev no S3: prefixo `dev/` no mesmo bucket; dev lê a Bronze de prod | Decidido |
+| 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado na Fase 1) |
+| 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 

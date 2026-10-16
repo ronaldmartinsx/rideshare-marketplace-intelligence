@@ -3,8 +3,9 @@
 # Layout de dev no S3: ver ADR 0013.
 
 locals {
-  # Prefixos onde o dbt grava, reescreve e apaga (prod e dev)
-  prefixos_dbt = ["silver", "gold", "dev/silver", "dev/gold"]
+  # Prefixos onde o dbt grava, reescreve e apaga (prod e dev).
+  # Regra do ADR 0013: prefixo no S3 = nome do banco no Glue.
+  prefixos_dbt = ["silver", "gold", "dev_silver", "dev_gold"]
 
   glue_catalogo = "arn:aws:glue:${local.regiao}:${local.conta_id}:catalog"
   glue_bancos   = [for banco in local.bancos_glue : "arn:aws:glue:${local.regiao}:${local.conta_id}:database/${banco}"]

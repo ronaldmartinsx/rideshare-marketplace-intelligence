@@ -1,0 +1,13 @@
+[project]
+name = "rideshare-dbt"
+version = "0.1.0"
+description = "Transformações Silver e Gold do Rideshare Marketplace Intelligence (dbt + Athena)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "dbt-core==1.12.5",
+    "dbt-athena==1.11.1",
+]
+
+[tool.uv]
+# Projeto de aplicação, não uma biblioteca: não empacotar
+package = false

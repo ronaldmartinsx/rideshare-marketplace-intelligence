@@ -1,0 +1,39 @@
+# Conexão do dbt com o Athena. Sem segredos: a credencial vem do perfil da AWS CLI
+# (padrão: rideshare-admin; troque com a variável de ambiente AWS_PROFILE).
+# Uso: rodar os comandos dbt de dentro da pasta dbt/ (o dbt procura este arquivo
+# no diretório atual).
+#
+# Onde ficam os ARQUIVOS das tabelas: s3_data_dir + s3_data_naming = schema_table
+#   -> s3://rmartins-rideshare-lake/<banco do Glue>/<tabela>/
+#   ex.: dev  -> .../dev_silver/stg_tlc__hvfhv_trips/
+#        prod -> .../silver/stg_tlc__hvfhv_trips/
+# Regra: o prefixo no S3 é igual ao nome do banco no Glue (ADR 0013).
+
+rideshare:
+  target: dev
+  outputs:
+    dev:
+      type: athena
+      region_name: us-east-1
+      aws_profile_name: "{{ env_var('AWS_PROFILE', 'rideshare-admin') }}"
+      work_group: rideshare
+      # Resultados de consulta (descartáveis, expiram em 7 dias)
+      s3_staging_dir: s3://rmartins-rideshare-athena-results/resultados/
+      # Dados das tabelas (permanentes, no lake)
+      s3_data_dir: s3://rmartins-rideshare-lake/
+      s3_data_naming: schema_table
+      database: awsdatacatalog
+      schema: dev
+      threads: 4
+
+    prod:
+      type: athena
+      region_name: us-east-1
+      aws_profile_name: "{{ env_var('AWS_PROFILE', 'rideshare-admin') }}"
+      work_group: rideshare
+      s3_staging_dir: s3://rmartins-rideshare-athena-results/resultados/
+      s3_data_dir: s3://rmartins-rideshare-lake/
+      s3_data_naming: schema_table
+      database: awsdatacatalog
+      schema: prod
+      threads: 4

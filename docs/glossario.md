@@ -124,6 +124,13 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Trino (antigo Presto)** | Motor SQL distribuído open source, que roda por baixo do Athena | O motor por trás do endpoint | 0 |
 | **Workgroup (Athena)** | Conjunto de regras para consultas: onde gravar resultados, limite de bytes por consulta, versão do motor | Um workspace com capacidade dedicada: quem consulta por ele herda as regras | 0 |
 | **Bytes scanned cutoff** | Limite de bytes lidos por consulta num workgroup. Acima dele, a consulta é cancelada | O freio de mão contra um `SELECT *` caro | 0 |
+| **Particionamento estilo Hive** | Organizar os arquivos em prefixos `coluna=valor` (`year=2025/month=01/`) para o motor ler só as pastas que interessam. Cada partição deve ter dezenas a centenas de MB | A atualização incremental do Power BI (partições por período); o arquivo morto com uma pasta por mês | 1 |
+| **Coluna de partição** | Coluna que não existe dentro do arquivo: o motor a lê do caminho (`year`, `month`, `ingest_ts`) | A etiqueta da pasta, não o conteúdo da folha | 1 |
+| **Partition pruning** | O motor pula pastas inteiras olhando só o caminho, sem abrir arquivos. Só acontece com filtro na coluna de partição | Ir direto à estante certa | 1 |
+| **Registro de partição** | O Glue precisa saber que uma pasta nova existe: `ALTER TABLE ADD PARTITION` (à mão), `MSCK REPAIR TABLE` (varre as pastas) ou partition projection (o Athena deduz o padrão). Sem isso, a pasta é invisível | Cadastrar a pasta nova no índice do arquivo morto | 1 |
+| **Tabela externa** | O catálogo só aponta para arquivos geridos por outra pessoa/processo. `DROP TABLE` apaga só a definição. Usada na Bronze | Files e shortcuts do Lakehouse | 1 |
+| **Tabela gerenciada** | O motor/formato de tabela é dono dos arquivos: cria, reescreve e apaga. `DROP TABLE` apaga os dados. Usada na Silver e na Gold (Iceberg) | Tables (Delta) do Lakehouse | 1 |
+| **Schema-on-read** | A definição da tabela é aplicada na hora da leitura: um tipo errado no `CREATE` só dá erro no primeiro `SELECT` | Um rótulo colado na caixa: só ao abrir você descobre se bate com o conteúdo | 1 |
 
 ---
 
@@ -164,8 +171,102 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Arquivos e formatos de dados
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Armazenamento colunar** | Guardar uma tabela coluna por coluna, e não linha por linha. Ler uma coluna não obriga a ler as outras; valores parecidos juntos comprimem muito | O VertiPaq do Power BI | 1 |
+| **Parquet** | Formato de arquivo colunar, comprimido, com tipos preservados e um rodapé com schema e estatísticas. Não pode ser editado: mudar uma linha exige reescrever o arquivo | As tabelas Delta do Lakehouse no Fabric são pastas de arquivos Parquet + um log | 1 |
+| **Row group** | Bloco de linhas dentro de um arquivo Parquet; cada coluna do bloco é guardada e comprimida separadamente, com seu min/max | Um capítulo do livro, com o resumo do capítulo | 1 |
+| **Footer (rodapé)** | Final do arquivo Parquet com o schema, a lista de row groups e as estatísticas de cada coluna. É lido primeiro | O sumário do livro | 1 |
+| **Predicate pushdown** | O motor usa as estatísticas (min/max) para pular row groups que com certeza não atendem ao `WHERE`. Pula quando o intervalo [min, max] inteiro fica fora do filtro. Só é eficaz se os dados estiverem minimamente ordenados | Pular os capítulos que o sumário prova não ter o que você procura | 1 |
+| **Dictionary encoding** | Compressão que guarda cada texto distinto uma vez e substitui as repetições por números | "Manhattan" guardado uma vez; as linhas guardam só o código 1 | 1 |
+| **Small files problem** | Muitos arquivos pequenos deixam a leitura lenta e cara: cada arquivo exige abrir o rodapé e uma requisição ao S3 | Mil envelopes de uma folha × um fichário | 1 |
+| **CSV** | Texto separado por vírgulas: sem tipos, sem compressão inteligente, guardado por linha | Planilha exportada como texto | 1 |
+| **DuckDB** | Motor SQL que roda localmente e lê Parquet direto (inclusive pela internet). Usado só para inspeção; não faz parte da arquitetura | Um "Athena de bolso" | 1 |
+| **HEAD (requisição HTTP)** | Pede só os cabeçalhos de um arquivo (tamanho, data, ETag), sem baixar o conteúdo | Perguntar o peso da encomenda sem abrir a caixa | 1 |
+| **ETag / Last-Modified** | Cabeçalhos que identificam a versão de um arquivo na web. Se mudam, o arquivo mudou. Com sufixo `-N`, o ETag veio de upload em N partes e não é um hash do conteúdo | O número do lote impresso na embalagem | 1 |
+| **Hash (SHA-256)** | "Impressão digital" de um arquivo, calculada do conteúdo: qualquer byte diferente gera um hash totalmente diferente | O número do chassi: identifica aquele exato veículo | 1 |
+
+---
+
+## Iceberg (formato de tabela)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Formato de tabela (table format)** | Camada de metadados sobre arquivos (ex.: Parquet) que os transforma numa tabela com transações, versões e schema controlado. Exemplos: Iceberg, Delta, Hudi | A lista oficial da frota sobre os carros | 1 |
+| **Apache Iceberg** | Formato de tabela aberto e neutro de fornecedor, lido por Athena, Spark, Trino, Snowflake etc. Usado na Silver e na Gold (ADR 0002). No Athena é tabela gerenciada: `DROP TABLE` apaga os dados | A tabela Delta do Fabric (concorrente com a mesma proposta) | 1 |
+| **Metadados do Iceberg** | `metadata.json` (schema, partições, histórico), manifest list (arquivos de um snapshot) e manifestos (arquivos + min/max). O catálogo guarda só o ponteiro para o `metadata.json` vigente | O `_delta_log` do Delta | 1 |
+| **Snapshot** | Uma versão da tabela **inteira** (a lista de arquivos que a formam), criada a cada escrita (commit). Não registra mudança linha a linha | A lista da frota de uma data | 1 |
+| **Transação ACID / commit atômico** | Cada escrita é "tudo ou nada": quem lê vê a versão anterior inteira ou a nova inteira, nunca a metade. O commit é a troca atômica do ponteiro no catálogo | Trocar a lista do quadro de avisos num gesto só | 1 |
+| **Time travel** | Consultar uma versão antiga da tabela (`FOR TIMESTAMP AS OF` / `FOR VERSION AS OF`). Só lê; não restaura | Ler a lista antiga no arquivo morto | 1 |
+| **Rollback** | Tornar vigente de novo uma versão antiga. Diferente de time travel | Recolocar a lista antiga no quadro | 1 |
+| **Evolução de schema** | Acrescentar, renomear ou remover colunas sem reescrever os arquivos antigos (colunas identificadas por ID, não por nome) | Renomear uma coluna no modelo sem reimportar os dados | 1 |
+| **Partição oculta (hidden partitioning)** | Particionar por uma transformação (`month(pickup_datetime)`): quem consulta filtra a coluna normal e a poda acontece sozinha | O motor sabe que a pasta "janeiro" corresponde às datas de janeiro | 1 |
+| **Sobrescrita por partição** | Substituir atomicamente só uma partição (ex.: `source_month=2025-01`). Base do reprocessamento idempotente. O Iceberg suporta; o dbt-athena não expõe (ver `insert_overwrite` em Estratégia incremental) | Atualização incremental do Power BI refazendo só um período | 1 |
+| **Schema drift** | Mudança no schema da fonte ao longo do tempo: coluna nova, removida ou com tipo diferente (ex.: `cbd_congestion_fee` só existe a partir de 2025-01) | A planilha do fornecedor que ganhou uma coluna sem aviso | 1 |
+| **OPTIMIZE (compactação)** | Junta arquivos pequenos de uma tabela Iceberg em arquivos maiores | Juntar folhas avulsas num fichário | 1 |
+| **VACUUM (expiração de snapshots)** | Expira snapshots antigos e apaga os arquivos que nenhuma versão vigente usa. Depois disso, aquele passado não existe mais | Descartar listas antigas do arquivo morto e os carros que só elas citavam | 1 |
+
+---
+
+## dbt (transformação)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **ELT** | Extrair e carregar o dado bruto primeiro (Bronze), transformar depois, dentro do warehouse. O dbt é o "T" | Carregar a fonte no Power BI e transformar no Power Query | 1 |
+| **dbt (data build tool)** | Ferramenta em que cada transformação é um `SELECT` num arquivo; o dbt monta o SQL completo, manda o Athena executar e cuida da ordem, dos testes e da documentação. Não processa dados nem agenda nada | O Power Query escrito em SQL e versionado no Git | 1 |
+| **Projeto dbt (`dbt_project.yml`)** | Arquivo que define o projeto: nome, pastas e configurações padrão por pasta | As configurações do arquivo PBIP | 1 |
+| **`profiles.yml` e target** | Como o dbt se conecta ao warehouse. Cada target (`dev`, `prod`) aponta para bancos diferentes | Trocar a fonte de dados entre homologação e produção | 1 |
+| **Adaptador (dbt-athena)** | Plugin que traduz o dbt para um warehouse específico (Athena, BigQuery, Databricks, Fabric...) | O conector do Power Query | 1 |
+| **Source** | Tabela que vem de fora do dbt, declarada em YAML e usada com `{{ source('tlc', 'hvfhv') }}`. Fica na fronteira | A fonte de dados de uma consulta | 1 |
+| **Model** | Um arquivo `.sql` com um `SELECT`. O nome do arquivo vira o nome da tabela; o dbt escreve o `CREATE` | Uma consulta do Power Query | 1 |
+| **`ref()`** | Referência a outro model: define a ordem (DAG), troca o banco conforme o ambiente e registra a linhagem | "Referência" no Power Query | 1 |
+| **Jinja e compilação** | O `{{ }}` é Jinja (modelo de texto). O dbt compila para SQL puro antes de executar; o resultado fica em `target/compiled/`. Erro de Jinja falha antes de chegar ao Athena | Uma fórmula com parâmetros que vira o valor final | 1 |
+| **Materialização** | Como o resultado do model existe: `view` (consulta salva, recalcula a cada leitura), `table` (reconstruída inteira), `incremental` (só o novo), `ephemeral` (vira CTE) | "Habilitar carga", atualização completa e incremental do Power BI | 1 |
+| **`is_incremental()`** | Macro que diz se o model está rodando em modo incremental; usada para filtrar só o dado novo | O filtro `RangeStart`/`RangeEnd` da atualização incremental | 1 |
+| **Estratégia incremental** | Como o pedaço novo entra na tabela: `insert_overwrite` (substitui partições), `append` (só acrescenta; pode duplicar), `merge` (linha a linha pela `unique_key`; não apaga o que sumiu da fonte). No dbt-athena, tabelas Iceberg aceitam só `append`, `merge` e `microbatch` (por isso o ADR 0014) | — | 1 |
+| **Hook (`pre_hook` / `post_hook`)** | SQL que o dbt roda antes ou depois de um model. Na Silver, o `pre_hook` apaga o mês antes do `append` | Uma etapa "antes de carregar" no pipeline | 1 |
+| **Variável (`var()` / `--vars`)** | Valor passado ao dbt na hora de rodar (`--vars '{"source_month": "2025-01"}'`) e lido no model com `{{ var('source_month') }}`. O Jinja insere o texto ao pé da letra: em SQL, precisa de aspas em volta | Um parâmetro do Power Query | 1 |
+| **`s3_data_naming`** | Configuração do dbt-athena que define o caminho no S3 de cada tabela. `schema_table_unique` dá uma pasta nova por versão, exigida pela materialização `table` em Iceberg (cria a tabela nova e troca o nome) | — | 1 |
+| **uv** | Gerenciador de ambientes e pacotes Python. Cria o ambiente isolado do dbt e fixa as versões (`pyproject.toml` + `uv.lock`) | O instalador que garante a mesma versão do conector em todas as máquinas | 1 |
+| **Idempotência** | Rodar o mesmo processamento duas vezes dá o mesmo resultado, sem duplicar | Apertar o botão do elevador duas vezes não chama dois elevadores | 1 |
+| **`--full-refresh`** | Reconstrói um model incremental do zero | Atualização completa de uma tabela com atualização incremental | 1 |
+| **Seed** | CSV pequeno e versionado dentro do projeto, transformado em tabela pelo dbt (`seed_operadoras.csv`) | "Inserir dados" no Power BI, só que no Git | 1 |
+| **Teste genérico** | Teste declarado em YAML: `unique`, `not_null`, `accepted_values`, `relationships`. Por baixo, é um `SELECT` que procura problemas | Relacionamento válido e coluna sem vazios no modelo semântico | 1 |
+| **Teste singular** | Arquivo `.sql` que devolve as linhas problemáticas; zero linhas = passou | Uma consulta de auditoria que deveria voltar vazia | 1 |
+| **`dbt build`** | Roda seeds, models e testes na ordem do grafo; se o teste de um model falha, os dependentes são pulados | Uma atualização que para se a validação falhar | 1 |
+| **Grão** | O que exatamente uma linha de uma tabela representa (ex.: hora × zona × operadora). Primeira decisão de qualquer tabela fato; vira o `GROUP BY` | A granularidade da tabela fato no modelo estrela do Power BI | 1 |
+| **Métrica aditiva** | Pode ser somada em qualquer nível (somas, contagens). Médias e percentis não são aditivos: guarde soma e contagem e divida no consumo | `DIVIDE(SUM(...), SUM(...))` em vez de `AVERAGE` sobre valores já agregados | 1 |
+| **Reconciliação** | Conferir que totais batem entre camadas (ex.: soma de corridas na Gold = corridas na Silver) | Conferir o total do relatório contra o sistema de origem | 1 |
+| **Macro** | Função em Jinja reutilizável (ex.: `generate_schema_name`, que decide o nome do banco) | Uma função personalizada do Power Query | 1 |
+
+---
+
 ## Power BI
 
 | Termo | O que é | Analogia / ponte | Fase |
 |---|---|---|---|
+| **ODBC** | Padrão antigo (anos 90) para programas conversarem com bancos; um driver instalado traduz para o banco específico. Precisa estar em toda máquina que conecta | Um adaptador de tomada | 1 |
+| **Driver ODBC da Athena** | O "tradutor" ODBC → API do Athena, instalado no Windows. Exigido pelo conector do Athena no Power BI | O conector instalado à parte | 1 |
+| **DSN (Data Source Name)** | Configuração de conexão ODBC salva com nome: driver, região, workgroup, autenticação. **User DSN** vale para um usuário; **System DSN**, para a máquina (exigido pelo gateway) | O perfil da AWS CLI, só que para o ODBC | 1 |
+| **Conector Amazon Athena** | Conector do Power BI feito pela Amazon, que usa o DSN por baixo. Modos Import e DirectQuery | O conector do SQL Server, mas dependente de driver | 1 |
+| **Browser SSO OIDC** | Autenticação do driver ODBC 2.x com o IAM Identity Center: abre o navegador, login + MFA, credencial temporária. Exige uma pessoa | "Entrar com conta organizacional", contra a AWS | 1 |
+| **Import × DirectQuery (com Athena)** | Import consulta o Athena só na atualização; DirectQuery consulta a cada interação (custo por clique, latência de segundos, sujeito ao limite do workgroup) | O mesmo trade-off do Power BI, agravado pela cobrança por dado lido | 1 |
+| **On-premises data gateway** | Serviço Windows que deixa o Power BI Service usar fontes que exigem software local (como um driver ODBC). Para o Athena, exige driver + System DSN + identidade de máquina | A ponte entre a nuvem da Microsoft e a sua máquina | 1 |
+| **Identidade de máquina** | Credencial que se autentica sozinha (ex.: usuário IAM com chave somente leitura), para processos sem pessoa na frente da tela, como uma atualização agendada | Um service principal | 1 |
 | **PBIP (Power BI Project)** | Formato do Power BI que salva relatório e modelo semântico em arquivos de texto, permitindo ao Git comparar as mudanças linha a linha | O `.pbix` desmontado em peças etiquetadas, em vez de uma caixa lacrada | 0 |
+| **PBIR** | Formato do **relatório** dentro do PBIP: uma pasta por página e um `visual.json` por visual. Os dados importados ficam fora, no `cache.abf` (ignorado pelo Git) | A planta de cada página, visual por visual | 1 |
+| **TMDL** | Linguagem de texto que descreve o **modelo semântico** no PBIP: tabelas, colunas, tipos, medidas | O DDL (`CREATE TABLE`) do modelo | 1 |
+| **Agregação implícita** | Somar ou contar uma coluna direto no visual ("Soma de `qtd_corridas`"), sem medida DAX escrita. Serve para conferências; as métricas oficiais viram medidas explícitas | Arrastar a coluna para o campo Valores | 1 |
+| **Data/hora automática** | Opção do Power BI que cria uma hierarquia oculta (Ano › Trimestre › Mês › Dia) para cada coluna de data. Neste projeto está desligada: sem ela, agrupar por dia exige uma coluna de data | A hierarquia de datas que aparece sozinha no eixo | 1 |
+
+---
+
+## IA no desenvolvimento (ferramentas do agente)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **MCP (Model Context Protocol)** | Padrão aberto que liga um agente de IA a um programa externo por meio de "ferramentas". O Power BI Modeling MCP conecta no Desktop aberto e roda DAX | Uma tomada padrão; o conector do Power Query, só que quem usa é o agente | 1 |
+| **Skill** | Manual de instruções que o agente lê antes de uma tarefa específica (ex.: `powerbi-report-cli` para editar PBIR) | O procedimento operacional padrão de uma tarefa da oficina | 1 |
+| **Plugin (Claude Code)** | Pacote que instala skills e MCPs de uma vez (ex.: `powerbi-authoring`, do repositório `microsoft/skills-for-fabric`) | Um kit de ferramentas com manual | 1 |
