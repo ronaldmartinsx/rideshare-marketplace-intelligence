@@ -105,6 +105,6 @@ Pelo ciclo da spec (seção 1.4):
 - [x] `docs/aprendizados/fase-1.md` (o que aprendeu, erros, decisões, gate).
 - [x] `docs/glossario.md` revisado.
 - [x] `CLAUDE.md`: "Fase atual: 2".
-- [ ] PR `fase-1-fatia-vertical` → `main`.
+- [x] PR `fase-1-fatia-vertical` → `main` (#2, aberto em 15/10/2026; merge pelo Ronald).
 
 **Pendências que passam para a Fase 2** (não bloqueiam o fechamento): recalibrar o limite de 1 GiB do workgroup antes do backfill; decidir a credencial do Airflow; partition projection na Bronze; manifesto de ingestão (conflito com Bronze sem `DeleteObject`, ADR 0013); escrever o ADR 0008 (Airflow local).
