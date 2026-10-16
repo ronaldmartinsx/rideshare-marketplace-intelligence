@@ -100,11 +100,11 @@ Em `docs/validacao/fase-1.md`, nova seção "Power BI ↔ Athena (R3)":
 Pelo ciclo da spec (seção 1.4):
 
 - [x] Passos 1 a 5 acima (R3 respondido com evidência em 15/10/2026: `docs/validacao/fase-1.md`, seção 8).
-- [ ] **ADR 0002** (`docs/adr/0002-iceberg-silver-gold.md`): Iceberg na Silver e na Gold, com as evidências da Fase 1 (snapshots, time travel `FOR TIMESTAMP AS OF TIMESTAMP '...'`, `DROP TABLE` apaga dados, rename na materialização `table`, ADR 0014).
-- [ ] **Gate de domínio da Fase 1** (Apêndice C da spec): explicação com as próprias palavras de Parquet, particionamento Hive, tabela externa × gerenciada, Iceberg, dbt, dbt-athena, ODBC/conector do Athena; 5 perguntas + 1 de entrevista. Pontos a sondar: aspas SQL em volta de `{{ }}` (erro recorrente), regra do predicate pushdown (max/min), time travel × rollback, `merge` × republicação.
-- [ ] `docs/aprendizados/fase-1.md` (o que aprendeu, erros, decisões, gate).
-- [ ] `docs/glossario.md` revisado.
-- [ ] `CLAUDE.md`: "Fase atual: 2".
+- [x] **ADR 0002** (`docs/adr/0002-iceberg-silver-gold.md`): Iceberg na Silver e na Gold, com as evidências da Fase 1 (snapshots, time travel `FOR TIMESTAMP AS OF TIMESTAMP '...'`, `DROP TABLE` apaga dados, rename na materialização `table`, ADR 0014).
+- [x] **Gate de domínio da Fase 1** (✅ passou em 15/10/2026, formato híbrido) (Apêndice C da spec): explicação com as próprias palavras de Parquet, particionamento Hive, tabela externa × gerenciada, Iceberg, dbt, dbt-athena, ODBC/conector do Athena; 5 perguntas + 1 de entrevista. Pontos a sondar: aspas SQL em volta de `{{ }}` (erro recorrente), regra do predicate pushdown (max/min), time travel × rollback, `merge` × republicação.
+- [x] `docs/aprendizados/fase-1.md` (o que aprendeu, erros, decisões, gate).
+- [x] `docs/glossario.md` revisado.
+- [x] `CLAUDE.md`: "Fase atual: 2".
 - [ ] PR `fase-1-fatia-vertical` → `main`.
 
 **Pendências que passam para a Fase 2** (não bloqueiam o fechamento): recalibrar o limite de 1 GiB do workgroup antes do backfill; decidir a credencial do Airflow; partition projection na Bronze; manifesto de ingestão (conflito com Bronze sem `DeleteObject`, ADR 0013); escrever o ADR 0008 (Airflow local).

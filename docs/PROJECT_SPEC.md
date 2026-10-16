@@ -777,7 +777,7 @@ rideshare-marketplace-intelligence/
 | ADR | Decisão | Status |
 |---|---|---|
 | 0001 | AWS (S3 + Glue + Athena) como plataforma | Decidido |
-| 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido |
+| 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido e validado (Fase 1; ADR escrito em 15/10/2026) |
 | 0003 | Bronze imutável e versionada por `ingest_ts` | Decidido |
 | 0004 | Chave surrogate por hash e política de duplicatas | A decidir (Fase 3) |
 | 0005 | Partição da Silver por `source_month` | Decidido (validar na Fase 1) |
