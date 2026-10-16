@@ -251,3 +251,17 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **On-premises data gateway** | Serviço Windows que deixa o Power BI Service usar fontes que exigem software local (como um driver ODBC). Para o Athena, exige driver + System DSN + identidade de máquina | A ponte entre a nuvem da Microsoft e a sua máquina | 1 |
 | **Identidade de máquina** | Credencial que se autentica sozinha (ex.: usuário IAM com chave somente leitura), para processos sem pessoa na frente da tela, como uma atualização agendada | Um service principal | 1 |
 | **PBIP (Power BI Project)** | Formato do Power BI que salva relatório e modelo semântico em arquivos de texto, permitindo ao Git comparar as mudanças linha a linha | O `.pbix` desmontado em peças etiquetadas, em vez de uma caixa lacrada | 0 |
+| **PBIR** | Formato do **relatório** dentro do PBIP: uma pasta por página e um `visual.json` por visual. Os dados importados ficam fora, no `cache.abf` (ignorado pelo Git) | A planta de cada página, visual por visual | 1 |
+| **TMDL** | Linguagem de texto que descreve o **modelo semântico** no PBIP: tabelas, colunas, tipos, medidas | O DDL (`CREATE TABLE`) do modelo | 1 |
+| **Agregação implícita** | Somar ou contar uma coluna direto no visual ("Soma de `qtd_corridas`"), sem medida DAX escrita. Serve para conferências; as métricas oficiais viram medidas explícitas | Arrastar a coluna para o campo Valores | 1 |
+| **Data/hora automática** | Opção do Power BI que cria uma hierarquia oculta (Ano › Trimestre › Mês › Dia) para cada coluna de data. Neste projeto está desligada: sem ela, agrupar por dia exige uma coluna de data | A hierarquia de datas que aparece sozinha no eixo | 1 |
+
+---
+
+## IA no desenvolvimento (ferramentas do agente)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **MCP (Model Context Protocol)** | Padrão aberto que liga um agente de IA a um programa externo por meio de "ferramentas". O Power BI Modeling MCP conecta no Desktop aberto e roda DAX | Uma tomada padrão; o conector do Power Query, só que quem usa é o agente | 1 |
+| **Skill** | Manual de instruções que o agente lê antes de uma tarefa específica (ex.: `powerbi-report-cli` para editar PBIR) | O procedimento operacional padrão de uma tarefa da oficina | 1 |
+| **Plugin (Claude Code)** | Pacote que instala skills e MCPs de uma vez (ex.: `powerbi-authoring`, do repositório `microsoft/skills-for-fabric`) | Um kit de ferramentas com manual | 1 |

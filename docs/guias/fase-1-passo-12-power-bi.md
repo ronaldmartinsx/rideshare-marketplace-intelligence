@@ -28,8 +28,10 @@ git switch fase-1-fatia-vertical
 ## 1. Instalar o driver ODBC da Athena
 
 - Baixar o instalador **64 bits (MSI)** do **Amazon Athena ODBC 2.x**: https://docs.aws.amazon.com/athena/latest/ug/odbc-v2-driver.html
-- Versão **2.1 ou mais nova** (login SSO com PKCE).
+- Versão **2.1 ou mais nova** (login SSO com PKCE). Usada em 15/10/2026: **2.4.0.0**. A partir da 2.2, desinstalar a versão anterior antes de instalar.
+- Pré-requisitos (conferidos): Visual C++ Redistributable x64 e porta de saída **444** liberada (é por onde o driver recebe os resultados).
 - Instalar com as opções padrão.
+- ⚠️ O instalador cria um **System DSN `Amazon Athena`** (workgroup `primary`). Não usar: o `primary` não tem o limite de 1 GiB.
 
 ## 2. Criar o DSN
 
@@ -51,7 +53,9 @@ git switch fase-1-fatia-vertical
 | Account ID | o ID da conta AWS (aparece no access portal). **Fica só na máquina; nunca no repositório** |
 | Role name | `AdministratorAccess` |
 
+   Os campos de login (Authentication Type em diante) ficam na janela do botão **Authentication Options**.
 4. **Test** → o navegador abre → login com o usuário `ronald` + MFA → o teste deve dar sucesso.
+5. **OK na janela de configuração.** ⚠️ O Test só testa; quem grava o DSN é o OK.
 
 Notas:
 - **User DSN** basta para o Desktop. **System DSN** só seria necessário com gateway (fora do escopo da v1).
@@ -81,6 +85,8 @@ Notas:
 | `AccessDenied` | Account ID ou Role name errados no DSN |
 | Consulta cancelada por limite | Algo lendo além de 1 GiB: conferir se a tabela é a da `dev_gold` (pequena) e o workgroup é o `rideshare` |
 | Tabela não aparece no navegador | Database diferente de `dev_gold` no DSN |
+| O teste passou, mas o DSN não aparece na lista | A janela de configuração foi fechada sem **OK** (o Test não salva) |
+| Aparece um DSN `Amazon Athena` que você não criou | É o DSN de exemplo do instalador (System, workgroup `primary`). Ignorar |
 
 ## 5. Registrar o resultado (R3)
 
@@ -93,7 +99,7 @@ Em `docs/validacao/fase-1.md`, nova seção "Power BI ↔ Athena (R3)":
 
 Pelo ciclo da spec (seção 1.4):
 
-- [ ] Passos 1 a 5 acima (R3 respondido com evidência).
+- [x] Passos 1 a 5 acima (R3 respondido com evidência em 15/10/2026: `docs/validacao/fase-1.md`, seção 8).
 - [ ] **ADR 0002** (`docs/adr/0002-iceberg-silver-gold.md`): Iceberg na Silver e na Gold, com as evidências da Fase 1 (snapshots, time travel `FOR TIMESTAMP AS OF TIMESTAMP '...'`, `DROP TABLE` apaga dados, rename na materialização `table`, ADR 0014).
 - [ ] **Gate de domínio da Fase 1** (Apêndice C da spec): explicação com as próprias palavras de Parquet, particionamento Hive, tabela externa × gerenciada, Iceberg, dbt, dbt-athena, ODBC/conector do Athena; 5 perguntas + 1 de entrevista. Pontos a sondar: aspas SQL em volta de `{{ }}` (erro recorrente), regra do predicate pushdown (max/min), time travel × rollback, `merge` × republicação.
 - [ ] `docs/aprendizados/fase-1.md` (o que aprendeu, erros, decisões, gate).

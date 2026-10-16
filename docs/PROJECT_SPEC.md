@@ -524,7 +524,7 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 4. **Taxa de congestionamento:** antes e depois, CBD versus não-CBD (com comparação de tendências).
 5. **Forecast × realizado:** com o WAPE do modelo e do baseline.
 
-**Publicação:** ⚠️ A VALIDAR se a atualização no Service exige gateway. Plano B: o `.pbix` no repositório, com prints e um vídeo curto no README.
+**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). Fica fora da v1. Plano B: o projeto do Power BI no repositório, com prints e um vídeo curto no README.
 
 ---
 
@@ -761,7 +761,7 @@ rideshare-marketplace-intelligence/
 |---|---|---|---|
 | R1 | Volume e custo mensal maiores que o estimado | 1 | Medir na fatia vertical; reduzir o recorte se necessário |
 | R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | ⚠️ Confirmado: sem `insert_overwrite` em Iceberg. ✅ Resolvido: `append` + delete do mês (ADR 0014), idempotência validada em 15/10/2026 |
-| R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | Plano B: `.pbix` + prints + vídeo |
+| R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | ✅ Respondido em 15/10/2026: Desktop conecta (ODBC 2.4 + Browser SSO OIDC, Import) e reproduz a Gold exatamente. ⚠️ Confirmado na documentação: o Service exige on-premises data gateway com System DSN. Plano B: PBIP + prints + vídeo |
 | R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | Contrato de schema na ingestão + ADR |
 | R5 | Fuso horário dos timestamps | 2 | Confirmar no guia oficial da TLC; ADR |
 | R6 | Códigos de licença das operadoras | 1 | Conferir no dicionário oficial |

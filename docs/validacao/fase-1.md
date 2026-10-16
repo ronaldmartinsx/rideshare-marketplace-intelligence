@@ -142,9 +142,38 @@ Model escrito pelo Ronald (grão: hora de embarque × zona de origem × operador
 | HV0003 (Uber) | 15.356.455 | 75,3% | 23,3% | US$ 4,98 | US$ 61,96 |
 | HV0005 (Lyft) | 5.049.211 | 24,7% | 22,5% | US$ 5,08 | US$ 59,64 |
 
-## 8. Pendências desta validação
+## 8. Power BI ↔ Athena (R3)
+
+Teste de 15/10/2026 na máquina Windows: Power BI Desktop `2.157.879.0` (Microsoft Store), driver **Amazon Athena ODBC 2.4.0.0** (64 bits), DSN de usuário `rideshare-athena` (workgroup `rideshare`, database `dev_gold`, autenticação **Browser SSO OIDC** com o IAM Identity Center, role `AdministratorAccess` só para este teste). Conector **Amazon Athena**, modo **Import**, autenticação "Use Data Source Configuration".
+
+**Desktop: conectou e os números batem.** Conferido por consultas DAX no modelo carregado (via Power BI Modeling MCP) e no visual:
+
+| Verificação | Esperado (seção 7) | Power BI |
+|---|---|---|
+| Linhas de `fct_demanda_zona_hora` | 364.630 | **364.630** ✅ |
+| Soma de `qtd_corridas` | 20.405.666 | **20.405.666** ✅ |
+| HV0003 (Uber) | 15.356.455 | **15.356.455** (185.743 linhas) ✅ |
+| HV0005 (Lyft) | 5.049.211 | **5.049.211** (178.887 linhas) ✅ |
+| Período de `hora_embarque` | jan/2025 | 01/01 00h a 31/01 23h ✅ |
+
+![Página de conferência do R3 no Power BI Desktop](img/fase-1-powerbi-r3.png)
+
+Leitura do gráfico (corridas por hora, por operadora): ciclo diário nítido, picos nas noites de sexta e sábado e o maior pico do mês na virada do ano (01/01, 0h–1h, ~50 mil corridas). A Uber fica ~3× acima da Lyft em todas as horas, coerente com o share de 75,3% / 24,7%.
+
+**Achados do teste:**
+- O instalador do driver cria sozinho um **System DSN `Amazon Athena`** (workgroup `primary`, database `default`, autenticação por chave). Não deve ser usado: o `primary` não tem o limite de 1 GiB.
+- Na janela do DSN, **Test não salva**: só o **OK** grava a configuração. O primeiro teste passou (o cache do login foi criado), mas o DSN não ficou gravado.
+- O campo **Database** da tela é gravado como `Schema` no registro do Windows.
+- A URL do access portal está no formato novo (`ssoins-….portal.us-east-1.app.aws`); o driver aceitou.
+- A coluna `hora_embarque` chegou como `dateTime` sem hierarquia de data (a opção "Data/hora automática" está desligada). Agrupar por dia exige uma coluna de data: decisão da Fase 4.
+
+**Service: fora do escopo da v1.** A documentação da Microsoft (página do conector, atualizada em 09/10/2026) diz que o conector exige **on-premises data gateway**, com o driver instalado na máquina do gateway e o DSN registrado como **System DSN** (o gateway roda como serviço do Windows e não enxerga o User DSN). Autenticações aceitas: "Microsoft Entra ID" ou "Use Data Source Configuration". O login Browser SSO OIDC exige uma pessoa no navegador, portanto uma atualização agendada precisaria de uma identidade de máquina (inferência a partir da documentação; ⚠️ não testado). Conclusão: atualização no Service fica **fora da v1** (spec 2.6); plano B: PBIP no repositório + prints + vídeo (Fase 4).
+
+**R3 respondido:** Desktop ✅ validado com números exatos; Service exige gateway (confirmado na documentação) e segue o plano B.
+
+## 9. Pendências desta validação
 
 - [x] R1 (custo): medido (seção 5).
 - [x] R2: estratégia incremental com Iceberg validada (seção 6).
-- [ ] R3: Power BI conectado ao Athena; atualização no Service.
+- [x] R3: Power BI Desktop conectado ao Athena e números conferidos; Service exige gateway, plano B (seção 8).
 - [x] Spec atualizada (seções 2.3, 2.4, 2.5 e 3.1) com estas evidências, sem ADR novo: nenhuma decisão mudou.
