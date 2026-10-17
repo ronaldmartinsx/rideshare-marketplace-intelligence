@@ -156,7 +156,26 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Apache Airflow** | Orquestrador: define quais tarefas existem, em que ordem e quando rodam, com retry e histórico. Escrito em Python. Por princípio, manda outros processarem; não processa dados pesados | O Data Factory/pipeline do Fabric, só que em código | 0 |
 | **DAG** | Fluxograma de tarefas sem ciclos, definido num arquivo Python | Um pipeline do Fabric | 0 |
 | **Task** | Uma etapa da DAG | Uma atividade do pipeline | 0 |
+| **Task instance** | Uma execução específica de uma task, numa execução da DAG. Tem estado próprio (`success`, `failed`, `up_for_retry`, `up_for_reschedule`, `upstream_failed`, `skipped`...) | A task é a medida; a task instance é o valor dela numa célula da matriz | 2 |
+| **Operator** | Molde de task: classe Python que já sabe fazer um tipo de trabalho (rodar comando, consultar o Athena, copiar no S3). Preenchidos os parâmetros, vira task | Os tipos de atividade do pipeline do Fabric (Copy, Notebook). Quebra: no Airflow a lista é aberta, dá para escrever o seu | 2 |
+| **Provider** | Pacote que traz operators, sensors e conexões de um sistema (AWS, HTTP...). No Airflow 3, até os básicos (`BashOperator`) mudaram para o `apache-airflow-providers-standard` | Um conector instalável do Power Query | 2 |
+| **TaskFlow (`@task`)** | Forma moderna de criar task: um decorator que transforma uma função Python numa task. O `return` da função vai para a próxima task | Escrever a etapa como função, em vez de configurar uma atividade | 2 |
+| **XCom** | Mecanismo para uma task passar um valor **pequeno** para outra (ex.: o caminho do arquivo no S3). Fica no banco de metadados; não serve para passar dados | Um post-it entre turnos, não um caminhão | 2 |
+| **Sensor** | Operator que espera uma condição ficar verdadeira (arquivo aparecer, hora chegar). Atendida a condição, libera as próximas tasks | O porteiro esperando o caminhão-cegonha; no Fabric, Get Metadata + Until | 2 |
+| **Modos do sensor** | `poke`: ocupa o slot o tempo todo. `reschedule`: libera o slot entre as checagens (estado `up_for_reschedule`). Deferrable: a espera vai para o triggerer; só funciona se o sensor tiver suporte e o triggerer estiver rodando | Porteiro parado no portão × que confere de hora em hora × que deixa um interfone | 2 |
+| **Slot** | Vaga de execução. O número de tasks rodando ao mesmo tempo é limitado | Vaga de mecânico na oficina | 2 |
+| **`soft_fail`** | No sensor: ao estourar o `timeout`, marca `skipped` em vez de `failed`. Para esperas em que "ainda não chegou" é normal | "Sem entrega hoje" não é ocorrência | 2 |
+| **Retries** | Quantas vezes o Airflow tenta de novo uma task que falhou (`retries`, `retry_delay`). Ajuda em erro **transitório** (rede, 503); não em erro **determinístico** (dado fora do contrato). Roda a task inteira de novo, por isso exige idempotência | Rediscagem automática do telefone | 2 |
+| **Backoff exponencial** | Espera crescente entre as tentativas (2, 4, 8 minutos...), com teto (`max_retry_delay`). Dá tempo ao servidor de se recuperar | Rediscar cada vez mais espaçado | 2 |
+| **`execution_timeout`** | Tempo máximo de **cada tentativa** de uma task; estourou, a tentativa falha e pode ser repetida. Diferente do `timeout` do sensor, que limita a espera inteira | Limite de tempo por tentativa de conserto | 2 |
 | **Schedule** | Quando a DAG roda (`@daily`, cron, ou por Asset) | Gatilho de agendamento | 0 |
+| **Cron** | Notação de agendamento do Unix com cinco campos: minuto, hora, dia, mês, dia da semana (`0 6 * * *` = todo dia às 6h). `@daily` e `@monthly` são atalhos | "Todo dia às 6h" da atualização agendada do Power BI | 2 |
+| **DAG run** | Uma execução da DAG inteira, criada pelo schedule, por um backfill ou manualmente. Cada DAG run tem suas task instances | Uma atualização do histórico de atualizações do Power BI | 2 |
+| **`logical_date`** | A "etiqueta de data" de um DAG run, que o código pode usar para saber qual período processar. Não é necessariamente o momento em que o run rodou | O parâmetro de período passado ao pipeline | 2 |
+| **Intervalo de dados (data interval)** | Período que um DAG run cobre (`data_interval_start`/`end`). ⚠️ No Airflow 3, agendamento cron por padrão não tem intervalo (início = fim = momento do disparo); no Airflow 2, o run do dia X cobria o dia X e rodava depois que ele terminava. Configuração: `create_cron_data_intervals` | — | 2 |
+| **`catchup`** | Se, ao ligar a DAG, o Airflow cria runs para todos os intervalos perdidos desde o `start_date`. ⚠️ Padrão `False` no Airflow 3 (era `True` no 2). Recupera **execuções**, não carrega histórico | O gestor que volta das férias e faz (ou não) as vistorias atrasadas. O agendamento do Fabric não recupera | 2 |
+| **Backfill** | Rodar a DAG para um período do passado, sob demanda (`airflow backfill create --from-date ... --to-date ...`), com paralelismo controlado (`--max-active-runs`). Segue o schedule da DAG: DAG diária gera um run por dia | Um ForEach do Fabric passando a lista de meses como parâmetro | 2 |
+| **Arquivo órfão** | Arquivo gravado no armazenamento sem registro no controle que diz o que vale (manifesto, metadados do Iceberg). Nasce quando um processo cai entre "gravar o arquivo" e "registrar o arquivo" | Carro no pátio sem ficha no sistema da frota | 2 |
 | **Asset** (no Airflow 2: Dataset) | Representa um dado. Uma task "publica" o Asset ao terminar, e outras DAGs podem rodar quando ele é atualizado | "Executar quando o arquivo chegar" | 0 |
 | **DAG pausada** | Estado inicial de toda DAG nova: não roda até ser ligada (toggle) | Pipeline criado mas com o gatilho desativado | 0 |
 | **Dynamic task mapping** | Uma task que vira N instâncias em tempo de execução, uma por item de uma lista (`map_index` 0, 1, 2...) | O `for_each` do Terraform, só que decidido na hora de rodar | 0 |
@@ -168,6 +187,23 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Triggerer** | Componente que cuida de tarefas que ficam esperando um evento, sem ocupar um worker | O porteiro que avisa quando o caminhão chegar | 0 |
 | **Astro Runtime** | Imagem Docker do Airflow empacotada pela Astronomer (ex.: `runtime:3.3-9` = Airflow 3.3) | A distribuição "pronta para usar" do Airflow | 0 |
 | **Astro CLI** | Ferramenta que cria o projeto (`astro dev init`) e sobe o Airflow local em contêineres (`astro dev start`). `astro dev stop` preserva os dados; `astro dev kill` apaga os volumes | O instalador e o painel de liga/desliga do Airflow local | 0 |
+
+---
+
+## Ingestão: HTTP, versões e manifesto
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **HTTP** | A "língua" dos pedidos a servidores web. Cada pedido tem um método (`GET` = me manda o arquivo; `HEAD` = só os dados sobre ele) e a resposta traz um código de status e cabeçalhos | — | 2 |
+| **Código de status HTTP** | Número que resume a resposta: `200` ok, `304` não mudou, `403` proibido, `404` não existe. Um S3 que não permite listar responde **403** (não 404) para arquivo inexistente: na TLC, mês ainda não publicado dá 403 | — | 2 |
+| **HEAD (requisição HTTP)** | Pede só os cabeçalhos de um arquivo (tamanho, data, ETag), sem baixar o conteúdo. Menos de 1 KB contra ~480 MB do arquivo | O conector Pasta do Power Query mostra `Date modified` e tamanho sem abrir os arquivos | 1 |
+| **ETag / Last-Modified** | Cabeçalhos que identificam a versão de um arquivo na web. ETag igual = mesmo arquivo; ETag diferente = **provavelmente** outro (o mesmo conteúdo reenviado em partes de outro tamanho ganha outro ETag). Com sufixo `-N`, o ETag veio de upload em N partes e não é um hash do conteúdo. Opaco: só se compara igualdade | O número do lote impresso na embalagem (ETag) e a data da última vistoria (Last-Modified) | 1 |
+| **Hash (SHA-256)** | "Impressão digital" de um arquivo, calculada do conteúdo: qualquer byte diferente gera um hash totalmente diferente. Calculado por nós depois de baixar; é a prova de que o conteúdo mudou | O número do chassi: identifica aquele exato veículo | 1 |
+| **Pedido condicional** | O cliente manda o ETag que já tem (`If-None-Match`); se nada mudou, o servidor responde `304 Not Modified` sem mandar o arquivo | "Só me mande se mudou" | 2 |
+| **CDN (CloudFront)** | Rede de servidores que entrega arquivos perto de quem pede. A TLC guarda os arquivos num S3 e os entrega pelo CloudFront, a CDN da AWS | Filiais de distribuição de um mesmo depósito | 2 |
+| **Republicação** | A fonte substitui um arquivo já publicado (correção). Detectada por ETag diferente e confirmada por SHA-256 diferente; vira nova versão na Bronze (novo `ingest_ts`, `is_current`) | Recall: o fornecedor troca um lote já entregue | 2 |
+| **Manifesto de ingestão** | Tabela de controle (`bronze.ingestion_manifest`) com uma linha por versão de arquivo que entrou na Bronze: origem, mês, URL, ETag, SHA-256, linhas, schema, caminho, `ingest_ts`, `is_current`. Decide o que baixar, diz o que vale e guarda a linhagem. Gravado **por último** (a linha é o commit). Não confundir com os manifestos internos do Iceberg | O livro de entrada do pátio; no Fabric, a tabela de controle de um pipeline guiado por metadados | 2 |
+| **Linhagem (lineage)** | Rastrear um dado até a origem. De objetos: qual tabela alimenta qual (DAG do dbt). De dados: esta linha veio de qual arquivo e versão (manifesto + `ingest_ts` na Silver) | A exibição de linhagem do workspace do Power BI (só o nível de objetos) | 2 |
 
 ---
 
@@ -184,9 +220,6 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Small files problem** | Muitos arquivos pequenos deixam a leitura lenta e cara: cada arquivo exige abrir o rodapé e uma requisição ao S3 | Mil envelopes de uma folha × um fichário | 1 |
 | **CSV** | Texto separado por vírgulas: sem tipos, sem compressão inteligente, guardado por linha | Planilha exportada como texto | 1 |
 | **DuckDB** | Motor SQL que roda localmente e lê Parquet direto (inclusive pela internet). Usado só para inspeção; não faz parte da arquitetura | Um "Athena de bolso" | 1 |
-| **HEAD (requisição HTTP)** | Pede só os cabeçalhos de um arquivo (tamanho, data, ETag), sem baixar o conteúdo | Perguntar o peso da encomenda sem abrir a caixa | 1 |
-| **ETag / Last-Modified** | Cabeçalhos que identificam a versão de um arquivo na web. Se mudam, o arquivo mudou. Com sufixo `-N`, o ETag veio de upload em N partes e não é um hash do conteúdo | O número do lote impresso na embalagem | 1 |
-| **Hash (SHA-256)** | "Impressão digital" de um arquivo, calculada do conteúdo: qualquer byte diferente gera um hash totalmente diferente | O número do chassi: identifica aquele exato veículo | 1 |
 
 ---
 
@@ -230,7 +263,7 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Variável (`var()` / `--vars`)** | Valor passado ao dbt na hora de rodar (`--vars '{"source_month": "2025-01"}'`) e lido no model com `{{ var('source_month') }}`. O Jinja insere o texto ao pé da letra: em SQL, precisa de aspas em volta | Um parâmetro do Power Query | 1 |
 | **`s3_data_naming`** | Configuração do dbt-athena que define o caminho no S3 de cada tabela. `schema_table_unique` dá uma pasta nova por versão, exigida pela materialização `table` em Iceberg (cria a tabela nova e troca o nome) | — | 1 |
 | **uv** | Gerenciador de ambientes e pacotes Python. Cria o ambiente isolado do dbt e fixa as versões (`pyproject.toml` + `uv.lock`) | O instalador que garante a mesma versão do conector em todas as máquinas | 1 |
-| **Idempotência** | Rodar o mesmo processamento duas vezes dá o mesmo resultado, sem duplicar | Apertar o botão do elevador duas vezes não chama dois elevadores | 1 |
+| **Idempotência** | Rodar o mesmo processamento duas vezes dá o mesmo resultado, sem duplicar. Três regras: chave pelo dado (não pelo relógio); substituir em vez de acumular; conferir antes de escrever. Na Bronze imutável, vem da regra 3: só se grava quando a fonte mudou | Apertar o botão do elevador duas vezes não chama dois elevadores; em SQL, `DELETE` + `INSERT` do mês × só `INSERT` | 1 |
 | **`--full-refresh`** | Reconstrói um model incremental do zero | Atualização completa de uma tabela com atualização incremental | 1 |
 | **Seed** | CSV pequeno e versionado dentro do projeto, transformado em tabela pelo dbt (`seed_operadoras.csv`) | "Inserir dados" no Power BI, só que no Git | 1 |
 | **Teste genérico** | Teste declarado em YAML: `unique`, `not_null`, `accepted_values`, `relationships`. Por baixo, é um `SELECT` que procura problemas | Relacionamento válido e coluna sem vazios no modelo semântico | 1 |
