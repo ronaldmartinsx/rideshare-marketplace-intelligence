@@ -1,1 +1,10 @@
 # Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+
+# Versões fixadas: a imagem é reconstruída igual em qualquer máquina (mesma ideia do uv.lock do dbt).
+# Conferidas contra o Astro Runtime 3.3-9 (Airflow 3.3.2, Python 3.14) em 17/10/2026.
+
+# Conexão com a AWS (Connection aws_default, hooks de S3 e Athena); traz o boto3.
+apache-airflow-providers-amazon==9.38.0
+
+# Lê só o rodapé do Parquet (schema e número de linhas) para o contrato de schema.
+pyarrow==26.0.0
