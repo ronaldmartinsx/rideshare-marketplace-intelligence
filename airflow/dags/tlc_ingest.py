@@ -17,33 +17,19 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from airflow.exceptions import AirflowFailException, AirflowSkipException
-from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
-from airflow.sdk import Asset, Param, dag, task
+from airflow.sdk import Param, dag, task
 
+from include.ingestao.ambientes import AMBIENTES, clientes_aws
+from include.ingestao.assets import BRONZE_TLC
 from include.ingestao.bronze import BUCKET_LAKE, chave_bronze, gravar_sem_sobrescrever, novo_ingest_ts
 from include.ingestao.contrato import carregar_contrato, contar_linhas, ler_colunas, validar
-from include.ingestao.decisao import LinhaManifesto, RespostaHead, classificar_download, decidir_acao
+from include.ingestao.decisao import LinhaManifesto, classificar_download, decidir_acao, ultima_versao
 from include.ingestao.fonte_http import BASE_URL_TLC, baixar, consultar_head, url_do_mes
 from include.ingestao.manifesto import RegistroManifesto, ler_historico, proximo_mes_esperado, registrar
 
 log = logging.getLogger(__name__)
 
 FONTE = "tlc_hvfhv"
-
-# Produção e teste usam o MESMO código; só muda para onde ele grava (etapa 8)
-AMBIENTES = {
-    "prod": {"prefixo_bronze": "bronze", "banco_controle": "controle"},
-    "teste": {"prefixo_bronze": "teste_bronze", "banco_controle": "teste_controle"},
-}
-
-# O dado que esta DAG produz. Outras DAGs (weather_ingest, dbt_build) são disparadas por ele (Aula 5)
-BRONZE_TLC = Asset(f"s3://{BUCKET_LAKE}/bronze/{FONTE}")
-
-
-def _clientes_aws():
-    """Clientes criados DENTRO de cada task: cada uma ganha a sua credencial de 1 hora (D8)."""
-    sessao = AwsBaseHook(aws_conn_id="aws_default").get_session()
-    return sessao.client("s3"), sessao.client("athena")
 
 
 def _meses_do_recorte(primeiro_mes: str, hoje: datetime) -> list[str]:
@@ -92,7 +78,7 @@ def tlc_ingest():
         """
         params = contexto["params"]
         ambiente = AMBIENTES[params["ambiente"]]
-        _, athena = _clientes_aws()
+        _, athena = clientes_aws()
 
         historico = ler_historico(athena, ambiente["banco_controle"], FONTE)
         proximo = proximo_mes_esperado(historico, params["primeiro_mes"])
@@ -142,7 +128,7 @@ def tlc_ingest():
 
         params = contexto["params"]
         ambiente = AMBIENTES[params["ambiente"]]
-        s3, athena = _clientes_aws()
+        s3, athena = clientes_aws()
         mes = item["mes"]
         url = url_do_mes(mes, params["base_url"])
         historico = [LinhaManifesto(*linha) for linha in item["historico"]]
@@ -162,9 +148,7 @@ def tlc_ingest():
 
             if tipo == "mesmo_conteudo":
                 # Conferência: nenhum arquivo novo. Aponta para a versão que já existe (etapa 5)
-                ultima = max((l for l in historico if l.status in ("aceito", "rejeitado")),
-                             key=lambda l: l.ingest_ts)
-                ingest_ts, status = ultima.ingest_ts, "mesmo_conteudo"
+                ingest_ts, status = ultima_versao(historico).ingest_ts, "mesmo_conteudo"
                 motivo = f"ETag novo sem mudança de conteúdo; mesmo arquivo da versão {ingest_ts}"
             else:
                 ingest_ts, status, motivo = item["ingest_ts"], contrato.status, contrato.motivo

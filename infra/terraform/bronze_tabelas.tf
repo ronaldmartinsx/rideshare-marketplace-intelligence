@@ -131,3 +131,95 @@ resource "aws_glue_catalog_table" "tlc_hvfhv" {
     ]
   }
 }
+
+# ---------------------------------------------------------------
+# Clima: JSON do Open-Meteo, um objeto por arquivo, numa linha só (Fase 2, etapa 9)
+# As listas horárias ficam como arrays: a Silver (Fase 3) as "desdobra" em linhas com UNNEST.
+# ---------------------------------------------------------------
+resource "aws_glue_catalog_table" "open_meteo" {
+  for_each = local.bancos_bronze_tlc # mesmos bancos: bronze e teste_bronze
+
+  database_name = aws_glue_catalog_database.camadas[each.key].name
+  name          = "open_meteo"
+  table_type    = "EXTERNAL_TABLE"
+  owner         = "hadoop"
+
+  parameters = {
+    EXTERNAL = "TRUE"
+
+    # Mesma projection da TLC: ano/mês por regra, versão (ingest_ts) obrigatória na consulta (D6)
+    "projection.enabled"            = "true"
+    "projection.year.type"          = "date"
+    "projection.year.format"        = "yyyy"
+    "projection.year.range"         = "2024,NOW"
+    "projection.year.interval"      = "1"
+    "projection.year.interval.unit" = "YEARS"
+    "projection.month.type"         = "enum"
+    "projection.month.values"       = "01,02,03,04,05,06,07,08,09,10,11,12"
+    "projection.ingest_ts.type"     = "injected"
+    "storage.location.template"     = "s3://${aws_s3_bucket.datalake.bucket}/${each.key}/open_meteo/year=$${year}/month=$${month}/ingest_ts=$${ingest_ts}/"
+  }
+
+  partition_keys {
+    name = "year"
+    type = "string"
+  }
+
+  partition_keys {
+    name = "month"
+    type = "string"
+  }
+
+  partition_keys {
+    name = "ingest_ts"
+    type = "string"
+  }
+
+  storage_descriptor {
+    location          = "s3://${aws_s3_bucket.datalake.bucket}/${each.key}/open_meteo"
+    input_format      = "org.apache.hadoop.mapred.TextInputFormat"
+    output_format     = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+    number_of_buckets = -1
+
+    # Leitor de JSON do Athena: um objeto por linha (por isso o JSON canônico é uma linha só)
+    ser_de_info {
+      serialization_library = "org.openx.data.jsonserde.JsonSerDe"
+    }
+
+    columns {
+      name = "latitude"
+      type = "double"
+    }
+    columns {
+      name = "longitude"
+      type = "double"
+    }
+    columns {
+      name = "elevation"
+      type = "double"
+    }
+    columns {
+      name = "timezone"
+      type = "string"
+    }
+    columns {
+      name = "utc_offset_seconds"
+      type = "int"
+    }
+    columns {
+      name = "hourly_units"
+      type = "struct<time:string,temperature_2m:string,precipitation:string,rain:string,snowfall:string,wind_speed_10m:string>"
+    }
+    columns {
+      name = "hourly"
+      type = "struct<time:array<string>,temperature_2m:array<double>,precipitation:array<double>,rain:array<double>,snowfall:array<double>,wind_speed_10m:array<double>>"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      parameters["transient_lastDdlTime"],
+      storage_descriptor[0].skewed_info,
+    ]
+  }
+}

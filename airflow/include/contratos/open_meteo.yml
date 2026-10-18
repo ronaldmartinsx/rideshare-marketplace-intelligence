@@ -1,0 +1,35 @@
+# Contrato do clima: Open-Meteo, API histórica (archive-api.open-meteo.com/v1/archive)
+# Fase 2, etapa 9 (decisões W1 a W4). Conferido em 18/10/2026 com uma resposta real (agosto de 2026).
+#
+# A API devolve JSON, não Parquet: o "schema" aqui é o conjunto de variáveis horárias, as unidades
+# de cada uma, o ponto da grade e o número de horas.
+
+fonte: open_meteo
+versao_contrato: 1
+
+# Ponto pedido (Central Park, spec 3.3) e ponto que a API devolve: o centro da célula do modelo,
+# a ~4 km do pedido (W4). Um ponto diferente do esperado quer dizer que o modelo mudou.
+ponto:
+  latitude_pedida: 40.78
+  longitude_pedida: -73.97
+  latitude_grade: 40.808434
+  longitude_grade: -74.0199
+  tolerancia_graus: 0.01
+
+# Pedido sempre em UTC (D9). A conversão para o horário de Nova York é feita na Silver (Fase 3).
+fuso: GMT
+
+variaveis:
+  - {nome: temperature_2m, unidade: "°C"}
+  - {nome: precipitation,  unidade: "mm"}    # chuva + neve, em água
+  - {nome: rain,           unidade: "mm"}
+  - {nome: snowfall,       unidade: "cm"}    # neve em centímetros (não é água: dividir por 7 dá mm)
+  - {nome: wind_speed_10m, unidade: "km/h"}
+
+regras:
+  variavel_nova: alertar        # segue; aparece no motivo do manifesto
+  variavel_faltante: rejeitar   # sem ela, a análise de clima perde uma coluna inteira
+  unidade_diferente: rejeitar   # °F no lugar de °C estragaria todos os números
+  ponto_diferente: rejeitar
+  horas_incompletas: rejeitar   # cada arquivo cobre o mês + o dia 1 seguinte (W3), hora a hora
+  variavel_toda_nula: alertar   # schema ok, mas é um alerta de QUALIDADE (Aula 4)

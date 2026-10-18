@@ -48,7 +48,7 @@ class LinhaManifesto:
 _STATUS_COM_ARQUIVO = ("aceito", "rejeitado")
 
 
-def _ultima_versao(historico: list[LinhaManifesto]) -> LinhaManifesto | None:
+def ultima_versao(historico: list[LinhaManifesto]) -> LinhaManifesto | None:
     """A versão de arquivo mais recente do mês (aceita ou rejeitada), ou None se nunca houve.
 
     É "o que a Bronze tem de mais novo para este mês". Conferências (mesmo_conteudo) não contam:
@@ -95,7 +95,7 @@ def decidir_acao(
         return "erro"  # mês antigo, ou que já existiu e sumiu: alguém precisa olhar
 
     # 3) 200 e o mês nunca passou pela ingestão (cenário 1)
-    ultima = _ultima_versao(historico)
+    ultima = ultima_versao(historico)
     if ultima is None:
         return "baixar"
 
@@ -128,7 +128,7 @@ def classificar_download(sha256_baixado: str, historico: list[LinhaManifesto]) -
     """
     # Compara com a ÚLTIMA versão, não com qualquer versão antiga: se a TLC voltar a servir um
     # arquivo de antes, ele precisa virar uma versão nova para voltar a ser o vigente.
-    ultima = _ultima_versao(historico)
+    ultima = ultima_versao(historico)
     if ultima is not None and sha256_baixado == ultima.file_sha256:
         return "mesmo_conteudo"  # cenários A (última aceita) e D (última rejeitada)
     return "nova_versao"  # cenários B e C

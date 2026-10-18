@@ -9,6 +9,7 @@ arquivo nem rede. Por isso é testada sem precisar de S3 nem da TLC.
 
 from __future__ import annotations
 
+import calendar
 import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -25,6 +26,14 @@ _REGRAS_VALIDAS = {
     "coluna_faltante": {"alertar", "rejeitar"},
     "tipo_diferente": {"alertar", "rejeitar"},
     "tipo_nulo_compativel": {True, False},
+}
+_REGRAS_VALIDAS_CLIMA = {
+    "variavel_nova": {"alertar", "rejeitar"},
+    "variavel_faltante": {"alertar", "rejeitar"},
+    "unidade_diferente": {"alertar", "rejeitar"},
+    "ponto_diferente": {"alertar", "rejeitar"},
+    "horas_incompletas": {"alertar", "rejeitar"},
+    "variavel_toda_nula": {"alertar"},
 }
 
 
@@ -77,8 +86,9 @@ def calcular_schema_hash(colunas: dict[str, str]) -> str:
 def carregar_contrato(fonte: str) -> dict:
     """Lê include/contratos/<fonte>.yml e confere se as regras são valores conhecidos."""
     contrato = yaml.safe_load((PASTA_CONTRATOS / f"{fonte}.yml").read_text(encoding="utf-8"))
+    validas = _REGRAS_VALIDAS_CLIMA if fonte == "open_meteo" else _REGRAS_VALIDAS
     for regra, valor in contrato["regras"].items():
-        if valor not in _REGRAS_VALIDAS.get(regra, set()):
+        if valor not in validas.get(regra, set()):
             raise ValueError(f"Contrato {fonte}: regra {regra!r} com valor inválido {valor!r}")
     return contrato
 
@@ -151,4 +161,70 @@ def validar(colunas_arquivo: dict[str, str], contrato: dict, source_month: str) 
         colunas_faltantes=faltantes,
         tipos_diferentes=diferentes,
         colunas_tipo_nulo=tipo_nulo,
+    )
+
+
+# ---------------------------------------------------------------------------------------------
+# Clima (Open-Meteo, etapa 9). A resposta é JSON; o "schema" é variáveis + unidades + ponto + horas.
+# ---------------------------------------------------------------------------------------------
+
+def horas_esperadas_clima(mes: str) -> int:
+    """Horas do arquivo do mês: o mês inteiro + o dia 1 do mês seguinte (W3), em UTC."""
+    ano, numero = map(int, mes.split("-"))
+    return (calendar.monthrange(ano, numero)[1] + 1) * 24
+
+
+def validar_clima(dados: dict, contrato: dict, mes: str) -> ResultadoContrato:
+    """Confere a resposta da API do clima contra o contrato. Função pura, como validar()."""
+    regras = contrato["regras"]
+    esperadas = {v["nome"]: v["unidade"] for v in contrato["variaveis"]}
+    horario = dados.get("hourly", {})
+    unidades = dados.get("hourly_units", {})
+    recebidas = {nome: unidades.get(nome) for nome in horario if nome != "time"}
+
+    novas = sorted(set(recebidas) - set(esperadas))
+    faltantes = sorted(set(esperadas) - set(recebidas))
+    unidades_erradas = [
+        f"{nome} esperado {esperadas[nome]}, veio {recebidas[nome]}"
+        for nome in sorted(set(esperadas) & set(recebidas))
+        if recebidas[nome] != esperadas[nome]
+    ]
+
+    ponto = contrato["ponto"]
+    ponto_errado = (
+        abs(dados.get("latitude", 999) - ponto["latitude_grade"]) > ponto["tolerancia_graus"]
+        or abs(dados.get("longitude", 999) - ponto["longitude_grade"]) > ponto["tolerancia_graus"]
+    )
+
+    horas = horas_esperadas_clima(mes)
+    tamanhos = {nome: len(valores) for nome, valores in horario.items()}
+    horas_erradas = not tamanhos or any(tamanho != horas for tamanho in tamanhos.values())
+
+    toda_nula = sorted(nome for nome in recebidas if all(v is None for v in horario[nome]))
+
+    # Mensagens (vão para o motivo do manifesto) e decisão, cada problema com a sua regra
+    diferentes = list(unidades_erradas)
+    if ponto_errado:
+        diferentes.append(f"ponto esperado ({ponto['latitude_grade']}, {ponto['longitude_grade']}), "
+                          f"veio ({dados.get('latitude')}, {dados.get('longitude')})")
+    if horas_erradas:
+        diferentes.append(f"horas esperadas {horas}, vieram {tamanhos}")
+
+    rejeitar = (
+        (unidades_erradas and regras["unidade_diferente"] == "rejeitar")
+        or (ponto_errado and regras["ponto_diferente"] == "rejeitar")
+        or (horas_erradas and regras["horas_incompletas"] == "rejeitar")
+        or (novas and regras["variavel_nova"] == "rejeitar")
+        or (faltantes and regras["variavel_faltante"] == "rejeitar")
+    )
+    # "schema" do clima: variável:unidade (mais o formato do tempo), ordenado
+    assinatura = {nome: str(unidade) for nome, unidade in unidades.items()}
+    return ResultadoContrato(
+        status="rejeitado" if rejeitar else "aceito",
+        schema_hash=calcular_schema_hash(assinatura),
+        versao_contrato=contrato["versao_contrato"],
+        colunas_novas=novas,
+        colunas_faltantes=faltantes,
+        tipos_diferentes=diferentes,
+        colunas_tipo_nulo=toda_nula,
     )
