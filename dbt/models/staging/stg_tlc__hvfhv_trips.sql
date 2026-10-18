@@ -8,7 +8,8 @@
 }}
 
 
-{% set ano, mes = var('source_month', '2025-01').split('-') %}
+{% set mes_referencia = var('source_month', '2025-01') %}
+{% set ano, mes = mes_referencia.split('-') %}
 
 select
   hvfhs_license_num,
@@ -40,8 +41,9 @@ select
   ingest_ts
 from {{ source('tlc', 'hvfhv')}}
 
-
-{% if is_incremental() %}
-  where year  = '{{ ano }}'
-    and month = '{{ mes }}'
-{% endif %}
+-- Sempre um mês por vez, e só a versão VIGENTE dele (Fase 2, D6). Vale também na primeira
+-- construção: a projection da Bronze exige o ingest_ts escrito no SQL, e ler só a vigente
+-- impede somar duas versões do mesmo mês.
+where year      = '{{ ano }}'
+  and month     = '{{ mes }}'
+  and ingest_ts = '{{ ingest_ts_vigente('tlc_hvfhv', mes_referencia) }}'
