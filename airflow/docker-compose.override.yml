@@ -1,0 +1,11 @@
+# Serviços extras do Airflow LOCAL. O Astro junta este arquivo aos contêineres que ele já sobe.
+# Fase 2, etapa 8: a "TLC de mentira", alcançada pelas DAGs em http://tlc-de-mentira/trip-data
+services:
+  tlc-de-mentira:
+    image: nginx:1.27.5-alpine  # versão fixada, como o resto do projeto
+    volumes:
+      - ./tlc_de_mentira/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../data/tlc_de_mentira/trip-data:/usr/share/nginx/html/trip-data:ro
+    # Os contêineres do Astro ficam na rede "airflow"; sem isto, o nome não seria encontrado
+    networks:
+      - airflow
