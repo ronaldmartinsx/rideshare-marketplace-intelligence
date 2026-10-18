@@ -252,8 +252,10 @@ O fluxo é este:
 ### 3.3 Clima: Open-Meteo (API histórica)
 
 - Dados horários de um ponto representativo (Central Park, aprox. 40.78, −73.97).
-- Variáveis candidatas: temperatura, precipitação, neve, vento.
-- ⚠️ A VALIDAR: endpoint, nomes das variáveis, limites de uso e licença.
+- ✅ VERIFICADO (18/10/2026): endpoint `https://archive-api.open-meteo.com/v1/archive`; variáveis horárias `temperature_2m` (°C), `precipitation` (mm), `rain` (mm), `snowfall` (cm), `wind_speed_10m` (km/h); uso gratuito **não comercial** até 10.000 chamadas/dia (o projeto faz ~32 por run); licença **CC BY 4.0** (atribuição obrigatória, ver README). Que um portfólio público sem anúncios conta como "não comercial" é interpretação: ⚠️ não verificado.
+- ✅ VERIFICADO: a API **não tem ETag nem Last-Modified**; a resposta traz `generationtime_ms`, que muda a cada pedido. A mudança é detectada pelo SHA-256 do JSON canônico (ADR 0003).
+- ✅ VERIFICADO: o ponto devolvido é o centro da célula do modelo (40.808, −74.020), a ~4 km do pedido.
+- ✅ VERIFICADO: o parâmetro `timezone` usa deslocamento fixo e ignora o horário de verão. O clima é pedido em **UTC** e convertido na Silver (ADR 0009). Cada arquivo cobre o mês + o dia 1 seguinte.
 - **Simplificação assumida:** um único ponto para toda a cidade. Documentar como limitação.
 
 ### 3.4 Seeds do dbt (dados estáticos versionados)
@@ -341,26 +343,33 @@ flowchart TD
 
 - **Layout:** `bronze/tlc_hvfhv/year=YYYY/month=MM/ingest_ts=YYYYMMDDTHHMMSS/fhvhv_tripdata_YYYY-MM.parquet`
 - **Imutável:** nunca sobrescrever. Quando a TLC republica um mês, grava-se uma **nova versão** (novo `ingest_ts`).
-- **Manifesto de ingestão** (tabela `bronze.ingestion_manifest`, Iceberg):
+- **Manifesto de ingestão** (tabela `controle.ingestion_manifest`, Iceberg, só de acréscimo; banco próprio porque o Iceberg apaga arquivos na manutenção: ADR 0013 revisado, ADR 0003):
 
 | Coluna | Descrição |
 |---|---|
 | `source` | `tlc_hvfhv`, `open_meteo`, `tlc_zones` |
 | `source_month` | Mês de referência (YYYY-MM) |
 | `source_url` | URL baixada |
-| `etag`, `last_modified` | Cabeçalhos HTTP usados para detectar republicação |
+| `etag`, `last_modified` | Cabeçalhos HTTP usados para detectar republicação (vazios no clima: a API não os tem) |
+| `content_length` | Tamanho em bytes |
 | `file_sha256` | Hash do arquivo |
 | `row_count` | Linhas no arquivo |
 | `schema_hash` | Hash da lista de colunas e tipos (detecta schema drift) |
 | `s3_path` | Caminho gravado |
-| `ingest_ts` | Momento da ingestão |
-| `is_current` | Se esta é a versão vigente do mês |
+| `ingest_ts` | Versão (momento da gravação, UTC); igual ao nome da pasta |
+| `status` | `aceito` (arquivo novo no contrato), `rejeitado` (arquivo novo em quarentena), `mesmo_conteudo` (conferência: ETag novo, conteúdo igual, nenhum arquivo novo) |
+| `motivo` | Alertas do contrato ou explicação da linha |
+| `registrado_em`, `dag_run_id` | Quando a linha foi gravada e por qual run do Airflow (linhagem) |
+
+`is_current` **não é gravado**: a view `controle.manifesto_vigente` devolve a versão `aceito` mais recente de cada fonte e mês (decisão D5, ADR 0003).
 
 - **Tabela externa** no Glue sobre os arquivos, particionada por `year`, `month` e `ingest_ts`.
-  - Avaliar **partition projection** no Athena para não precisar registrar partições manualmente. É conceito da Fase 2.
+  - ✅ Decidido (ADR 0015): **partition projection** (`year` date, `month` enum, `ingest_ts` **injected**). Toda consulta precisa informar a versão; a Silver a tira de `controle.manifesto_vigente`.
 - **Validação de schema na ingestão:** comparar com o schema esperado (contrato).
   - Coluna nova ou faltante: registrar no manifesto e alertar.
-  - Tipo diferente: parar e decidir via ADR.
+  - Tipo diferente: o arquivo entra na Bronze **em quarentena** (`status = rejeitado`), não vira vigente e a task falha alto (decisão D7).
+  - O contrato fica em `airflow/include/contratos/<fonte>.yml`, no vocabulário de tipos do Athena.
+- **Gravação imutável garantida pelo armazenamento:** `PutObject` com `If-None-Match: *`, exigido pela política do bucket em `bronze/*` (ADR 0003).
 
 ### 6.3 Silver
 
@@ -427,8 +436,8 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 
 | DAG | Gatilho | O que faz |
 |---|---|---|
-| `tlc_ingest` | Diário | Verifica se o **próximo mês esperado** existe (HTTP HEAD). Se existir, baixa para a Bronze, valida o schema, grava o manifesto e publica o Asset `bronze_tlc`. Também verifica o **ETag dos últimos 3 meses** para detectar republicação |
-| `weather_ingest` | Asset `bronze_tlc` ou mensal | Busca o clima do período novo na API e grava na Bronze |
+| `tlc_ingest` | Diário | **Guiada pelo manifesto** (decisão D1): faz o HEAD de **todos os meses do recorte** (D2; mudou de "últimos 3 meses" porque a TLC republica arquivos antigos e o HEAD custa < 1 KB), decide por mês (baixar, reprocessar, ignorar, aguardar, erro), ingere até 3 meses em paralelo, valida o contrato, grava o manifesto por último e publica o Asset `bronze_tlc` se houver versão nova aceita. O histórico (backfill) passa pelo mesmo código |
+| `weather_ingest` | Asset `bronze_tlc` | Para cada mês com TLC vigente, pede o clima (UTC) e compara o SHA-256 do JSON canônico com a última versão; grava na Bronze só o que mudou |
 | `dbt_build` | Assets da Bronze | Roda via **Cosmos**: `dbt source freshness`, depois os modelos e os testes da Silver, o **gate de qualidade** (Seção 8) e por fim a Gold. Se o gate falhar, a Gold não é atualizada |
 | `ml_forecast` | Asset `gold_demanda` | Treino, backtest, previsão e gravação em `ml_*` |
 | `llm_monthly_summary` | Após `ml_forecast` | Calcula os deltas do mês em SQL e gera a narrativa (ver 9.3) |
@@ -762,12 +771,12 @@ rideshare-marketplace-intelligence/
 | R1 | Volume e custo mensal maiores que o estimado | 1 | Medir na fatia vertical; reduzir o recorte se necessário |
 | R2 | O dbt-athena não suportar a estratégia incremental desejada com Iceberg | 1 | ⚠️ Confirmado: sem `insert_overwrite` em Iceberg. ✅ Resolvido: `append` + delete do mês (ADR 0014), idempotência validada em 15/10/2026 |
 | R3 | O Power BI exigir gateway para atualizar no Service | 1/4 | ✅ Respondido em 15/10/2026: Desktop conecta (ODBC 2.4 + Browser SSO OIDC, Import) e reproduz a Gold exatamente. ⚠️ Confirmado na documentação: o Service exige on-premises data gateway com System DSN. Plano B: PBIP + prints + vídeo |
-| R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | Contrato de schema na ingestão + ADR |
-| R5 | Fuso horário dos timestamps | 2 | Confirmar no guia oficial da TLC; ADR |
+| R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | ✅ Mitigado na Fase 2: contrato de schema na ingestão (quarentena para tipo diferente). Evidência: 2024-01 a 2026-08 têm só 2 schemas (o CBD a partir de 2025-01); `PULocationID` era INT64 em 2019/2022 |
+| R5 | Fuso horário dos timestamps | 2 | ✅ Resolvido (ADR 0009): o dicionário não informa e o Parquet marca `isAdjustedToUTC = false`; o teste do horário de verão prova horário local de NY (2h de 09/03/2025: 85 corridas; 1h de 02/11/2025: 75.292) |
 | R6 | Códigos de licença das operadoras | 1 | Conferir no dicionário oficial |
 | R7 | Lista de zonas do CBD | 3 | Montar a partir da definição oficial da MTA; documentar a fonte |
 | R8 | Versão do Airflow (2.x × 3.x) e compatibilidade com o Cosmos | 0 | ✅ Resolvido: Airflow 3.3 (Runtime 3.3-9, fixado no `Dockerfile`) + Cosmos 1.15.x |
-| R9 | Endpoint, limites e licença do Open-Meteo | 2 | Conferir a documentação oficial |
+| R9 | Endpoint, limites e licença do Open-Meteo | 2 | ✅ Resolvido em 18/10/2026 (seção 3.3): archive API, 10.000 chamadas/dia não comerciais, CC BY 4.0 |
 | R10 | O forecast não vencer o baseline | 5 | Reportar com honestidade; isso também é resultado |
 
 ---
@@ -778,18 +787,19 @@ rideshare-marketplace-intelligence/
 |---|---|---|
 | 0001 | AWS (S3 + Glue + Athena) como plataforma | Decidido |
 | 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido e validado (Fase 1; ADR escrito em 15/10/2026) |
-| 0003 | Bronze imutável e versionada por `ingest_ts` | Decidido |
+| 0003 | Bronze imutável e versionada por `ingest_ts` | Decidido e validado (Fase 2; ADR escrito em 18/10/2026) |
 | 0004 | Chave surrogate por hash e política de duplicatas | A decidir (Fase 3) |
 | 0005 | Partição da Silver por `source_month` | Decidido (validar na Fase 1) |
 | 0006 | Percentis de espera via histograma na Gold | Decidido (validar na Fase 3) |
 | 0007 | CBD definido por lista de zonas, e não pela taxa | Decidido |
-| 0008 | Airflow local (Astro) em vez de serviço gerenciado | Decidido |
-| 0009 | Fuso horário padrão | A decidir (Fase 2) |
+| 0008 | Airflow local (Astro) em vez de serviço gerenciado, e a identidade dele na AWS | Decidido (ADR escrito na Fase 2, com a credencial D8) |
+| 0009 | Fuso horário: corridas no horário local de NY; momentos de máquina e clima em UTC | Decidido (Fase 2) |
 | 0010 | Interface do agente (CLI × Streamlit) | Decidido: Streamlit (antecipado em 15/10/2026; o Power BI segue como dashboard de negócio). Escrever o ADR na Fase 6 |
 | 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
-| 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado na Fase 1) |
+| 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado nas Fases 1 e 2: banco `controle` e ambiente de teste) |
 | 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
+| 0015 | Leitura da Bronze por partition projection, com `ingest_ts` obrigatório na consulta | Decidido e validado (Fase 2) |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 
