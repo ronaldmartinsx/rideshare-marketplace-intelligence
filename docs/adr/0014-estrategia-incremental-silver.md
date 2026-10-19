@@ -50,4 +50,4 @@ O mês vem da variável `source_month` do dbt, passada pelo orquestrador (Airflo
 - São **dois commits Iceberg** (delete e insert), não um. Entre eles, por alguns segundos, o mês fica ausente para quem consulta. Aceitável para carga mensal sem consumo simultâneo; o Power BI deve atualizar depois do `dbt build`.
 - Se o insert falhar depois do delete, o mês fica vazio até a próxima execução. Mitigação: o teste de volume (gate da seção 8) barra a Gold; o time travel permite consultar a versão anterior.
 - O `DELETE` em Iceberg gera arquivos de deleção e snapshots; a manutenção (`OPTIMIZE`/`VACUUM`) entra na Fase 3.
-- A primeira execução (tabela inexistente) processa todos os meses presentes na Bronze, não só o da variável.
+- ~~A primeira execução (tabela inexistente) processa todos os meses presentes na Bronze, não só o da variável.~~ Mudou na Fase 2 (ADR 0015): o filtro de ano, mês e versão vigente vale sempre, então toda execução processa só o mês da variável.

@@ -10,4 +10,14 @@ sources:
         description: >
           Corridas High Volume FHV (Uber, Lyft), um arquivo por mês de embarque.
           Particionada por year, month e ingest_ts (versão da ingestão; Bronze imutável).
-          Na Fase 1 há uma única ingestão; a seleção da versão vigente pelo manifesto entra na Fase 2.
+          Partition projection com ingest_ts "injected": toda consulta precisa informar a versão,
+          que vem de controle.manifesto_vigente (macro ingest_ts_vigente).
+
+  - name: controle
+    description: "Tabelas de controle do pipeline, gravadas pelas DAGs de ingestão do Airflow (Fase 2)."
+    schema: controle
+    tables:
+      - name: manifesto_vigente
+        description: >
+          View sobre controle.ingestion_manifest: a versão aceita mais recente de cada fonte e mês.
+          É daqui que a Silver tira o ingest_ts que precisa escrever no SQL.

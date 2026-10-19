@@ -1,6 +1,6 @@
 # ADR 0013: Layout do ambiente de dev no S3
 
-- **Status:** Decidido (revisado em 14/10/2026; ver "Revisão")
+- **Status:** Decidido (revisado em 14/10/2026 e em 18/10/2026; ver "Revisão" e "Revisão da Fase 2")
 - **Data:** 12/10/2026
 - **Fase:** 0 (revisão na Fase 1)
 
@@ -24,6 +24,22 @@ As tabelas de `dev_bronze` são definições no Glue que apontam para os mesmos 
 
 A versão original deste ADR usava `dev/silver/` e `dev/gold/`. Ao montar o projeto dbt (Fase 1), verificou-se que o dbt-athena monta o caminho das tabelas como `<s3_data_dir>/<banco>/<tabela>/` (`s3_data_naming: schema_table`), o que produz `dev_silver/` e `dev_gold/`. Manter o layout original exigiria configurar o local de cada model à mão. A intenção do ADR (dev nunca grava fora do espaço de dev) não muda; só o nome do prefixo. A política IAM do Airflow foi ajustada junto.
 
+## Revisão da Fase 2 (18/10/2026): o banco `controle` e o ambiente de teste
+
+O ponto em aberto (abaixo, em "Consequências") foi resolvido pela decisão D4 da Fase 2: o manifesto de ingestão é uma tabela Iceberg, e a manutenção do Iceberg (`OPTIMIZE`, `VACUUM`) **apaga arquivos**. Ele não pode morar em `bronze/`, que nega `DeleteObject`.
+
+**Decisão:** um banco novo no Glue, **`controle`**, com prefixo **`controle/`**, seguindo a mesma regra "prefixo = banco". O manifesto passa a se chamar `controle.ingestion_manifest` (a spec dizia `bronze.ingestion_manifest`), e a versão vigente sai da view `controle.manifesto_vigente` (ADR 0003). Não há `dev_controle`: só existe uma ingestão, e o dev lê o manifesto de produção, assim como lê a Bronze de produção.
+
+Também entraram dois bancos para o **ambiente de teste da ingestão** (Fase 2, etapa 8), com a mesma regra: `teste_bronze` (prefixo `teste_bronze/`) e `teste_controle` (prefixo `teste_controle/`). A DAG de ingestão roda em teste com o mesmo código, mudando só o destino.
+
+| Banco no Glue | Prefixo no S3 | Apaga arquivos? | Para quê |
+|---|---|---|---|
+| `controle` | `controle/` | Sim (manutenção do Iceberg) | Manifesto de ingestão |
+| `teste_bronze` | `teste_bronze/` | Sim (limpar o teste); grava só com `If-None-Match`, como a Bronze | Bronze do ambiente de teste |
+| `teste_controle` | `teste_controle/` | Sim | Manifesto do ambiente de teste |
+
+**Alternativas consideradas para o manifesto:** tabela no banco `bronze` com arquivos em `controle/` (quebraria a regra "prefixo = banco"); manifesto em arquivos JSON só de acréscimo dentro de `bronze/` (imutável fisicamente, mas sem transações nem SQL confortável). Escolhida a primeira opção da decisão D4.
+
 ## Alternativas consideradas
 
 | Alternativa | Por que não |
@@ -39,4 +55,5 @@ A versão original deste ADR usava `dev/silver/` e `dev/gold/`. Ao montar o proj
 
 **Perdemos / cuidados:**
 - Dev e prod compartilham o bucket: uma regra de ciclo de vida no bucket precisa filtrar por prefixo para não afetar os dois.
-- Ponto em aberto para a Fase 2: o manifesto de ingestão (`bronze.ingestion_manifest`) é uma tabela Iceberg, e Iceberg apaga arquivos antigos na manutenção. Se ele ficar em `bronze/`, conflita com a regra "Bronze sem `DeleteObject`". Resolver na Fase 2 (provável: prefixo próprio para o manifesto).
+- ~~Ponto em aberto para a Fase 2: o manifesto de ingestão (`bronze.ingestion_manifest`) é uma tabela Iceberg, e Iceberg apaga arquivos antigos na manutenção. Se ele ficar em `bronze/`, conflita com a regra "Bronze sem `DeleteObject`".~~ Resolvido na Fase 2: banco `controle` (ver "Revisão da Fase 2").
+- O ciclo de vida do bucket (Fase 2, decisão D11) expira versões não correntes depois de 30 dias em todos os prefixos que apagam (`silver/`, `gold/`, `dev_*/`, `controle/`, `teste_*/`), e nunca em `bronze/`. Isso cumpre o cuidado do item acima ("filtrar por prefixo").

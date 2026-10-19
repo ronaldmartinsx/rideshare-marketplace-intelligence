@@ -1,0 +1,49 @@
+# Contrato de schema: TLC High Volume For-Hire Vehicle (HVFHV)
+# Fase 2, decisão D7. Conferido em 17/10/2026 contra os 32 meses de 2024-01 a 2026-08.
+#
+# A referência é uma DECISÃO escrita e versionada, nunca "o que veio no mês passado" (Aula 4).
+# Mudou o que a TLC publica e a mudança é aceitável? Altere este arquivo num commit, com o motivo.
+#
+# Os tipos usam o vocabulário do Athena/Glue: o mesmo da tabela bronze.tlc_hvfhv
+# (infra/terraform/bronze_tabelas.tf). Assim, "o arquivo cumpre o contrato" também quer dizer
+# "o Athena consegue ler o arquivo com a tabela que declaramos".
+
+fonte: tlc_hvfhv
+versao_contrato: 1
+
+colunas:
+  - {nome: hvfhs_license_num,    tipo: string}
+  - {nome: dispatching_base_num, tipo: string}
+  - {nome: originating_base_num, tipo: string}
+  - {nome: request_datetime,     tipo: timestamp}
+  - {nome: on_scene_datetime,    tipo: timestamp}
+  - {nome: pickup_datetime,      tipo: timestamp}
+  - {nome: dropoff_datetime,     tipo: timestamp}
+  # No arquivo vêm como PULocationID / DOLocationID: a comparação ignora maiúsculas
+  - {nome: pulocationid,         tipo: int}
+  - {nome: dolocationid,         tipo: int}
+  - {nome: trip_miles,           tipo: double}
+  - {nome: trip_time,            tipo: bigint}
+  - {nome: base_passenger_fare,  tipo: double}
+  - {nome: tolls,                tipo: double}
+  - {nome: bcf,                  tipo: double}
+  - {nome: sales_tax,            tipo: double}
+  - {nome: congestion_surcharge, tipo: double}
+  - {nome: airport_fee,          tipo: double}
+  - {nome: tips,                 tipo: double}
+  - {nome: driver_pay,           tipo: double}
+  - {nome: shared_request_flag,  tipo: string}
+  - {nome: shared_match_flag,    tipo: string}
+  - {nome: access_a_ride_flag,   tipo: string}
+  - {nome: wav_request_flag,     tipo: string}
+  - {nome: wav_match_flag,       tipo: string}
+  # Taxa de congestionamento: cobrada a partir de 05/01/2025 (dicionário oficial da TLC).
+  # Antes de 2025-01, a coluna não existe no arquivo, e isso é esperado.
+  - {nome: cbd_congestion_fee,   tipo: double, desde: "2025-01"}
+
+# O que fazer com cada tipo de drift (spec, seção 6.2; Aula 4)
+regras:
+  coluna_nova: alertar        # segue; o motivo fica registrado no manifesto
+  coluna_faltante: alertar    # segue; o motivo fica registrado no manifesto
+  tipo_diferente: rejeitar    # arquivo entra na Bronze em quarentena (status rejeitado)
+  tipo_nulo_compativel: true  # coluna inteira vazia (tipo "null") não conta como tipo diferente
