@@ -304,9 +304,16 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Teste singular** | Arquivo `.sql` que devolve as linhas problemáticas; zero linhas = passou | Uma consulta de auditoria que deveria voltar vazia | 1 |
 | **`dbt build`** | Roda seeds, models e testes na ordem do grafo; se o teste de um model falha, os dependentes são pulados | Uma atualização que para se a validação falhar | 1 |
 | **Grão** | O que exatamente uma linha de uma tabela representa (ex.: hora × zona × operadora). Primeira decisão de qualquer tabela fato; vira o `GROUP BY` | A granularidade da tabela fato no modelo estrela do Power BI | 1 |
+| **Método de Kimball (4 passos)** | 1) processo de negócio; 2) **grão**; 3) dimensões; 4) fatos (medidas). O grão vem antes das colunas: o que não respeita o grão não entra | O roteiro para montar um modelo estrela do zero | 3 |
+| **Fato de transação × fato agregado** | Transação: uma linha por evento (cada corrida). Agregado: uma linha por combinação do grão (hora × zona × operadora). Aqui a Gold só tem fatos agregados: 651 milhões de corridas não cabem num modelo do Power BI. O que não está no grão não se recupera sem voltar à Silver | Importar cada venda × importar o resumo diário por loja | 3 |
+| **Dimensão conformada** | Uma única definição de uma dimensão (ex.: `dim_zona`) compartilhada por vários fatos, para os números de fatos diferentes baterem no mesmo visual | A mesma tabela de calendário ligada a duas fatos | 3 |
+| **Dimensão com papéis (role-playing)** | A mesma dimensão usada mais de uma vez no mesmo fato (zona de origem e zona de destino na `fct_od_diario`) | Relacionamento inativo + `USERELATIONSHIP` | 3 |
+| **One big table (tabela larga)** | Uma tabela plana com tudo junto, sem estrela. Serve a exploração pontual e a ML; a estrela serve ao consumo recorrente e consistente | Uma consulta "achatada" exportada para Excel | 3 |
 | **Métrica aditiva** | Pode ser somada em qualquer nível (somas, contagens). Médias e percentis não são aditivos: guarde soma e contagem e divida no consumo | `DIVIDE(SUM(...), SUM(...))` em vez de `AVERAGE` sobre valores já agregados | 1 |
 | **Reconciliação** | Conferir que totais batem entre camadas (ex.: soma de corridas na Gold = corridas na Silver) | Conferir o total do relatório contra o sistema de origem | 1 |
 | **Macro** | Função em Jinja reutilizável (ex.: `generate_schema_name`, que decide o nome do banco) | Uma função personalizada do Power Query | 1 |
+| **Camadas do dbt (staging, intermediate, marts)** | `stg_`: espelha uma fonte, limpa (renomear, tipar), sem joins nem regra de negócio. `int_`: junta e deriva o que vários marts reusam (ex.: `is_valid`). `fct_`/`dim_`: o produto pronto, com grão claro. Nome `stg_<fonte>__<entidade>` | Consultas de preparo com "Habilitar carga" desligado → consultas que mesclam → tabelas que carregam no modelo. Quebra: no dbt cada camada é um objeto no banco, testado e reaproveitado | 3 |
+| **Marcar × usar a marca** | A regra de qualidade (`is_valid`, `invalid_reason`) é **calculada** uma vez na Silver (`int_`); a decisão de **usar** (excluir inválidas da contagem) acontece na Gold (`fct_`) | Coluna calculada `É Válida` na consulta × filtro dentro da medida | 3 |
 
 ---
 
