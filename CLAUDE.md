@@ -21,10 +21,13 @@ Código que ele não consegue explicar não conta como entregue.
 - Antes de escrever código: apresentar o plano (arquivos, comandos, recursos de nuvem) e esperar OK.
 - Um arquivo/conceito por vez. Depois de cada arquivo: o que faz, por que existe, o que quebra sem ele.
 - Peças marcadas ✍️ na spec: o Ronald escreve primeiro; você revisa, dá pistas antes da correção.
+  Peças ✍️ em Python: o Ronald desenha a regra (tabela de cenários); se ele pedir, o Claude escreve o código e os
+  testes, explica bloco a bloco com pontes para SQL e fecha com uma checagem de entendimento. Registrar quem
+  escreveu o quê em docs/aprendizados/fase-N.md. Peças ✍️ em SQL e DAX continuam sendo escritas por ele.
 - No fim da fase: gate de domínio (Apêndice C da spec). A fase só fecha quando o gate passa.
 - Ao fechar a fase: docs/aprendizados/fase-N.md, glossário e ADRs atualizados.
 
-## Combinados de trabalho (aprendidos nas Fases 0 e 1)
+## Combinados de trabalho (aprendidos nas Fases 0 a 2)
 - O Ronald NÃO vê a saída das ferramentas (fica recolhida). Toda saída comentada ou usada para pedir decisão
   vai colada no texto da mensagem, mascarando e-mail e ID da conta AWS.
 - Aula e plano em mensagens separadas; esperar a resposta da pergunta rápida antes do plano.
