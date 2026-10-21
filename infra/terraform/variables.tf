@@ -15,7 +15,10 @@ variable "prefixo" {
 }
 
 variable "athena_limite_bytes_por_consulta" {
-  description = "Limite de bytes lidos por consulta no workgroup do Athena. Acima disso, a consulta é cancelada. Recalibrar na Fase 1."
+  description = "Limite de bytes lidos por consulta no workgroup do Athena. Acima disso, a consulta é cancelada."
   type        = number
-  default     = 1073741824 # 1 GiB
+  # 3 GiB (Fase 3, decisão F9 revisada): o incremental do dbt-athena copia o mês inteiro da tabela
+  # temporária para a final, e um mês da int_trips_enriched tem ~1,3 GB. Ler a Silver inteira por
+  # engano (~40 GB) continua barrado.
+  default = 3221225472
 }

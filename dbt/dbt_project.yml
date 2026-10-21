@@ -17,6 +17,11 @@ models:
     # Padrão do projeto: tabelas Iceberg (o padrão do dbt-athena seria Hive)
     +table_type: iceberg
     +format: parquet
+    # Uma pasta única por versão da tabela, em TODAS as camadas (não só na Gold). Reconstruir uma
+    # tabela Iceberg (materialização table ou --full-refresh de um incremental) cria a nova ao lado,
+    # troca o nome e apaga a antiga, e apagar uma tabela Iceberg apaga os arquivos da pasta dela.
+    # Com a mesma pasta, a nova seria apagada junto (aconteceu na Fase 3, etapa 4, em dev).
+    +s3_data_naming: schema_table_unique
 
     # A pasta decide a camada (spec, seção 5). O nome final do banco
     # (silver ou dev_silver) é montado pela macro generate_schema_name.
@@ -39,6 +44,10 @@ models:
 seeds:
   rideshare:
     +schema: silver
+    # Iceberg, e não o padrão Hive: com o local dos resultados imposto pelo workgroup, um seed Hive vai
+    # parar no bucket de resultados do Athena, que apaga tudo em 7 dias. Iceberg sempre recebe pasta no lake.
+    +table_type: iceberg
+    +s3_data_naming: schema_table_unique
     seed_zonas_tlc:
       +column_types:
         LocationID: int
