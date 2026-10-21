@@ -1,0 +1,48 @@
+version: 2
+
+seeds:
+  - name: seed_zonas_tlc
+    description: >
+      As 265 zonas de táxi da TLC (cópia fiel de taxi_zone_lookup.csv, Last-Modified 22/02/2024).
+      Fonte: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv.
+      Inclui 264 "Unknown" e 265 "Outside of NYC" (zonas especiais que aparecem nas corridas).
+    columns:
+      - name: LocationID
+        description: "Código da zona, o mesmo de PULocationID e DOLocationID nas corridas."
+        data_tests: [unique, not_null]
+
+  - name: seed_zonas_cbd
+    description: >
+      As 38 zonas de táxi dentro da Congestion Relief Zone (taxa de congestionamento, desde 05/01/2025).
+      Fonte oficial: MTA Central Business District Taxi Zones (data.ny.gov, dataset yfdc-w5jh).
+      Conferida nos dados de jan/2025: são exatamente as zonas de destino em que >= 96% das corridas
+      pagaram a taxa (ADR 0007).
+    columns:
+      - name: location_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('seed_zonas_tlc')
+                field: LocationID
+
+  - name: seed_operadoras
+    description: "Código da licença HVFHS → operadora (dicionário oficial da TLC; risco R6, Fase 1)."
+    columns:
+      - name: licenca
+        data_tests: [unique, not_null]
+
+  - name: seed_feriados
+    description: >
+      Feriados de 2024 a 2026, gerados pelas regras oficiais: federais (OPM) e estaduais de NY
+      (Department of Civil Service: Lincoln's Birthday e Election Day, muitas vezes "flutuantes").
+      Só os federais marcam o tipo de dia "feriado" na dim_tempo_hora (decisão F4).
+    columns:
+      - name: data
+        data_tests: [not_null]
+      - name: esfera
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['federal', 'estadual_ny']

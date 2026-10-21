@@ -33,3 +33,30 @@ models:
       # o nome (rename), sem janela sem dados. Exige um caminho único por versão.
       # Resultado: lake/<banco>/<tabela>/<id único>/ (ainda dentro do prefixo do banco).
       +s3_data_naming: schema_table_unique
+
+# Seeds: tabelas pequenas e quase estáticas, versionadas como CSV (Fase 3, decisão F10).
+# Ficam no banco da Silver (silver ou dev_silver). Tipos declarados para o dbt não adivinhar.
+seeds:
+  rideshare:
+    +schema: silver
+    seed_zonas_tlc:
+      +column_types:
+        LocationID: int
+        Borough: string
+        Zone: string
+        service_zone: string
+    seed_zonas_cbd:
+      +column_types:
+        location_id: int
+        zona: string
+    seed_operadoras:
+      +column_types:
+        licenca: string
+        operadora: string
+        ativa: boolean
+    seed_feriados:
+      +column_types:
+        data: date
+        feriado: string
+        esfera: string
+        data_observada: date
