@@ -13,6 +13,17 @@ sources:
           Partition projection com ingest_ts "injected": toda consulta precisa informar a versão,
           que vem de controle.manifesto_vigente (macro ingest_ts_vigente).
 
+  - name: open_meteo
+    description: "Clima horário do Open-Meteo na Bronze (JSON canônico, um objeto por arquivo, em UTC). Licença CC BY 4.0."
+    schema: bronze
+    tables:
+      - name: weather
+        identifier: open_meteo
+        description: >
+          Um arquivo por mês: o mês inteiro + o dia 1 seguinte, em UTC (decisão W3 da Fase 2).
+          As listas horárias ficam em arrays dentro da coluna hourly. Mesma projection da TLC:
+          ingest_ts obrigatório na consulta (macro ingest_ts_vigente).
+
   - name: controle
     description: "Tabelas de controle do pipeline, gravadas pelas DAGs de ingestão do Airflow (Fase 2)."
     schema: controle
