@@ -85,14 +85,19 @@ com_motivo as (
         case
             -- Decidida no plano (F3): a segunda cópia em diante de uma duplicata exata
             when ordem_duplicata > 1 then 'duplicata_exata'
-
-            -- ✍️ RONALD: as suas regras de qualidade entram aqui, uma por WHEN.
-            -- A ORDEM importa: uma corrida com dois problemas fica com o motivo do primeiro WHEN
-            -- que ela satisfizer. Formato:
-            --     when <condição> then '<motivo_em_snake_case>'
-
+            when trip_miles <= 0 then 'milhas_insuficientes'
+            when trip_time <= 0 then 'tempo_corrida_insuficiente'
+            when speed_mph > 100 then 'velocidade_impossivel'
             else null
-        end as invalid_reason
+        end as invalid_reason,
+        case
+            when wait_time_s >= 7200 or wait_time_s < 0 then false
+            else true
+        end as is_valid_wait_metric,
+        case
+            when base_passenger_fare <= 0 then false
+            else true
+        end as is_valid_economic_metrics
     from derivadas
 
 )
@@ -108,6 +113,8 @@ select
     take_rate,
     is_dropoff_cbd,
     pickup_hour,
+    is_valid_wait_metric,
+    is_valid_economic_metrics,
     invalid_reason,
     invalid_reason is null as is_valid
 from com_motivo
