@@ -32,3 +32,16 @@ sources:
         description: >
           View sobre controle.ingestion_manifest: a versão aceita mais recente de cada fonte e mês.
           É daqui que a Silver tira o ingest_ts que precisa escrever no SQL.
+
+      - name: ingestion_manifest
+        description: >
+          O livro de registro da ingestão (só de acréscimo). Usado aqui para o source freshness da TLC:
+          a Bronze não serve, porque a projection exige o ingest_ts na consulta (Aula 3 da Fase 3).
+        config:
+          # Quando chegou a última versão NOVA aceita da TLC (registrado_em, em UTC).
+          # A TLC publica todo mês: mais de 45 dias sem versão nova já é anormal (decisão F12).
+          loaded_at_field: registrado_em
+          freshness:
+            warn_after: {count: 45, period: day}
+            error_after: {count: 75, period: day}
+            filter: "source = 'tlc_hvfhv' and status = 'aceito'"
