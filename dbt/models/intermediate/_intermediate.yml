@@ -55,6 +55,21 @@ models:
             warn_if: ">40000"
             error_if: ">400000"
 
+      # ✍️ Gate de volume do Ronald (tests/generic/volume_mensal.sql): média diária de corridas válidas
+      # contra os até 3 meses anteriores. Normal visto em 32 meses: de -7,0% a +8,3%.
+      - volume_mensal:
+          name: gate_volume_mensal_aviso
+          arguments:
+            limite: 0.2
+          config:
+            severity: warn
+      - volume_mensal:
+          name: gate_volume_mensal
+          arguments:
+            limite: 0.3
+          config:
+            severity: error
+
     columns:
       - name: corrida_id
         description: "Hash das 25 colunas + ordem da duplicata exata (ADR 0004). Único em todo mês."
