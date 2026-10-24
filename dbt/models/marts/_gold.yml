@@ -1,0 +1,36 @@
+version: 2
+
+# Gold: tabelas pequenas, com grão claro, prontas para o Power BI, o ML e o agente de IA.
+# A corrida individual não sai da Silver. As definições das métricas ficam no `meta` de cada
+# modelo: são a fonte única para as medidas DAX (Fase 4) e o contexto do agente (Fase 6).
+
+models:
+  - name: dim_zona
+    description: >
+      Uma linha por zona de táxi da TLC. Dimensão conformada: serve às fatos de demanda, de espera
+      e de origem-destino (nesta, em dois papéis: origem e destino).
+    meta:
+      grao: "zona de táxi da TLC"
+    columns:
+      - name: zona_id
+        description: "Código da zona (LocationID da TLC)."
+        data_tests: [unique, not_null]
+      - name: is_cbd
+        description: "Dentro da Congestion Relief Zone (38 zonas, lista oficial da MTA; ADR 0007)."
+      - name: is_aeroporto
+        description: "JFK, LaGuardia ou Newark."
+      - name: is_zona_conhecida
+        description: >
+          Falso só para a 264 ("Unknown"): a corrida conta no total da cidade, mas não tem lugar no
+          mapa. Use para filtrar análises por zona.
+      - name: is_fora_de_nyc
+        description: "Newark (Nova Jersey) e a 265 (Outside of NYC): destinos reais fora dos 5 boroughs."
+
+  - name: dim_operadora
+    description: "Uma linha por licença HVFHS (Uber, Lyft e as inativas Juno e Via). Fonte: dicionário da TLC."
+    meta:
+      grao: "licença HVFHS"
+    columns:
+      - name: operadora_id
+        description: "Código da licença (HV0002 a HV0005), o mesmo de hvfhs_license_num."
+        data_tests: [unique, not_null]
