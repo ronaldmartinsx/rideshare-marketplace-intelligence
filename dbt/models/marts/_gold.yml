@@ -57,3 +57,63 @@ models:
           'inexistente' (2º domingo de março, 2h: o relógio pula), 'repetida' (1º domingo de novembro,
           1h: soma o movimento de duas horas reais) ou nulo. Marque essas horas em análises por hora e
           no modelo de previsão (Fase 5).
+
+  - name: fct_demanda_zona_hora
+    description: >
+      Demanda e economia por hora de embarque × zona de origem × operadora. Só corridas válidas (nível
+      corrida). As somas econômicas usam só as corridas com tarifa válida (nível métrica), todas sobre o
+      mesmo conjunto de corridas. Incremental por source_month. Peça ✍️ do Ronald (Fase 1), estendida na Fase 3.
+    meta:
+      grao: "hora de embarque (local NY) × zona de origem × operadora"
+      # Fonte única das métricas (spec 2.5): as medidas DAX (Fase 4) e o agente (Fase 6) usam estas fórmulas.
+      metricas:
+        corridas_validas:
+          formula: "sum(qtd_corridas)"
+        take_rate:
+          formula: "(sum(tarifa_base_total) - sum(repasse_motorista_total)) / sum(tarifa_base_total)"
+          cuidado: "Razão das SOMAS, nunca média de take rates. Só corridas com tarifa > 0."
+        receita_por_milha:
+          formula: "sum(tarifa_base_total) / sum(milhas_tarifa_valida_total)"
+          cuidado: "Numerador e denominador das mesmas corridas (tarifa válida)."
+        repasse_por_hora_de_corrida:
+          formula: "sum(repasse_motorista_total) / (sum(segundos_tarifa_valida_total) / 3600)"
+          cuidado: "NÃO é o ganho por hora do motorista: o dado não tem tempo ocioso nem id de motorista."
+        share_operadora:
+          formula: "sum(qtd_corridas) da operadora / sum(qtd_corridas) do mesmo recorte"
+        corridas_destino_cbd:
+          formula: "sum(qtd_corridas_destino_cbd)"
+          cuidado: "Destino pela lista de zonas da MTA, não pela taxa (ADR 0007). Antes x depois: corte em 2025-01-05."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['hora_embarque', 'zona_origem_id', 'licenca_operadora']
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+    columns:
+      - name: hora_embarque
+        data_tests:
+          - not_null:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+          - relationships:
+              arguments:
+                to: ref('dim_tempo_hora')
+                field: hora
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: zona_origem_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: licenca_operadora
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operadora')
+                field: operadora_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
