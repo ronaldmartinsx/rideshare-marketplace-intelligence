@@ -34,3 +34,26 @@ models:
       - name: operadora_id
         description: "Código da licença (HV0002 a HV0005), o mesmo de hvfhs_license_num."
         data_tests: [unique, not_null]
+
+  - name: dim_tempo_hora
+    description: >
+      Uma linha por hora LOCAL de Nova York, de 2024-01-01 a 2026-12-31: calendário, feriados federais,
+      tipo de dia (útil, fim de semana, feriado), clima da hora e a marcação das horas de troca do
+      horário de verão (ADR 0009). A hora "inexistente" de março existe aqui de propósito: a TLC
+      registra algumas corridas nela (85 em 09/03/2025), e a fato precisa encontrá-la.
+    meta:
+      grao: "hora local de Nova York"
+    columns:
+      - name: hora
+        data_tests: [unique, not_null]
+      - name: tipo_dia
+        description: "util | fim_de_semana | feriado (só feriados federais). Grão do histograma de espera."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['util', 'fim_de_semana', 'feriado']
+      - name: hora_troca_horario_verao
+        description: >
+          'inexistente' (2º domingo de março, 2h: o relógio pula), 'repetida' (1º domingo de novembro,
+          1h: soma o movimento de duas horas reais) ou nulo. Marque essas horas em análises por hora e
+          no modelo de previsão (Fase 5).
