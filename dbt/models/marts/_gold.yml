@@ -117,3 +117,57 @@ models:
                 field: operadora_id
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+  - name: fct_espera_histograma
+    description: >
+      Histograma do tempo de espera (pedido -> embarque): contagem de corridas por faixa de espera, por
+      mês × hora do dia × tipo de dia × zona de origem × operadora (ADR 0006). Só corridas válidas e com
+      espera válida (entre 0 e 2 h). As contagens somam em qualquer recorte; o percentil sai no consumo.
+    meta:
+      grao: "mês × hora do dia × tipo de dia × zona de origem × operadora × faixa de espera"
+      metricas:
+        espera_percentil:
+          passos: >
+            1) filtrar o recorte (zona, hora do dia, tipo de dia, mês...); 2) somar qtd_corridas por faixa
+            e o total; 3) acumular as faixas em ordem de faixa_id até passar de p × total (p = 0,5 ou 0,9);
+            4) interpolar na faixa encontrada: faixa_inicio_min + (p × total - acumulado antes) /
+            qtd_corridas da faixa × (faixa_fim_min - faixa_inicio_min); 5) se cair na faixa 17 (30+),
+            a resposta é ">= 30 min".
+          cuidado: "Percentil NÃO soma nem tira média entre recortes: sempre recalcular a partir das faixas."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['hora_do_dia', 'tipo_dia', 'zona_origem_id', 'licenca_operadora', 'faixa_id']
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+    columns:
+      - name: tipo_dia
+        data_tests:
+          - not_null:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: faixa_id
+        description: "0 a 14: faixas de 1 minuto; 15: 15–20 min; 16: 20–30 min; 17: 30 min ou mais."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+                quote: false
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: zona_origem_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: licenca_operadora
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operadora')
+                field: operadora_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
