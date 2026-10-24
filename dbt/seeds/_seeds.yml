@@ -7,7 +7,7 @@ seeds:
       Fonte: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv.
       Inclui 264 "Unknown" e 265 "Outside of NYC" (zonas especiais que aparecem nas corridas).
     columns:
-      - name: LocationID
+      - name: locationid
         description: "Código da zona, o mesmo de PULocationID e DOLocationID nas corridas."
         data_tests: [unique, not_null]
 
@@ -25,7 +25,7 @@ seeds:
           - relationships:
               arguments:
                 to: ref('seed_zonas_tlc')
-                field: LocationID
+                field: locationid
 
   - name: seed_operadoras
     description: "Código da licença HVFHS → operadora (dicionário oficial da TLC; risco R6, Fase 1)."
