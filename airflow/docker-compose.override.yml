@@ -1,6 +1,6 @@
 # Serviços extras do Airflow LOCAL. O Astro junta este arquivo aos contêineres que ele já sobe.
-# Fase 2, etapa 8: a "TLC de mentira", alcançada pelas DAGs em http://tlc-de-mentira/trip-data
 services:
+  # Fase 2, etapa 8: a "TLC de mentira", alcançada pelas DAGs em http://tlc-de-mentira/trip-data
   tlc-de-mentira:
     image: nginx:1.27.5-alpine  # versão fixada, como o resto do projeto
     volumes:
@@ -9,3 +9,12 @@ services:
     # Os contêineres do Astro ficam na rede "airflow"; sem isto, o nome não seria encontrado
     networks:
       - airflow
+
+  # Fase 3, decisão F6: o projeto dbt (pasta dbt/ do repositório) visível dentro do Airflow.
+  # O dag-processor lê o projeto para desenhar as tasks; o scheduler executa o dbt.
+  scheduler:
+    volumes:
+      - ../dbt:/usr/local/airflow/dbt
+  dag-processor:
+    volumes:
+      - ../dbt:/usr/local/airflow/dbt
