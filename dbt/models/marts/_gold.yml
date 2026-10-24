@@ -171,3 +171,49 @@ models:
                 field: operadora_id
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+  - name: fct_od_diario
+    description: >
+      Fluxos de origem-destino por dia × zona de origem × zona de destino × operadora. Só corridas
+      válidas. A dim_zona entra em dois papéis (origem e destino): no Power BI, um relacionamento
+      inativo ligado com USERELATIONSHIP. Base do mapa de fluxos e da análise do CBD (destino).
+    meta:
+      grao: "dia de embarque × zona de origem × zona de destino × operadora"
+      metricas:
+        corridas_validas:
+          formula: "sum(qtd_corridas)"
+        receita_por_milha:
+          formula: "sum(tarifa_base_total) / sum(milhas_tarifa_valida_total)"
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['data_embarque', 'zona_origem_id', 'zona_destino_id', 'licenca_operadora']
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+    columns:
+      - name: zona_origem_id
+        description: "Papel 'origem' da dim_zona."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: zona_destino_id
+        description: "Papel 'destino' da dim_zona (relacionamento inativo no Power BI)."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: licenca_operadora
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operadora')
+                field: operadora_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
