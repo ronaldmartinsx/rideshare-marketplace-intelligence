@@ -7,47 +7,50 @@ run fica vermelho (alarme).
 
 Duas DAGs, uma por ambiente: o target do dbt (dev -> dev_silver/dev_gold; prod -> silver/gold) é
 fixo no perfil, então cada ambiente tem a sua.
+
+A última task, registrar_construcao, só roda se TODAS as tasks do dbt ficarem verdes (gate e
+reconciliações incluídos). Ela grava no registro (controle.dbt_meses_construidos) as versões que
+a Silver de fato usou. É assim que a dbt_build sabe que o mês está em dia.
 """
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
-from airflow.sdk import Param
-from cosmos import DbtDag, ExecutionConfig, ProfileConfig, ProjectConfig, RenderConfig
+from airflow.sdk import Param, task
+from cosmos import DbtDag, ExecutionConfig, ProjectConfig, RenderConfig
 from cosmos.constants import LoadMode
-from cosmos.profiles import AthenaAccessKeyProfileMapping
 
-PROJETO_DBT = "/usr/local/airflow/dbt"  # montado pelo docker-compose.override.yml (F6)
-DBT_EXECUTAVEL = "/usr/local/airflow/dbt_venv/bin/dbt"  # ambiente próprio do dbt (Dockerfile, F7)
+from include.dbt_perfil import DBT_EXECUTAVEL, PROJETO_DBT, perfil
+from include.dbt_registro import gravar_construcao, versoes_na_silver
+from include.ingestao.ambientes import clientes_aws
+
+log = logging.getLogger(__name__)
 
 
-def _perfil(ambiente: str) -> ProfileConfig:
-    """Conexão do dbt com o Athena pela Connection aws_default: veste a role rideshare-airflow (F8)."""
-    return ProfileConfig(
-        profile_name="rideshare",
-        target_name=ambiente,
-        profile_mapping=AthenaAccessKeyProfileMapping(
-            conn_id="aws_default",
-            profile_args={
-                "region_name": "us-east-1",
-                "database": "awsdatacatalog",
-                "schema": ambiente,  # a macro generate_schema_name monta dev_silver ou silver
-                "work_group": "rideshare",
-                "s3_staging_dir": "s3://rmartins-rideshare-athena-results/resultados/",
-                "s3_data_dir": "s3://rmartins-rideshare-lake/",
-                "s3_data_naming": "schema_table",
-                "threads": 4,
-            },
-        ),
-    )
+def _registrar_construcao(ambiente: str):
+    """Task final: grava o mês no registro de construção deste ambiente (Fase 3, B1)."""
+
+    @task(task_id="registrar_construcao", retries=3)
+    def registrar_construcao(**contexto):
+        _, athena = clientes_aws()
+        mes = contexto["params"]["source_month"]
+        construcao = versoes_na_silver(athena, ambiente, mes)
+        gravado = gravar_construcao(
+            athena, ambiente, mes, construcao, contexto["params"]["motivo"], contexto["run_id"]
+        )
+        log.info("%s %s registrado: TLC %s, clima %s%s", ambiente, mes, construcao.ingest_ts_tlc,
+                 construcao.ingest_ts_clima, "" if gravado else " (já gravado por uma tentativa anterior)")
+
+    return registrar_construcao()
 
 
 for ambiente in ("dev", "prod"):
-    globals()[f"dbt_mes_{ambiente}"] = DbtDag(
+    with DbtDag(
         dag_id=f"dbt_mes_{ambiente}",
         project_config=ProjectConfig(PROJETO_DBT),
-        profile_config=_perfil(ambiente),
+        profile_config=perfil(ambiente),
         execution_config=ExecutionConfig(dbt_executable_path=DBT_EXECUTAVEL),
         render_config=RenderConfig(
             load_method=LoadMode.DBT_LS,
@@ -65,6 +68,9 @@ for ambiente in ("dev", "prod"):
         params={
             "source_month": Param("2026-05", type="string", pattern=r"^\d{4}-\d{2}$",
                                   description="Mês do arquivo a processar (AAAA-MM)"),
+            # Vai para o registro. A dbt_build preenche; disparo à mão fica como "manual".
+            "motivo": Param("manual", enum=["manual", "manifesto", "forcado"],
+                            description="Por que este mês está sendo construído"),
         },
         schedule=None,  # só por disparo da dbt_build (ou manual)
         start_date=datetime(2026, 10, 1, tzinfo=timezone.utc),
@@ -73,4 +79,9 @@ for ambiente in ("dev", "prod"):
         default_args={"retries": 2, "retry_delay": timedelta(minutes=2)},
         tags=["dbt", "silver", "gold", "fase-3", ambiente],
         doc_md=__doc__,
-    )
+    ) as dag_dbt:
+        # As folhas são as últimas tasks do dbt (testes da Gold e reconciliações). O registro
+        # depende de todas: com a regra padrão (all_success), qualquer vermelho o impede.
+        folhas = list(dag_dbt.leaves)
+        folhas >> _registrar_construcao(ambiente)
+    globals()[f"dbt_mes_{ambiente}"] = dag_dbt

@@ -1,5 +1,6 @@
 -- Registro de construção do dbt (Fase 3, etapa 8, decisão B1).
--- A dbt_build grava uma linha SÓ quando a dbt_mes de um mês termina verde (Silver, gate e Gold).
+-- A dbt_mes grava uma linha SÓ quando o mês inteiro termina verde (Silver, gate e Gold), com as
+-- versões lidas da própria Silver (o que foi construído de fato).
 -- Mês pendente = a versão vigente no manifesto é diferente da última construção registrada.
 -- Mesmo padrão do manifesto (Fase 2, D5): só INSERT; a última construção é calculada pela view.
 --
@@ -11,11 +12,11 @@
 CREATE TABLE IF NOT EXISTS controle.dbt_meses_construidos (
   ambiente         string    COMMENT 'Ambiente do dbt: dev (dev_silver/dev_gold) | prod (silver/gold)',
   source_month     string    COMMENT 'Mês construído, YYYY-MM',
-  ingest_ts_tlc    string    COMMENT 'Versão da TLC usada na construção (a vigente no manifesto naquela hora)',
-  ingest_ts_clima  string    COMMENT 'Versão do clima usada na construção (a vigente no manifesto naquela hora)',
-  motivo           string    COMMENT 'manifesto (versão nova na Bronze) | forcado (código do dbt mudou)',
+  ingest_ts_tlc    string    COMMENT 'Versão da TLC que a Silver usou (max ingest_ts da staging no mês)',
+  ingest_ts_clima  string    COMMENT 'Versão do clima que a Silver usou (max ingest_ts da staging no mês)',
+  motivo           string    COMMENT 'manifesto (versão nova na Bronze) | forcado (código do dbt mudou) | manual',
   construido_em    timestamp COMMENT 'Quando a construção terminou, em UTC',
-  dag_run_id       string    COMMENT 'Linhagem: qual execução da dbt_build gravou'
+  dag_run_id       string    COMMENT 'Linhagem: qual execução da dbt_mes construiu e gravou'
 )
 LOCATION 's3://rmartins-rideshare-lake/controle/dbt_meses_construidos/'
 TBLPROPERTIES (
