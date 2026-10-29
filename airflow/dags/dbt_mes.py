@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from airflow.sdk import Param, task
 from cosmos import DbtDag, ExecutionConfig, ProjectConfig, RenderConfig
 from cosmos.constants import LoadMode
+from cosmos.operators.local import DbtTestLocalOperator
 
 from include.dbt_perfil import DBT_EXECUTAVEL, PROJETO_DBT, perfil
 from include.dbt_registro import gravar_construcao, versoes_na_silver
@@ -84,4 +85,11 @@ for ambiente in ("dev", "prod"):
         # depende de todas: com a regra padrão (all_success), qualquer vermelho o impede.
         folhas = list(dag_dbt.leaves)
         folhas >> _registrar_construcao(ambiente)
+
+        # Teste sem retry (decisão do Ronald, 28/10/2026): um teste que falha (gate de volume,
+        # reconciliação) falha igual na 2ª tentativa, e o retry só atrasa o alarme em 4 minutos.
+        # Se o Athena oscilar, o mês fica sem registro e volta como pendente no próximo run.
+        for tarefa in dag_dbt.tasks:
+            if isinstance(tarefa, DbtTestLocalOperator):
+                tarefa.retries = 0
     globals()[f"dbt_mes_{ambiente}"] = dag_dbt
