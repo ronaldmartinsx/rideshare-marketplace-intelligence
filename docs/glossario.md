@@ -4,6 +4,19 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Negócio: mobilidade em Nova York
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **TLC (Taxi and Limousine Commission)** | Órgão da prefeitura de Nova York que regula táxis e aplicativos e publica os dados de corridas, um arquivo por mês | A secretaria de transportes que publica os dados abertos | 3 |
+| **HVFHV (High Volume For-Hire Vehicle)** | Categoria da TLC para as empresas de aplicativo de grande volume. No recorte: Uber (`HV0003`) e Lyft (`HV0005`) | — | 3 |
+| **Zona de táxi (`LocationID`)** | Divisão da cidade em ~263 zonas numeradas. A corrida só diz a zona de origem e a de destino, nunca o endereço. 264 e 265 = desconhecida e fora de NY (viagens reais, ~4%) | Um CEP curto que agrupa bairros | 3 |
+| **MTA (Metropolitan Transportation Authority)** | Autarquia estadual que opera metrô, ônibus, pontes e túneis de NY. Cobra a taxa de congestionamento e publica a lista oficial das zonas de táxi dentro do CBD (fonte do `seed_zonas_cbd`) | — | 3 |
+| **CBD (Central Business District)** | O centro comercial de Manhattan, onde se paga a taxa de congestionamento (nome oficial: *Congestion Relief Zone*). No projeto: 38 zonas de táxi da lista da MTA (ADR 0007) | O centro expandido do rodízio de São Paulo | 3 |
+| **Taxa de congestionamento (`cbd_congestion_fee`)** | Cobrança para entrar no CBD, desde 05/01/2025. Na TLC, aparece por corrida nos arquivos a partir de 2025-01. É valor em dinheiro: **não** define destino no CBD (nula em 2024; corridas que só atravessam o CBD também pagam, hipótese não verificada) | Pedágio urbano: o rodízio que cobra em vez de proibir | 3 |
+
+---
+
 ## Git e GitHub
 
 | Termo | O que é | Analogia / ponte | Fase |
@@ -144,6 +157,7 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Tabela externa** | O catálogo só aponta para arquivos geridos por outra pessoa/processo. `DROP TABLE` apaga só a definição. Usada na Bronze | Files e shortcuts do Lakehouse | 1 |
 | **Tabela gerenciada** | O motor/formato de tabela é dono dos arquivos: cria, reescreve e apaga. `DROP TABLE` apaga os dados. Usada na Silver e na Gold (Iceberg) | Tables (Delta) do Lakehouse | 1 |
 | **Schema-on-read** | A definição da tabela é aplicada na hora da leitura: um tipo errado no `CREATE` só dá erro no primeiro `SELECT` | Um rótulo colado na caixa: só ao abrir você descobre se bate com o conteúdo | 1 |
+| **Versões de tabela (Glue)** | Cada alteração de uma tabela guarda a definição anterior no Glue. O dbt-athena lê e apaga versões antigas (`GetTableVersions`, `BatchDeleteTableVersion`): sem essa permissão, o Cosmos falhou no primeiro run | O histórico de versões de um arquivo no OneDrive | 3 |
 
 ---
 
@@ -185,6 +199,7 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Trigger rule** | Regra que decide quando uma task roda, olhando as anteriores. Padrão `all_success` (todas deram certo). `all_done` = roda quando todas terminaram, com sucesso ou não (o `publicar` da `tlc_ingest`, para os meses bons seguirem mesmo com um mês falho) | "Só começa a lavagem quando todos os carros do lote chegaram" × "quando o caminhão terminar de descarregar, com ou sem avaria" | 2 |
 | **Falha sem retry (`AirflowFailException`)** | Exceção que marca a task como falha **sem** tentar de novo. Para erro determinístico: mês em `erro` ou em quarentena. Retry só serviria para baixar 480 MB à toa | — | 2 |
 | **Run verde escondendo falha** | O Airflow decide o estado do run pelas **últimas** tasks. Se a última usa `all_done` e termina bem, o run fica verde mesmo com uma task vermelha no meio. A `tudo_certo` (regra padrão) existe para o run terminar como falho | — | 2 |
+| **Trigger rule `none_failed`** | Roda se nenhuma task anterior **falhou**, mesmo que alguma tenha sido pulada. A `tudo_certo` da `dbt_build` usa para rodar também quando não havia mês a construir (o pedido impossível não passa em silêncio) | — | 3 |
 | **`map_index_template`** | Nome de cada cópia de uma task mapeada na grade do Airflow (ex.: o mês `2025-03` em vez de `0`, `1`, `2`) | — | 2 |
 | **`airflow dags test`** | Roda a DAG uma vez, direto no terminal, sem o scheduler e sem despausar o agendamento. Usado na etapa 8 com `ambiente=teste` | Testar a atualização no Desktop antes de publicar | 2 |
 | **Cosmos** | Biblioteca da Astronomer que lê o projeto dbt e transforma cada model numa task do Airflow (por padrão, com os testes logo depois). Visibilidade por model, retry só do que falhou e o gate de qualidade visível na grade. Alternativa caixa-preta: uma task com `dbt build` | Ordem de serviço com cada item separado × "revisão completa"; histórico de atualização por tabela | 3 |
@@ -212,6 +227,11 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Triggerer** | Componente que cuida de tarefas que ficam esperando um evento, sem ocupar um worker | O porteiro que avisa quando o caminhão chegar | 0 |
 | **Astro Runtime** | Imagem Docker do Airflow empacotada pela Astronomer (ex.: `runtime:3.3-9` = Airflow 3.3) | A distribuição "pronta para usar" do Airflow | 0 |
 | **Astro CLI** | Ferramenta que cria o projeto (`astro dev init`) e sobe o Airflow local em contêineres (`astro dev start`). `astro dev stop` preserva os dados; `astro dev kill` apaga os volumes | O instalador e o painel de liga/desliga do Airflow local | 0 |
+| **`TriggerDagRunOperator`** | Task que dispara **outra DAG**, passando parâmetros (`conf`). Com `wait_for_completion=True`, espera ela terminar e herda o resultado: se a DAG disparada falha, a task falha. A `construir_mes` da `dbt_build` dispara uma `dbt_mes` por mês | O despachante que abre a OS na oficina e fica esperando o carro sair | 3 |
+| **`max_active_tis_per_dagrun`** | Quantas cópias de uma task mapeada rodam ao mesmo tempo no mesmo run. Com 1, os meses saem um por vez, na ordem do `map_index` (o gate de um mês compara com os 3 anteriores) | Uma baia só no lava-rápido: a fila anda na ordem de chegada | 3 |
+| **`max_active_runs`** | Quantos runs da mesma DAG podem rodar juntos. Com 1, dois disparos não decidem nem gravam o mesmo mês ao mesmo tempo | — | 3 |
+| **Teste destacado (Cosmos)** | Teste com dois "pais" (ex.: reconciliação Silver × Gold) vira uma task própria, que roda depois dos dois (`should_detach_multiple_parents_tests`) | — | 3 |
+| **`airflow dags reserialize`** | Força o DAG processor a ler os arquivos de novo e atualizar a versão das DAGs guardada no banco. Resolveu a DAG nova que não aparecia | Atualizar o cache do relatório | 3 |
 
 ---
 
@@ -243,6 +263,9 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Promoção de tipo (alargar × estreitar)** | Alargar (INT32 → INT64, `float` → `double`) não perde informação; estreitar pode estourar valores; mudar de família (número → texto) quebra contas. O Iceberg aceita promoções seguras sem reescrever arquivos | Trocar a caixa por uma maior × por uma menor | 2 |
 | **Tipo nulo (NullType)** | Tipo que um gravador de Parquet usa quando a coluna inteira está vazia e ele não sabe o tipo. É compatível com qualquer tipo no schema, mas uma coluna 100% nula é um alerta de **qualidade** | Campo da ficha que veio em branco | 2 |
 | **UTC e `isAdjustedToUTC`** | UTC: horário de referência mundial, sem horário de verão. No Parquet, `isAdjustedToUTC = false` marca um horário "de relógio de parede", sem fuso. É o caso dos arquivos da TLC: o fuso não está no dado, precisa de decisão (ADR 0009) | Horário anotado na ficha sem dizer de qual cidade | 2 |
+| **Registro de construção (checkpoint)** | Tabela `controle.dbt_meses_construidos` (só INSERT): uma linha por mês construído **com sucesso**, por ambiente, com as versões que a Silver leu e o motivo. Responde "a Gold já foi feita a partir da versão vigente?" (ADR 0016) | O manifesto é o livro de entrada do almoxarifado; o registro é a ficha de cada OS concluída, com o lote das peças usadas | 3 |
+| **Regra de pendência** | ✍️ do Ronald: decide **SE** um mês é construído. Sem versão vigente: espera. Registro ≠ manifesto: constrói (`manifesto`). Forçado: constrói (`forcado`). Senão: nada. **QUAL** versão é lida, quem decide é a macro `ingest_ts_vigente` | — | 3 |
+| **`forcar_meses`** | Parâmetro da `dbt_build` para reconstruir meses já em dia (ex.: depois de mudar o código do dbt, que o registro não detecta). Pedido impossível deixa o run vermelho no fim | Recall: chamar de volta carros que já saíram da oficina | 3 |
 
 ---
 
@@ -278,6 +301,7 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Sobrescrita por partição** | Substituir atomicamente só uma partição (ex.: `source_month=2025-01`). Base do reprocessamento idempotente. O Iceberg suporta; o dbt-athena não expõe (ver `insert_overwrite` em Estratégia incremental) | Atualização incremental do Power BI refazendo só um período | 1 |
 | **OPTIMIZE (compactação)** | Junta arquivos pequenos de uma tabela Iceberg em arquivos maiores | Juntar folhas avulsas num fichário | 1 |
 | **VACUUM (expiração de snapshots)** | Expira snapshots antigos e apaga os arquivos que nenhuma versão vigente usa. Depois disso, aquele passado não existe mais: **o prazo de retenção é o limite do time travel**. No Athena: `vacuum_max_snapshot_age_seconds` (padrão 5 dias) e `vacuum_min_snapshots_to_keep` (padrão 1); só roda quando alguém executa. Sem `s3:DeleteObject`, o comando "dá certo" mas não apaga nada | Descartar listas antigas do arquivo morto e os carros que só elas citavam | 1 |
+| **Arquivo órfão (Iceberg)** | Arquivo de dados que nenhuma versão vigente usa mais: sobra de delete + append ou de commit que falhou. Só o `VACUUM` o apaga, e só depois da retenção. Medido: a `int` de dev tinha 11,87 GB no S3 para 8,74 GB vivos | — | 3 |
 
 ---
 
@@ -333,6 +357,13 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **`dbt docs`** | `generate` lê o projeto e o catálogo; `serve` abre um site com a documentação e o grafo de linhagem dos models. Documentação como código: gerada do que está no repositório | A exibição de linhagem do workspace, no nível dos models | 3 |
 | **Camadas do dbt (staging, intermediate, marts)** | `stg_`: espelha uma fonte, limpa (renomear, tipar), sem joins nem regra de negócio. `int_`: junta e deriva o que vários marts reusam (ex.: `is_valid`). `fct_`/`dim_`: o produto pronto, com grão claro. Nome `stg_<fonte>__<entidade>` | Consultas de preparo com "Habilitar carga" desligado → consultas que mesclam → tabelas que carregam no modelo. Quebra: no dbt cada camada é um objeto no banco, testado e reaproveitado | 3 |
 | **Marcar × usar a marca** | A regra de qualidade (`is_valid`, `invalid_reason`) é **calculada** uma vez na Silver (`int_`); a decisão de **usar** (excluir inválidas da contagem) acontece na Gold (`fct_`) | Coluna calculada `É Válida` na consulta × filtro dentro da medida | 3 |
+| **Validade em dois níveis** | **Corrida** (`is_valid`: aconteceu como registrado?) × **métrica** (`is_valid_wait_metric`, `is_valid_economic_metrics`: esta medida serve?). Uma corrida com espera negativa conta na demanda, mas fica fora do P90 | Carro que rodou (conta no km), mas com o tacógrafo com defeito (fica fora da média de velocidade) | 3 |
+| **Duplicata exata** | Duas linhas com todas as colunas iguais. A cópia ≥ 2 fica marcada (`invalid_reason = 'duplicata_exata'`), não apagada (ADR 0004). Produção: 17 em 651 milhões | Nota fiscal lançada duas vezes | 3 |
+| **Gate de volume (`volume_mensal`)** | ✍️ do Ronald: média **diária** de corridas válidas do mês × média dos até 3 meses anteriores. Aviso ±20%, erro ±30%. Diária, e não o total, porque os meses têm tamanhos diferentes | — | 3 |
+| **`on_schema_change`** | O que um model incremental faz quando o SELECT ganha ou perde coluna. `ignore` (padrão) descarta a coluna nova **em silêncio**; `fail` para com erro. Usamos `fail` | Power Query que ignora a coluna nova × que dá erro de coluna | 3 |
+| **`-- depends_on:`** | Comentário com `ref`/`source` que avisa o dbt de uma dependência que ele não enxerga (a macro lê o manifesto com SQL próprio). Faz o manifesto aparecer na linhagem do `dbt docs` | — | 3 |
+| **Seleção indireta de testes** | Ao selecionar ou excluir um model, o dbt leva junto os testes dele. `--exclude int_trips_enriched` tiraria também o gate. Solução: seleção explícita (`"int_trips_enriched,resource_type:test"`) | — | 3 |
+| **Tabelas temporárias do dbt-athena** | Sufixos `__dbt_tmp`, `__bkp`, `__ha`, `__tmp_not_partitioned`: existem só durante uma construção. A manutenção as ignora (o `__` sozinho não serve: as stagings têm `__` no nome) | — | 3 |
 
 ---
 

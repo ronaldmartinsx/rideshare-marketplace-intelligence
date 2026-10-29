@@ -263,7 +263,7 @@ O fluxo é este:
 | Seed | Conteúdo |
 |---|---|
 | `seed_operadoras.csv` | Código da licença → nome da operadora |
-| `seed_zonas_cbd.csv` | LocationIDs dentro da Congestion Relief Zone (⚠️ A VALIDAR: montar a partir da definição oficial da MTA, Manhattan ao sul da rua 60) |
+| `seed_zonas_cbd.csv` | LocationIDs dentro da Congestion Relief Zone. ✅ Montado em 20/10/2026 a partir da lista oficial da MTA (data.ny.gov, dataset `yfdc-w5jh`): 38 zonas, conferidas contra a cobrança da taxa (ADR 0007) |
 | `seed_feriados_us.csv` | Feriados federais e de NY no período |
 
 ### 3.5 Recorte temporal
@@ -398,15 +398,15 @@ flowchart TD
 1. **Chave surrogate.** Não existe chave natural de corrida. Gerar um hash (ex.: `dbt_utils.generate_surrogate_key`) a partir de licença, horários, zonas e valores.
    - Testar a unicidade.
    - Documentar em ADR a política para duplicatas exatas.
-2. **Qualidade se marca, não se apaga.** Colunas `is_valid` e `invalid_reason`. Regras iniciais (⚠️ calibrar com os dados reais):
-   - tarifa base ≤ 0;
-   - `trip_time` ≤ 0;
-   - `trip_miles` ≤ 0;
-   - `speed_mph` > 100;
-   - `wait_time_s` < 0 ou acima de um teto definido;
-   - zona inexistente.
+   - ✅ Decidido (ADR 0004): `corrida_id` = hash das 25 colunas + ordem da cópia. Duplicata exata (cópia ≥ 2) fica com `is_valid = false` e `invalid_reason = 'duplicata_exata'`. Produção: 17 duplicatas em 32 meses, todas da Uber.
+2. **Qualidade se marca, não se apaga.** Colunas `is_valid` e `invalid_reason`. ✅ Decidido na Fase 3 (✍️ do Ronald), em **dois níveis**:
+   - **Corrida** ("aconteceu como registrado?"): `is_valid = false` para `trip_miles` ≤ 0, `trip_time` ≤ 0, `speed_mph` > 100 e duplicata exata. Fica fora da Gold.
+   - **Métrica** ("esta medida serve para a análise?"): `is_valid_wait_metric = false` para espera < 0 ou ≥ 2 h; `is_valid_economic_metrics = false` para tarifa base ≤ 0. A corrida conta na demanda, mas fica fora da espera ou da economia.
+   - Zona desconhecida (264/265, ~4% das corridas, viagens reais): não invalida. Vira `is_zona_conhecida` na `dim_zona`.
+   - Produção (32 meses): 83.012 corridas inválidas (0,013%), sendo 82.785 por milhas ≤ 0.
 3. **Incremental idempotente por partição.**
    - A tabela Iceberg é particionada por **`source_month`**, e não pelo mês do embarque, porque corridas na virada do mês e dados ruins podem cair fora do mês do arquivo.
+   - ✅ Validado (ADR 0005): o teste "mês do embarque = `source_month`" passou nos 32 meses. A premissa virou teste com severidade erro.
    - Estratégia: `append` + `pre_hook` que apaga o `source_month` processado (ADR 0014). Reprocessar um mês substitui só aquele mês.
    - ✅ VERIFICADO (14/10/2026): o dbt-athena 1.11.1 não aceita `insert_overwrite` em Iceberg (só `append`, `microbatch` e `merge`).
 
@@ -416,11 +416,11 @@ flowchart TD
 
 | Modelo | Grão (uma linha por...) | Conteúdo principal |
 |---|---|---|
-| `dim_zona` | zona | borough, nome, `service_zone`, `is_cbd`, `is_aeroporto` |
+| `dim_zona` | zona | borough, nome, `service_zone`, `is_cbd`, `is_aeroporto`, `is_zona_conhecida`, `is_fora_de_nyc` |
 | `dim_operadora` | operadora | código da licença, nome |
-| `dim_tempo_hora` | hora | data, hora, dia da semana, fim de semana, feriado, variáveis de clima |
-| `fct_demanda_zona_hora` | hora × zona de origem × operadora | corridas, milhas, segundos de corrida, tarifa base, repasse, gorjetas, taxa CBD, corridas com destino no CBD, corridas compartilhadas |
-| `fct_espera_histograma` | hora × zona × operadora × faixa de espera | corridas por faixa (ex.: 0–2, 2–4, 4–6, 6–10, 10–15, 15+ min). Permite **calcular percentis aproximados em qualquer nível de agregação** |
+| `dim_tempo_hora` | hora (local de NY) | data, hora, dia da semana, tipo de dia (útil / fim de semana / feriado), variáveis de clima, `hora_troca_horario_verao` |
+| `fct_demanda_zona_hora` | hora × zona de origem × operadora | corridas, milhas, segundos de corrida, tarifa base, repasse, gorjetas, taxa CBD, corridas com destino no CBD, corridas compartilhadas. Economia só de corridas com tarifa válida |
+| `fct_espera_histograma` | mês × hora do dia × tipo de dia × zona de origem × operadora × faixa de espera (**mudou na Fase 3, ADR 0006**) | corridas por faixa, em 18 faixas (1 min até 15, 15–20, 20–30, 30+), com início e fim da faixa. Permite **calcular percentis aproximados em qualquer nível de agregação** (P90 8,06 × 8,05 real). ~435 mil linhas/mês |
 | `fct_od_diario` | dia × zona de origem × zona de destino × operadora | corridas, tarifa base, milhas |
 | `ml_forecast_demanda` | hora-alvo × zona × execução | previsão, intervalo, versão do modelo |
 | `ml_backtest_metricas` | execução × janela | WAPE do modelo e do baseline |
@@ -438,7 +438,9 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 |---|---|---|
 | `tlc_ingest` | Diário | **Guiada pelo manifesto** (decisão D1): faz o HEAD de **todos os meses do recorte** (D2; mudou de "últimos 3 meses" porque a TLC republica arquivos antigos e o HEAD custa < 1 KB), decide por mês (baixar, reprocessar, ignorar, aguardar, erro), ingere até 3 meses em paralelo, valida o contrato, grava o manifesto por último e publica o Asset `bronze_tlc` se houver versão nova aceita. O histórico (backfill) passa pelo mesmo código |
 | `weather_ingest` | Asset `bronze_tlc` | Para cada mês com TLC vigente, pede o clima (UTC) e compara o SHA-256 do JSON canônico com a última versão; grava na Bronze só o que mudou |
-| `dbt_build` | Assets da Bronze | Roda via **Cosmos**: `dbt source freshness`, depois os modelos e os testes da Silver, o **gate de qualidade** (Seção 8) e por fim a Gold. Se o gate falhar, a Gold não é atualizada |
+| `dbt_build_prod` (e `dbt_build_dev`, só manual) | Assets da Bronze (TLC ou clima) | Seeds e `dbt source freshness` (só alarme). Depois decide mês a mês, comparando o manifesto com o **registro de construção** (`controle.dbt_meses_construidos`), pela regra de pendência (ADR 0016), e dispara a `dbt_mes` de cada mês pendente, um por vez, do mais antigo para o mais novo. Publica o Asset `gold_demanda` se algum mês foi construído. Dev é amostra: só meses já construídos em dev e os forçados (`forcar_meses`) |
+| `dbt_mes_prod` / `dbt_mes_dev` | Disparada pela `dbt_build` | Um mês (`source_month`), via **Cosmos**: uma task por model, com os testes logo depois (sem retry); o **gate de qualidade** (Seção 8) antes da Gold; reconciliações Silver × Gold. Se tudo ficar verde, a última task grava o mês no registro de construção. Se o gate falhar, a Gold não é atualizada e o mês continua pendente |
+| `manutencao_iceberg` | Semanal (domingo, 6h UTC) | `VACUUM` em todas as tabelas Iceberg (Silver e Gold de prod e dev, retenção de 5 dias) e `OPTIMIZE` + `VACUUM` no banco `controle` (retenção de 90 dias). Descobre as tabelas no Glue |
 | `ml_forecast` | Asset `gold_demanda` | Treino, backtest, previsão e gravação em `ml_*` |
 | `llm_monthly_summary` | Após `ml_forecast` | Calcula os deltas do mês em SQL e gera a narrativa (ver 9.3) |
 
@@ -456,10 +458,10 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 
 | Camada | Testes |
 |---|---|
-| **Fonte** | `dbt source freshness` com limite de aviso de ~75 dias (coerente com o atraso de publicação). ⚠️ Calibrar |
-| **Silver** | `unique` e `not_null` na chave surrogate; `accepted_values` em flags e licenças; `relationships` com as zonas; percentual de inválidas por mês abaixo de um limite |
-| **Gate de volume** | Teste singular: as linhas válidas do mês ficam dentro de uma faixa esperada (ex.: ±25% da média dos 3 meses anteriores, ajustado por sazonalidade). Fora da faixa → falha → quarentena e alerta |
-| **Gold** | Integridade com as dimensões; soma das corridas na Gold igual às válidas da Silver (reconciliação) |
+| **Fonte** | `dbt source freshness` no manifesto (último `aceito` da TLC), não na Bronze (a projection exige o `ingest_ts`): aviso com 45 dias e erro com 75. ✅ Calibrado na Fase 3. Só alarma: não impede a construção |
+| **Silver** | `unique` e `not_null` na chave surrogate; `accepted_values` em flags e licenças; `relationships` com as zonas; mês do embarque = `source_month`; limites por mês (calibrados na Fase 3): corridas inválidas (aviso > 5 mil, erro > 50 mil), espera inválida (aviso > 400 mil, erro > 2 milhões), tarifa inválida (aviso > 40 mil, erro > 400 mil); clima com 24 horas por dia. Todos com `where` do mês (custo) |
+| **Gate de volume** | ✍️ Teste genérico do Ronald (`tests/generic/volume_mensal.sql`): a **média diária** de corridas válidas do mês comparada com a média dos até 3 meses anteriores existentes. Aviso com desvio > ±20%, erro com > ±30% (normal medido: −7,0% a +8,3%). Sem mês anterior, passa. Erro → a Gold não é atualizada (proteção), a task fica vermelha (alarme) e o mês fica pendente no registro |
+| **Gold** | Integridade com as dimensões; soma das corridas na Gold igual às válidas da Silver (reconciliação), nas três fatos. Produção: 651.163.831 = 651.163.831 nos 32 meses |
 
 ---
 
@@ -562,7 +564,7 @@ rideshare-marketplace-intelligence/
 
 ### 11.2 Ambientes
 
-- **dev:** bancos `dev_*`. Usa uma amostra de 1 a 2 meses.
+- **dev:** bancos `dev_*`. Usa uma amostra de meses: os que já estão no registro de construção de dev e os forçados na `dbt_build_dev` (hoje 2026-02 a 2026-05, os 4 meses consecutivos que exercitam o gate). A `dev_silver` ainda guarda 2024-07 e 2025-01 das etapas iniciais, fora do registro.
 - **prod:** bancos sem prefixo. Período completo.
 - **Troca de ambiente:** via `target` do dbt e variáveis do Airflow.
 
@@ -575,8 +577,9 @@ rideshare-marketplace-intelligence/
 ### 11.4 Custo
 
 - **AWS Budget** com alerta de US$ 10/mês, criado **antes** de qualquer outro recurso.
-- **Workgroups do Athena** com limite de bytes por consulta.
+- **Workgroups do Athena** com limite de bytes por consulta: **3 GiB** desde a Fase 3 (era 1 GiB). O incremental copia o mês inteiro da tabela temporária para a final, e um mês da `int_trips_enriched` tem ~1,3 GB. Ler a Silver inteira por engano (~55 GB) continua barrado. Maior consulta do build de produção: 1,46 GiB.
 - Particionamento e modelos incrementais para que cada execução leia só o mês necessário.
+- **Medido na Fase 3 (28/10/2026):** build completo de produção (32 meses) = 2.683 consultas, 121,78 GiB lidos, **US$ 0,59** no Athena. Um mês novo custa ~US$ 0,02. Armazenamento: Bronze 14,7 GiB, Silver 58,7 GiB, Gold 1,2 GiB, dev 27,2 GiB (com arquivos antigos à espera do `VACUUM`), `controle` < 0,1 GiB. São ~102 GiB, cerca de **US$ 2,30/mês** a US$ 0,023/GB.
 - ⚠️ A VALIDAR: preços atuais do Athena e do S3 em us-east-1.
 
 ### 11.5 Segurança
@@ -774,7 +777,7 @@ rideshare-marketplace-intelligence/
 | R4 | Tipos de coluna diferentes entre arquivos da TLC | 1/2 | ✅ Mitigado na Fase 2: contrato de schema na ingestão (quarentena para tipo diferente). Evidência: 2024-01 a 2026-08 têm só 2 schemas (o CBD a partir de 2025-01); `PULocationID` era INT64 em 2019/2022 |
 | R5 | Fuso horário dos timestamps | 2 | ✅ Resolvido (ADR 0009): o dicionário não informa e o Parquet marca `isAdjustedToUTC = false`; o teste do horário de verão prova horário local de NY (2h de 09/03/2025: 85 corridas; 1h de 02/11/2025: 75.292) |
 | R6 | Códigos de licença das operadoras | 1 | Conferir no dicionário oficial |
-| R7 | Lista de zonas do CBD | 3 | Montar a partir da definição oficial da MTA; documentar a fonte |
+| R7 | Lista de zonas do CBD | 3 | ✅ Resolvido na Fase 3 (ADR 0007): lista oficial da MTA (38 zonas, dataset `yfdc-w5jh`), conferida contra a cobrança da taxa em jan/2025 e ago/2026 |
 | R8 | Versão do Airflow (2.x × 3.x) e compatibilidade com o Cosmos | 0 | ✅ Resolvido: Airflow 3.3 (Runtime 3.3-9, fixado no `Dockerfile`) + Cosmos 1.15.x |
 | R9 | Endpoint, limites e licença do Open-Meteo | 2 | ✅ Resolvido em 18/10/2026 (seção 3.3): archive API, 10.000 chamadas/dia não comerciais, CC BY 4.0 |
 | R10 | O forecast não vencer o baseline | 5 | Reportar com honestidade; isso também é resultado |
@@ -788,10 +791,10 @@ rideshare-marketplace-intelligence/
 | 0001 | AWS (S3 + Glue + Athena) como plataforma | Decidido |
 | 0002 | Iceberg como formato de tabela da Silver e da Gold | Decidido e validado (Fase 1; ADR escrito em 15/10/2026) |
 | 0003 | Bronze imutável e versionada por `ingest_ts` | Decidido e validado (Fase 2; ADR escrito em 18/10/2026) |
-| 0004 | Chave surrogate por hash e política de duplicatas | A decidir (Fase 3) |
-| 0005 | Partição da Silver por `source_month` | Decidido (validar na Fase 1) |
-| 0006 | Percentis de espera via histograma na Gold | Decidido (validar na Fase 3) |
-| 0007 | CBD definido por lista de zonas, e não pela taxa | Decidido |
+| 0004 | Chave surrogate por hash e política de duplicatas | Decidido e validado (Fase 3): hash das 25 colunas + ordem; duplicata exata marcada |
+| 0005 | Partição da Silver por `source_month` | Decidido e validado (Fase 3: premissa testada nos 32 meses; vale também para a Gold) |
+| 0006 | Percentis de espera via histograma na Gold | Decidido e validado (Fase 3): 18 faixas; grão por hora do dia e tipo de dia (muda a spec) |
+| 0007 | CBD definido por lista de zonas, e não pela taxa | Decidido e validado (Fase 3) |
 | 0008 | Airflow local (Astro) em vez de serviço gerenciado, e a identidade dele na AWS | Decidido (ADR escrito na Fase 2, com a credencial D8) |
 | 0009 | Fuso horário: corridas no horário local de NY; momentos de máquina e clima em UTC | Decidido (Fase 2) |
 | 0010 | Interface do agente (CLI × Streamlit) | Decidido: Streamlit (antecipado em 15/10/2026; o Power BI segue como dashboard de negócio). Escrever o ADR na Fase 6 |
@@ -800,6 +803,7 @@ rideshare-marketplace-intelligence/
 | 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado nas Fases 1 e 2: banco `controle` e ambiente de teste) |
 | 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
 | 0015 | Leitura da Bronze por partition projection, com `ingest_ts` obrigatório na consulta | Decidido e validado (Fase 2) |
+| 0016 | Registro de construção do dbt e regra de pendência por mês (substitui a comparação manifesto × Silver) | Decidido e validado (Fase 3) |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 
