@@ -3,7 +3,7 @@
 ## Contexto
 Projeto de portfólio de engenharia de dados (AWS S3 + Glue + Athena/Iceberg, dbt, Airflow, Power BI, IA).
 Especificação completa: docs/PROJECT_SPEC.md. Antes de cada fase, leia a Seção 1 e a fase atual na Seção 12.
-Fase atual: 3  ← atualizar ao avançar
+Fase atual: 4  ← atualizar ao avançar
 
 ## Objetivo duplo (inegociável)
 1. Construir o sistema com qualidade de mercado.
