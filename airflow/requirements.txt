@@ -8,3 +8,7 @@ apache-airflow-providers-amazon==9.38.0
 
 # Lê só o rodapé do Parquet (schema e número de linhas) para o contrato de schema.
 pyarrow==26.0.0
+
+# Roda o projeto dbt como tasks do Airflow, um model por task (Fase 3, decisão F5).
+# Testado com o Airflow 3.3 (spec, risco R8). O dbt em si NÃO entra aqui: ele tem ambiente próprio (Dockerfile).
+astronomer-cosmos==1.15.1

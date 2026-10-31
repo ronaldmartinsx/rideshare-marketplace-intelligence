@@ -1,0 +1,6 @@
+# Pacotes do dbt: macros prontas, instaladas com `dbt deps` (Fase 3).
+# Versão fixada, como o resto do projeto. O dbt grava a versão resolvida em package-lock.yml.
+packages:
+  # generate_surrogate_key (chave da corrida, decisão F2) e testes extras
+  - package: dbt-labs/dbt_utils
+    version: 1.4.1

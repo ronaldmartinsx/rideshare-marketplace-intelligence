@@ -1,0 +1,119 @@
+version: 2
+
+# Testes da Silver: parte do GATE de qualidade (Aula 3 da Fase 3). Um teste "error" que falha faz
+# o dbt pular a Gold (proteção) e deixa a task vermelha no Airflow (alarme).
+#
+# Todos os testes olham SÓ o mês processado (where com source_month): no Athena o teste também
+# custa por dado lido, e reler os 32 meses a cada build seria caro e lento.
+#
+# Limites de warn_if / error_if calibrados em 21/10/2026 com 2024-07, 2025-01 e 2026-05 (dev):
+# o maior valor visto de cada medida está no comentário ao lado.
+
+models:
+  - name: int_trips_enriched
+    description: >
+      Corridas da Silver enriquecidas: chave surrogate, colunas derivadas e as marcas de qualidade
+      em dois níveis (regras do Ronald, Fase 3). Corrida: is_valid / invalid_reason ("aconteceu como
+      registrado?"). Métrica: is_valid_wait_metric e is_valid_economic_metrics ("esta medida serve
+      para a análise?"). Uma corrida pode valer para a demanda e não para a espera.
+    data_tests:
+      # Premissa da Gold incremental (F1): todas as corridas do arquivo embarcaram no mês do arquivo.
+      # Verdadeira em jan/2025; este teste a confere em todo mês, e falha alto se um dia não valer.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "date_format(pickup_datetime, '%Y-%m') = source_month"
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+      # Corridas inválidas (nível corrida). Maior visto: 2.610 (0,013%).
+      - dbt_utils.expression_is_true:
+          name: int_trips_enriched_corridas_invalidas
+          arguments:
+            expression: "is_valid"
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+            warn_if: ">5000"
+            error_if: ">50000"
+
+      # Corridas fora da métrica de espera. Maior visto: 275.564 (1,25%).
+      - dbt_utils.expression_is_true:
+          name: int_trips_enriched_espera_fora_da_metrica
+          arguments:
+            expression: "is_valid_wait_metric"
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+            warn_if: ">400000"
+            error_if: ">2000000"
+
+      # Corridas fora das métricas econômicas (tarifa <= 0). Maior visto: 17.204.
+      - dbt_utils.expression_is_true:
+          name: int_trips_enriched_tarifa_fora_da_metrica
+          arguments:
+            expression: "is_valid_economic_metrics"
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+            warn_if: ">40000"
+            error_if: ">400000"
+
+      # ✍️ Gate de volume do Ronald (tests/generic/volume_mensal.sql): média diária de corridas válidas
+      # contra os até 3 meses anteriores. Normal visto em 32 meses: de -7,0% a +8,3%.
+      - volume_mensal:
+          name: gate_volume_mensal_aviso
+          arguments:
+            limite: 0.2
+          config:
+            severity: warn
+      - volume_mensal:
+          name: gate_volume_mensal
+          arguments:
+            limite: 0.3
+          config:
+            severity: error
+
+    columns:
+      - name: corrida_id
+        description: "Hash das 25 colunas + ordem da duplicata exata (ADR 0004). Único em todo mês."
+        data_tests:
+          - unique:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+          - not_null:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+      - name: hvfhs_license_num
+        description: "Licença da operadora. Uma licença nova (operadora nova) falha o teste."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('seed_operadoras')
+                field: licenca
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+      - name: pulocationid
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_tlc__zones')
+                field: location_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+      - name: dolocationid
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_tlc__zones')
+                field: location_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+      - name: invalid_reason
+        description: "Motivo da invalidez (nível corrida); nulo quando a corrida é válida."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['duplicata_exata', 'milhas_insuficientes', 'tempo_corrida_insuficiente', 'velocidade_impossivel']
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"

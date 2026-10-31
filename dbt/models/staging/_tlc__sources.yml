@@ -13,6 +13,17 @@ sources:
           Partition projection com ingest_ts "injected": toda consulta precisa informar a versão,
           que vem de controle.manifesto_vigente (macro ingest_ts_vigente).
 
+  - name: open_meteo
+    description: "Clima horário do Open-Meteo na Bronze (JSON canônico, um objeto por arquivo, em UTC). Licença CC BY 4.0."
+    schema: bronze
+    tables:
+      - name: weather
+        identifier: open_meteo
+        description: >
+          Um arquivo por mês: o mês inteiro + o dia 1 seguinte, em UTC (decisão W3 da Fase 2).
+          As listas horárias ficam em arrays dentro da coluna hourly. Mesma projection da TLC:
+          ingest_ts obrigatório na consulta (macro ingest_ts_vigente).
+
   - name: controle
     description: "Tabelas de controle do pipeline, gravadas pelas DAGs de ingestão do Airflow (Fase 2)."
     schema: controle
@@ -21,3 +32,16 @@ sources:
         description: >
           View sobre controle.ingestion_manifest: a versão aceita mais recente de cada fonte e mês.
           É daqui que a Silver tira o ingest_ts que precisa escrever no SQL.
+
+      - name: ingestion_manifest
+        description: >
+          O livro de registro da ingestão (só de acréscimo). Usado aqui para o source freshness da TLC:
+          a Bronze não serve, porque a projection exige o ingest_ts na consulta (Aula 3 da Fase 3).
+        config:
+          # Quando chegou a última versão NOVA aceita da TLC (registrado_em, em UTC).
+          # A TLC publica todo mês: mais de 45 dias sem versão nova já é anormal (decisão F12).
+          loaded_at_field: registrado_em
+          freshness:
+            warn_after: {count: 45, period: day}
+            error_after: {count: 75, period: day}
+            filter: "source = 'tlc_hvfhv' and status = 'aceito'"

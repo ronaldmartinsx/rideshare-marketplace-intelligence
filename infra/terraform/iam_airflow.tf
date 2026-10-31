@@ -83,6 +83,16 @@ resource "aws_iam_policy" "airflow" {
         ]
         Resource = [aws_athena_workgroup.rideshare.arn]
       },
+      {
+        # Metadados do catálogo que o dbt-athena lê pela API do Athena (somente leitura; Fase 3, etapa 8)
+        Sid    = "AthenaMetadadosDoCatalogo"
+        Effect = "Allow"
+        Action = [
+          "athena:GetDataCatalog",
+          "athena:ListTableMetadata",
+        ]
+        Resource = ["arn:aws:athena:${local.regiao}:${local.conta_id}:datacatalog/AwsDataCatalog"]
+      },
 
       # ---------- Glue: só os 6 bancos do projeto ----------
       {
@@ -101,6 +111,11 @@ resource "aws_iam_policy" "airflow" {
           "glue:GetPartitions",
           "glue:BatchCreatePartition",
           "glue:BatchDeletePartition",
+          # O dbt-athena consulta e limpa as versões das tabelas que reconstrói (Fase 3, etapa 8)
+          "glue:GetTableVersions",
+          "glue:GetTableVersion",
+          "glue:DeleteTableVersion",
+          "glue:BatchDeleteTableVersion",
         ]
         Resource = concat([local.glue_catalogo], local.glue_bancos, local.glue_tabelas)
       },

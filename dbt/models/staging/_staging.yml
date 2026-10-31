@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_tlc__zones
+    description: "As 265 zonas de táxi da TLC, renomeadas e tipadas. Atributos de negócio ficam na dim_zona."
+    columns:
+      - name: location_id
+        data_tests: [unique, not_null]
+
+  - name: stg_open_meteo__weather_hourly
+    description: >
+      Clima hora a hora no horário local de Nova York (UTC convertido com as regras do horário de verão).
+      Na hora repetida de novembro, as duas horas UTC viram uma linha: média da temperatura e do vento,
+      soma da chuva e da neve (qtd_horas_utc = 2). A 2h do domingo da troca em março não existe.
+      Teste singular: tests/clima_24_horas_por_dia.sql.
+    columns:
+      - name: hora_local
+        data_tests:
+          - unique:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+          - not_null:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: qtd_horas_utc
+        description: "Quantas horas UTC formam a hora local: 2 só na hora repetida de novembro."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2]
+                quote: false
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"

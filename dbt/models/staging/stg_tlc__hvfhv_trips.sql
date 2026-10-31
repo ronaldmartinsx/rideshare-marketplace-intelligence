@@ -8,6 +8,10 @@
 }}
 
 
+-- A macro ingest_ts_vigente consulta o manifesto na hora de rodar, e o dbt não enxerga isso ao
+-- montar o grafo. Esta linha declara a dependência, para a linhagem (dbt docs) mostrá-la:
+-- depends_on: {{ source('controle', 'manifesto_vigente') }}
+
 {% set mes_referencia = var('source_month', '2025-01') %}
 {% set ano, mes = mes_referencia.split('-') %}
 
