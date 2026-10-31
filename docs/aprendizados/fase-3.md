@@ -1,12 +1,12 @@
 # Fase 3: Silver e Gold — registro de aprendizado
 
-- **Período:** 19/10/2026 a 28/10/2026 (gate de domínio pendente)
+- **Período:** 19/10/2026 a 31/10/2026
 - **Objetivo:** modelos completos, testados e com o gate de qualidade.
 - **Resultado:** "pronto quando" cumprido:
   - a reconciliação Silver × Gold bate nos 32 meses de produção (651.163.831 = 651.163.831);
   - o gate barrou um mês adulterado pela CLI (−49,5%) e pelo Airflow (+101,9%).
 
-  Produção construída pelo Airflow em ~3h20 por US$ 0,59 ([relatório de validação](../validacao/fase-3.md)).
+  Produção construída pelo Airflow em ~3h20 por US$ 0,59 ([relatório de validação](../validacao/fase-3.md)). Gate de domínio aprovado, com quatro reforços (seção 5).
 
 ---
 
@@ -137,7 +137,62 @@
 
 ## 5. Gate de domínio
 
-*A preencher no item 11 da etapa 11.*
+Formato híbrido (o mesmo das Fases 1 e 2), em 30 e 31/10/2026.
+
+### Explicação com as próprias palavras (resumo da avaliação)
+
+| Item | Avaliação |
+|---|---|
+| Camadas e Kimball | Intermediate e Gold certos; definição de grão certa. Impreciso: "staging preserva o bruto" (é a Bronze), "Gold cria visualizações" (entrega tabelas com grão), "grão maior = mais detalhe" (é "mais fino"). Faltou fato × dimensão |
+| Chave surrogate | Definição certa. Faltou o hash, as 25 colunas e a ordem da cópia (retomado na mini-checagem) |
+| Incremental e idempotência | Mecanismo certo (apaga a partição e reinsere) e o motivo de custo. **Errado:** `source_month` por "volume recomendado pelo Athena" (o motivo é arquivo = versão = partição = registro) |
+| Testes e gate | Definições certas, limites certos. Faltou o que o gate faz no pipeline (Gold em SKIP, vermelho, mês pendente) e a referência dos 3 meses |
+| `source freshness` | Limites e local certos. Faltou por que no manifesto (projection) e que só alarma |
+| Jinja, macros e `meta` | Definições certas; `meta` vago. **Errado:** o exemplo da macro (confundiu a `ingest_ts_vigente` com o `ingest_ts` fixo da ingestão) |
+| Percentil e histograma | **Não lembrou.** Aula refeita com outra analogia (idade da frota em duas garagens: mediana real 11,5; média 7,5; ponderada 9,7; histograma 12). Na checagem seguinte, acertou por que a Gold guarda contagens |
+| Cosmos | Uma task por model e o ganho de diagnóstico, certos. Faltou o retry por partes e os testes logo depois de cada model |
+| Registro de construção | Certo no "controla o que foi construído". **Errado:** "manifesto × Silver não faz sentido" (era o plano F5; falha porque a `int` é gravada mesmo com a Gold barrada) |
+
+### Autoavaliação (quiz)
+
+| # | Tipo | Resultado |
+|---|---|---|
+| 1 | Conceitual: fato × dimensão e grão da demanda | ⚠️ Definições certas; faltaram os exemplos e o grão |
+| 2 | Conceitual: idempotência e mecanismo | ✅ |
+| 3 | Aplicada: republicação de 2025-03, da Bronze ao registro | ✅ |
+| 4 | Aplicada: mudança na regra `is_valid` e o próximo run | ✅ ("nada"; reconstruir com `forcar_meses`) |
+| 5 | Diagnóstico: gate −35% em 2026-09 | ⚠️ Gold e registro certos; faltou que a Silver já tem o mês e a segunda hipótese |
+
+**Pergunta de entrevista:** "Como garante que um mês ruim não chega ao dashboard e que o pipeline se recupera sozinho?"
+- Boa estrutura em camadas, e o gate descrito com a referência certa.
+- **Errado:** o contrato verificado "na staging" (é na ingestão, com quarentena).
+- Faltaram a recuperação pelo registro de construção e a evidência medida.
+- Resposta-modelo entregue.
+
+**Mini-checagem:**
+
+| Item | Resultado |
+|---|---|
+| A: Bronze × ingestão × staging | ✅ |
+| B1: motivo do `source_month` | ✅ |
+| B2: 25 colunas + ordem da cópia | ❌ (entendeu "ordem das colunas" e SHA-256). Reexplicado com notas fiscais duplicadas. Na checagem final: ✅ 5 colunas colidem; ✅ sem a ordem, as 17 cópias repetiriam a chave e o `unique` falharia; ⚠️ disse que as cópias são "filtradas na intermediária" (são **marcadas** lá e filtradas na Gold) |
+| C1: macro `ingest_ts_vigente` | ✅ |
+| C2: por que não olhar a Silver | ✅ |
+
+**Resultado:** ✅ Passou. Os pontos errados na primeira explicação foram acertados na mini-checagem, e o percentil foi refeito e acertado.
+
+**Reforços para as próximas fases:**
+1. **Quem faz o quê na esteira:**
+   - ingestão: contrato e quarentena;
+   - Bronze: preserva;
+   - staging: lê a versão vigente e tipa;
+   - `int`: marca;
+   - Gold: usa a marca.
+
+   A confusão entre essas camadas apareceu três vezes nesta fase.
+2. **Fechar com evidência medida.** É o mesmo reforço da Fase 2, ainda ausente na entrevista.
+3. **Marcar, não apagar:** a duplicata é marcada na `int`, não removida.
+4. **P90 pelo histograma = acumular até 90% e interpolar.** Volta na Fase 4, na medida DAX que é ✍️ do Ronald.
 
 ---
 
