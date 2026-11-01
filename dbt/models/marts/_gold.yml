@@ -35,6 +35,19 @@ models:
         description: "Código da licença (HV0002 a HV0005), o mesmo de hvfhs_license_num."
         data_tests: [unique, not_null]
 
+  - name: dim_faixa_espera
+    description: >
+      Uma linha por faixa de espera do histograma (18): limites em minutos e um rótulo para o eixo dos
+      gráficos ("0–1 min" ... "30+ min"). Ordene o rótulo pelo faixa_id no Power BI.
+    meta:
+      grao: "faixa de espera"
+    columns:
+      - name: faixa_id
+        description: "0 a 14: faixas de 1 minuto; 15: 15–20 min; 16: 20–30 min; 17: 30 min ou mais."
+        data_tests: [unique, not_null]
+      - name: faixa_fim_min
+        description: "Nulo só na faixa 17 (30+): sem fim, não dá para interpolar dentro dela."
+
   - name: dim_tempo_hora
     description: >
       Uma linha por hora LOCAL de Nova York, de 2024-01-01 a 2026-12-31: calendário, feriados federais,
@@ -57,6 +70,43 @@ models:
           'inexistente' (2º domingo de março, 2h: o relógio pula), 'repetida' (1º domingo de novembro,
           1h: soma o movimento de duas horas reais) ou nulo. Marque essas horas em análises por hora e
           no modelo de previsão (Fase 5).
+      - name: periodo_id
+        description: "Chave do período do histograma (mês|hora do dia|tipo de dia, ex.: 2025-03|18|util)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_periodo_espera')
+                field: periodo_id
+
+  - name: dim_mes
+    description: >
+      Uma linha por mês (2024 a 2026). Topo da hierarquia de tempo no Power BI: filtra a
+      dim_periodo_espera (e por ela a dim_tempo_hora) e a fct_od_mensal.
+    meta:
+      grao: "mês"
+    columns:
+      - name: ano_mes
+        description: "AAAA-MM, o mesmo formato do source_month."
+        data_tests: [unique, not_null]
+
+  - name: dim_periodo_espera
+    description: >
+      Dimensão encolhida (shrunken) da dim_tempo_hora, no grão do histograma de espera: mês × hora do dia
+      × tipo de dia. Filtra a fct_espera_histograma direto e a fct_demanda_zona_hora pela dim_tempo_hora.
+      Use as segmentações de período DESTA tabela nas páginas com o P90; data e hora exatas não existem
+      no histograma (ADR 0006).
+    meta:
+      grao: "mês × hora do dia × tipo de dia"
+    columns:
+      - name: periodo_id
+        data_tests: [unique, not_null]
+      - name: ano_mes
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_mes')
+                field: ano_mes
 
   - name: fct_demanda_zona_hora
     description: >
@@ -146,13 +196,25 @@ models:
           - not_null:
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
-      - name: faixa_id
-        description: "0 a 14: faixas de 1 minuto; 15: 15–20 min; 16: 20–30 min; 17: 30 min ou mais."
+      - name: periodo_id
+        description: "Chave da dim_periodo_espera (mês|hora do dia|tipo de dia). Liga o histograma ao tempo no Power BI."
         data_tests:
-          - accepted_values:
+          - not_null:
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+          - relationships:
               arguments:
-                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-                quote: false
+                to: ref('dim_periodo_espera')
+                field: periodo_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: faixa_id
+        description: "Faixa de espera; limites e rótulo na dim_faixa_espera."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_faixa_espera')
+                field: faixa_id
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
       - name: zona_origem_id
@@ -215,5 +277,63 @@ models:
               arguments:
                 to: ref('dim_operadora')
                 field: operadora_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+  - name: fct_od_mensal
+    description: >
+      Fluxos de origem-destino por mês × zona de origem × zona de destino × operadora, somados da
+      fct_od_diario (Fase 4, D2). É a tabela de origem-destino do Power BI: a diária fica no Athena.
+      O corte diário do antes × depois da taxa do CBD (05/01/2025) vem da fct_demanda_zona_hora.
+    meta:
+      grao: "mês × zona de origem × zona de destino × operadora"
+      metricas:
+        corridas_validas:
+          formula: "sum(qtd_corridas)"
+        corridas_entrando_no_cbd:
+          formula: "sum(qtd_corridas) com dim_zona (papel destino) is_cbd e dim_zona (papel origem) não is_cbd"
+          cuidado: "Destino pela lista de zonas da MTA (ADR 0007). jan/2025 mistura 4 dias antes da taxa."
+        receita_por_milha:
+          formula: "sum(tarifa_base_total) / sum(milhas_tarifa_valida_total)"
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['zona_origem_id', 'zona_destino_id', 'licenca_operadora']
+          config:
+            where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+    columns:
+      - name: zona_origem_id
+        description: "Papel 'origem' da dim_zona."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: zona_destino_id
+        description: "Papel 'destino' da dim_zona (relacionamento inativo no Power BI)."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: licenca_operadora
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operadora')
+                field: operadora_id
+              config:
+                where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+      - name: source_month
+        description: "Mês (AAAA-MM). Liga a fato à dim_mes no Power BI."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_mes')
+                field: ano_mes
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
