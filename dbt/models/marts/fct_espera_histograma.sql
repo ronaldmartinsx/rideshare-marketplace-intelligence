@@ -1,15 +1,9 @@
-{#
-  on_schema_change temporário (Fase 4, D1): a coluna periodo_id é nova. "append_new_columns" a ADICIONA
-  à tabela (ALTER TABLE ADD COLUMNS) em vez de parar o build; a reconstrução dos 32 meses preenche os
-  meses antigos. Depois dela, volta ao padrão do projeto (fail).
-#}
 {{
     config(
         materialized         = 'incremental',
         incremental_strategy = 'append',
         partitioned_by       = ['source_month'],
-        pre_hook             = "{% if is_incremental() %} delete from {{ this }} where source_month = '{{ var('source_month', '2025-01') }}' {% endif %}",
-        on_schema_change     = 'append_new_columns'
+        pre_hook             = "{% if is_incremental() %} delete from {{ this }} where source_month = '{{ var('source_month', '2025-01') }}' {% endif %}"
     )
 }}
 
