@@ -404,6 +404,7 @@ flowchart TD
    - **Métrica** ("esta medida serve para a análise?"): `is_valid_wait_metric = false` para espera < 0 ou ≥ 2 h; `is_valid_economic_metrics = false` para tarifa base ≤ 0. A corrida conta na demanda, mas fica fora da espera ou da economia.
    - Zona desconhecida (264/265, ~4% das corridas, viagens reais): não invalida. Vira `is_zona_conhecida` na `dim_zona`.
    - Produção (32 meses): 83.012 corridas inválidas (0,013%), sendo 82.785 por milhas ≤ 0.
+   - Tarifa ≤ 0, investigada por operadora na Fase 4: são dois fenômenos. **Lyft:** tarifa zerada com repasse normal ao motorista (média US$ 19,94, 100% com repasse) concentrada em poucos dias (ago/2025: 183.494 corridas, 99,99% entre 16 e 18/08); inferência: falha de registro da tarifa. **Uber:** zeros e negativos com repasse quase nulo, em todos os meses e crescendo em 2026. A regra de nível métrica **foi mantida**: nos dois casos a tarifa não mede a corrida. A página de economia mostra o "% tarifa inválida" ao lado das medidas (validação da Fase 4, seção 1).
 3. **Incremental idempotente por partição.**
    - A tabela Iceberg é particionada por **`source_month`**, e não pelo mês do embarque, porque corridas na virada do mês e dados ruins podem cair fora do mês do arquivo.
    - ✅ Validado (ADR 0005): o teste "mês do embarque = `source_month`" passou nos 32 meses. A premissa virou teste com severidade erro.
