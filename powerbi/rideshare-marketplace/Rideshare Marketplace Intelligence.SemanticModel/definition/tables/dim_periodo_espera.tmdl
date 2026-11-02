@@ -1,3 +1,4 @@
+/// Mês × hora do dia × tipo de dia: o grão do histograma de espera. Fica entre a dim_mes e a dim_tempo_hora e filtra a demanda e o histograma ao mesmo tempo. Nas páginas com P90, use as segmentações DESTA tabela (decisão D1).
 table dim_periodo_espera
 	lineageTag: 412a983c-2913-4372-8630-2b1f26605003
 

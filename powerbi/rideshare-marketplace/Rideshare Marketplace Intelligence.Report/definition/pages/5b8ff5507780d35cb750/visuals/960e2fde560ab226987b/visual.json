@@ -1,0 +1,336 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "960e2fde560ab226987b",
+  "position": {
+    "x": 162.06008583690988,
+    "y": 190.90128755364807,
+    "z": 0,
+    "height": 781.45922746781116,
+    "width": 1494.2489270386266,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Corridas"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Corridas",
+              "nativeQueryRef": "Corridas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Corridas com tarifa valida"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Corridas com tarifa valida",
+              "nativeQueryRef": "Corridas com tarifa valida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "% tarifa invalida"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.% tarifa invalida",
+              "nativeQueryRef": "% tarifa invalida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Milhas com tarifa valida"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Milhas com tarifa valida",
+              "nativeQueryRef": "Milhas com tarifa valida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Receita por milha"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Receita por milha",
+              "nativeQueryRef": "Receita por milha"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Repasse"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Repasse",
+              "nativeQueryRef": "Repasse"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Take rate"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Take rate",
+              "nativeQueryRef": "Take rate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Tarifa"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Tarifa",
+              "nativeQueryRef": "Tarifa"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Segundos tarifa valida"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Segundos tarifa valida",
+              "nativeQueryRef": "Segundos tarifa valida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Receita por minuto"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Receita por minuto",
+              "nativeQueryRef": "Receita por minuto"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Repasse por hora de corrida"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Repasse por hora de corrida",
+              "nativeQueryRef": "Repasse por hora de corrida"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "67b9dd70588d5b4537bb",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Corridas"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "7b701f40560a59c30e02",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Corridas com tarifa valida"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "aa1d990db485bda8e076",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "% tarifa invalida"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "15fd996b576dc83b3a4e",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Milhas com tarifa valida"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "9fc90ea73aa5ae15c400",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Receita por milha"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f6052e6fab9c042c387a",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Repasse"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "ecaa674528ea0cbc1672",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Take rate"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "72a805661059c42d4388",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Tarifa"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "c4f17835d61984ba3c3c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Segundos tarifa valida"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "4c90b305014dc00c343a",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Receita por minuto"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "1f49292a7eab787b61d9",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_demanda_zona_hora"
+              }
+            },
+            "Property": "Repasse por hora de corrida"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

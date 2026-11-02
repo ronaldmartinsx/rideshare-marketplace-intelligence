@@ -1,3 +1,4 @@
+/// Uma linha por mês (2024 a 2026). Topo da hierarquia de tempo: filtra as três fatos com o mesmo recorte.
 table dim_mes
 	lineageTag: 47e45969-5b79-42eb-b664-bce28f54a8d9
 

@@ -1,3 +1,4 @@
+/// Licenças HVFHS do dicionário da TLC: HV0003 = Uber, HV0005 = Lyft. HV0002 (Juno) e HV0004 (Via) estão inativas.
 table dim_operadora
 	lineageTag: b3096aa7-56d4-42e3-aa5d-ad739de620c7
 

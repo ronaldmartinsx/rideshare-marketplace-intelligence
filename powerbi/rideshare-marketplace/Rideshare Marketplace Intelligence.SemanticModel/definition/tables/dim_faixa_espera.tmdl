@@ -1,3 +1,4 @@
+/// As 18 faixas de espera do histograma, em minutos: 0 a 14 (1 min cada), 15–20, 20–30 e 30+. A faixa 30+ não tem fim e não interpola. O rótulo é ordenado pela faixa_id.
 table dim_faixa_espera
 	lineageTag: 18c59cf5-ce60-41b4-856b-ee8195368b80
 

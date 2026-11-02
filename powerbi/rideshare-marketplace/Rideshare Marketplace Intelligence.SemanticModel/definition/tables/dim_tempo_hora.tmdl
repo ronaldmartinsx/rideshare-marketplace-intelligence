@@ -1,3 +1,4 @@
+/// Uma linha por hora local de Nova York (2024 a 2026), com feriado, tipo de dia e clima horário. Filtra só a fct_demanda_zona_hora. Para filtrar também o histograma, use a dim_periodo_espera (hora do dia, tipo de dia) e a dim_mes.
 table dim_tempo_hora
 	lineageTag: 2f16101e-753a-48f3-b44d-9379bddae773
 

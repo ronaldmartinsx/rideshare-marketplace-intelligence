@@ -11,7 +11,7 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 
 annotation PBI_QueryOrder = ["dim_mes","dim_operadora","dim_faixa_espera","dim_periodo_espera","dim_tempo_hora","dim_zona","fct_demanda_zona_hora","fct_espera_histograma","fct_od_mensal"]
 
-annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling"]
+annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling","TMDLView_Desktop"]
 
 ref table dim_mes
 ref table dim_operadora

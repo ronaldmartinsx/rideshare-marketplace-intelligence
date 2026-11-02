@@ -1,5 +1,86 @@
+/// Demanda por hora de embarque (hora local de Nova York) × zona de origem × operadora. Só corridas válidas. As somas econômicas (tarifa, repasse, milhas e segundos) usam só as corridas com tarifa válida (> 0). Fonte: gold.fct_demanda_zona_hora (dbt).
 table fct_demanda_zona_hora
 	lineageTag: 079a40e8-eefc-45e1-b8f3-45485aa20d1d
+
+	/// Corridas válidas (spec 2.5). Contrato: sum(qtd_corridas).
+	measure Corridas = SUM(fct_demanda_zona_hora[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Volume
+		lineageTag: 9ffa9551-2c05-432c-b67c-281e263e6986
+
+	/// Corridas válidas com tarifa base > 0. É a base de todas as métricas de economia.
+	measure 'Corridas com tarifa valida' = SUM(fct_demanda_zona_hora[qtd_corridas_tarifa_valida])
+		formatString: #,##0
+		displayFolder: Volume
+		lineageTag: fd2509a3-fba5-4650-9b98-6b219afe0cc0
+
+	/// Parcela das corridas válidas com tarifa ≤ 0, que ficam fora das métricas de economia (Fase 4, passo 1). Mostrar na página de economia.
+	measure '% tarifa invalida' = DIVIDE( [Corridas] - [Corridas com tarifa valida], [Corridas])
+		formatString: 0.00%
+		displayFolder: Economia
+		lineageTag: 7bb5660e-0e95-4249-88d1-fdf47dd2018d
+
+	/// (Tarifa − Repasse) / Tarifa. Razão das somas, nunca média de take rates. Só corridas com tarifa válida. Impostos, taxas, pedágios e gorjetas ficam fora (spec 2.5).
+	measure 'Take rate' = DIVIDE( [Tarifa] - [Repasse], [Tarifa])
+		formatString: 0.0%
+		displayFolder: Economia
+		lineageTag: 918afd29-ab09-4867-882f-4ae9241d43f5
+
+	/// Soma da tarifa base (base_passenger_fare) das corridas com tarifa válida. Medida base das métricas de economia.
+	measure Tarifa = SUM(fct_demanda_zona_hora[tarifa_base_total])
+		formatString: $#,##0
+		displayFolder: Base
+		lineageTag: abbc8a97-8001-4c6c-8e78-89236582c14b
+
+	/// Soma do repasse ao motorista (driver_pay) das corridas com tarifa válida. Exclui pedágios e gorjetas. Medida base.
+	measure Repasse = SUM(fct_demanda_zona_hora[repasse_motorista_total])
+		formatString: $#,##0
+		displayFolder: Base
+		lineageTag: 96db544b-27e0-4137-931f-1bb3d968f16a
+
+	/// Soma das milhas das corridas com tarifa válida. Medida base.
+	measure 'Milhas com tarifa valida' = SUM(fct_demanda_zona_hora[milhas_tarifa_valida_total])
+		formatString: #,##0.0
+		displayFolder: Base
+		lineageTag: d6856893-5105-468f-9c1f-e242d70491d8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Tarifa / milhas, nas mesmas corridas (tarifa válida).
+	measure 'Receita por milha' = DIVIDE([Tarifa], [Milhas com tarifa valida])
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: fcf4b0d8-128a-4b7e-97b7-da5fe25c4c0e
+
+	/// Tarifa / (segundos / 60), nas mesmas corridas (tarifa válida). Entrou no contrato em 02/11/2026.
+	measure 'Receita por minuto' =
+			
+			VAR numerador = [Tarifa]
+			VAR denominador = DIVIDE([Segundos tarifa valida], 60)
+			
+			RETURN
+			DIVIDE(numerador, denominador)
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: a2757cbc-8ae6-46d6-b8ac-ce27e1fd44f4
+
+	/// Soma do tempo de corrida, em segundos, das corridas com tarifa válida. Medida base.
+	measure 'Segundos tarifa valida' = SUM(fct_demanda_zona_hora[segundos_tarifa_valida_total])
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: f7b8b3f3-e782-4629-819b-66c32a50637b
+
+	/// Repasse / (segundos / 3600). NÃO é o ganho por hora do motorista: o dado não tem tempo ocioso nem identificador de motorista.
+	measure 'Repasse por hora de corrida' =
+			
+			VAR numerador = [Repasse]
+			VAR denominador = DIVIDE([Segundos tarifa valida], 3600)
+			
+			RETURN
+			DIVIDE(numerador, denominador)
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: 3b9a7d0e-09fa-44f4-bd62-2ddead75b440
 
 	column hora_embarque
 		dataType: dateTime
@@ -32,6 +113,7 @@ table fct_demanda_zona_hora
 
 	column qtd_corridas
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: ec7c880b-99af-4d00-b60e-a173cf26ac4b
 		summarizeBy: sum
@@ -101,6 +183,7 @@ table fct_demanda_zona_hora
 
 	column qtd_corridas_tarifa_valida
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: 42b9218a-78e8-4765-8d80-f4c335e1bd13
 		summarizeBy: sum
@@ -110,6 +193,7 @@ table fct_demanda_zona_hora
 
 	column tarifa_base_total
 		dataType: double
+		isHidden
 		formatString: $#,##0.00
 		lineageTag: d489d782-9e5b-4c43-978a-3bc90f95b1e7
 		summarizeBy: sum
@@ -121,6 +205,7 @@ table fct_demanda_zona_hora
 
 	column repasse_motorista_total
 		dataType: double
+		isHidden
 		formatString: $#,##0.00
 		lineageTag: 90eb7b19-9a1a-401e-9462-e1504f87bd33
 		summarizeBy: sum
@@ -132,6 +217,7 @@ table fct_demanda_zona_hora
 
 	column milhas_tarifa_valida_total
 		dataType: double
+		isHidden
 		formatString: #,##0.0
 		lineageTag: 3e1c96f5-c204-4ece-8cc6-8b4dc19f0b45
 		summarizeBy: sum
@@ -143,6 +229,7 @@ table fct_demanda_zona_hora
 
 	column segundos_tarifa_valida_total
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: 6e2d463c-8f92-4b0f-9b54-abd3f1b2df40
 		summarizeBy: sum

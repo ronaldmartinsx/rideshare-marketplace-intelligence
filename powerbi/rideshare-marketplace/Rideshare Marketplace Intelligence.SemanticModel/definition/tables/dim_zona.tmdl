@@ -1,3 +1,4 @@
+/// Zona de táxi da TLC (265) no papel de ORIGEM: filtra as três fatos pela zona de embarque. is_cbd marca as 38 zonas da Congestion Relief Zone (lista oficial da MTA, ADR 0007).
 table dim_zona
 	lineageTag: 99677487-7013-4bff-8982-dca518c63028
 

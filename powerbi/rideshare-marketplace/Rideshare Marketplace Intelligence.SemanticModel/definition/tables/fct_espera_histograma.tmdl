@@ -1,3 +1,4 @@
+/// Histograma do tempo de espera (pedido → embarque): mês × hora do dia × tipo de dia × zona de origem × operadora × faixa de espera. Só corridas com espera válida (0 a 2 h). P50 e P90 saem por interpolação entre as faixas; percentil nunca soma nem tira média (ADR 0006). Fonte: gold.fct_espera_histograma.
 table fct_espera_histograma
 	lineageTag: 73e266e0-8be5-4a0d-b60b-e2e27cfbc504
 

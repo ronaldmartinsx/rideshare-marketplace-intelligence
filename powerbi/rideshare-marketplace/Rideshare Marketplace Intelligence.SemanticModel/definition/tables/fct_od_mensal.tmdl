@@ -1,3 +1,4 @@
+/// Origem-destino por mês × zona de origem × zona de destino × operadora (soma da fct_od_diario, decisão D2). Base das corridas que entram no CBD. A origem vem da dim_zona e o destino, da dim_zona_destino. Fonte: gold.fct_od_mensal.
 table fct_od_mensal
 	lineageTag: 59385602-9b8f-419b-89d0-538dac752ed5
 
