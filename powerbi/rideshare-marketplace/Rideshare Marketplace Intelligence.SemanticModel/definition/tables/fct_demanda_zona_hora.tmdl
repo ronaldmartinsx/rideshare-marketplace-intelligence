@@ -198,6 +198,7 @@ table fct_demanda_zona_hora
 
 	column qtd_corridas_destino_cbd
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: 7695841f-1ce9-4949-9f80-4fa68bd46760
 		summarizeBy: sum

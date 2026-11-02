@@ -51,6 +51,7 @@ table fct_od_mensal
 
 	column qtd_corridas
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: da27d3dd-b13d-48f4-8bb7-c2f900bd29dd
 		summarizeBy: sum

@@ -2,6 +2,123 @@
 table fct_espera_histograma
 	lineageTag: 73e266e0-8be5-4a0d-b60b-e2e27cfbc504
 
+	/// Corridas válidas com espera válida (0 a 2 h), pelo histograma. Menor que [Corridas] da demanda: só entram as esperas válidas.
+	measure 'Corridas com espera valida' = SUM(fct_espera_histograma[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Espera
+		lineageTag: aeeb338a-a776-43f5-8964-d8d0c01b9ec3
+
+	/// Mediana do tempo de espera (pedido → embarque), em minutos, pelo histograma: acumula as faixas até 50% do recorte e interpola dentro da faixa (ADR 0006). Na faixa 30+ devolve 30 (piso: ≥ 30 min). Recorte sem corridas: vazio.
+	measure 'Espera P50 (min)' = ```
+			
+			VAR p = 0.5
+			VAR total = [Corridas com espera valida do recorte]
+			VAR alvo = p * total
+			VAR faixas =
+			    ADDCOLUMNS (
+			        ALL ( dim_faixa_espera ),
+			        "@qtd", [Corridas com espera valida],
+			        "@acum", [Corridas com espera valida acumulada]
+			    )
+			VAR faixa_alvo =
+			    MINX ( FILTER ( faixas, [@acum] >= alvo ), dim_faixa_espera[faixa_id] )
+			VAR linha = FILTER ( faixas, dim_faixa_espera[faixa_id] = faixa_alvo )
+			VAR inicio = MAXX ( linha, dim_faixa_espera[faixa_inicio_min] )
+			VAR fim = MAXX ( linha, dim_faixa_espera[faixa_fim_min] )
+			VAR qtd = MAXX ( linha, [@qtd] )
+			VAR acum_antes = MAXX ( linha, [@acum] ) - qtd
+			RETURN
+			    IF ( total > 0,
+			        IF ( faixa_alvo = 17, inicio,
+			            inicio + DIVIDE ( alvo - acum_antes, qtd ) * ( fim - inicio ) ) )
+			
+			```
+		formatString: #,##0.0
+		displayFolder: Espera
+		lineageTag: 70f9a6df-dd29-47a6-94df-284504004522
+
+	/// Corridas das faixas até a faixa atual (inclusive), no recorte. Usada pelo P50/P90.
+	measure 'Corridas com espera valida acumulada' = ```
+			
+			VAR faixa_contexto = MAX(dim_faixa_espera[faixa_id])
+			
+			RETURN
+			CALCULATE( 
+			    [Corridas com espera valida],
+			    FILTER(
+			        ALL(dim_faixa_espera),
+			        dim_faixa_espera[faixa_id] <= faixa_contexto
+			    )
+			)
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: ffe43855-0f43-43f4-95a4-2a990d143aed
+
+	/// Total do recorte sem o filtro da faixa de espera: o 100% do percentil.
+	measure 'Corridas com espera valida do recorte' = ```
+			CALCULATE( [Corridas com espera valida], REMOVEFILTERS(dim_faixa_espera) )
+			
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: e1f0cd11-3d07-437a-94da-4393f0f1758b
+
+	/// Corridas das faixas anteriores à faixa atual, no recorte. Auxiliar de conferência num visual por faixa.
+	measure 'Corridas com espera valida acumulada antes' = ```
+			
+			VAR faixa_contexto = MAX(dim_faixa_espera[faixa_id])
+			
+			RETURN
+			CALCULATE( 
+			    [Corridas com espera valida],
+			    FILTER(
+			        ALL(dim_faixa_espera),
+			        dim_faixa_espera[faixa_id] < faixa_contexto
+			    )
+			)
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 31c2d0bf-3ac3-4c44-8e89-879655f133f7
+
+	/// Acumulado até a faixa atual / total do recorte. Mostra onde o 50% e o 90% caem num visual por faixa.
+	measure '% corridas espera valida acumulado' = DIVIDE([Corridas com espera valida acumulada], [Corridas com espera valida do recorte])
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Base
+		lineageTag: 5fe3270e-7dad-4d7a-95f7-3996135a124a
+
+	/// P90 do tempo de espera, em minutos: 90% das corridas do recorte esperaram até este valor. Mesmo algoritmo do P50 com p = 0,9. Percentil não soma nem tira média entre recortes: sempre recalculado das faixas. Na faixa 30+ devolve 30 (piso).
+	measure 'Espera P90 (min)' = ```
+			
+			VAR p = 0.9
+			VAR total = [Corridas com espera valida do recorte]
+			VAR alvo = p * total
+			VAR faixas =
+			    ADDCOLUMNS (
+			        ALL ( dim_faixa_espera ),
+			        "@qtd", [Corridas com espera valida],
+			        "@acum", [Corridas com espera valida acumulada]
+			    )
+			VAR faixa_alvo =
+			    MINX ( FILTER ( faixas, [@acum] >= alvo ), dim_faixa_espera[faixa_id] )
+			VAR linha = FILTER ( faixas, dim_faixa_espera[faixa_id] = faixa_alvo )
+			VAR inicio = MAXX ( linha, dim_faixa_espera[faixa_inicio_min] )
+			VAR fim = MAXX ( linha, dim_faixa_espera[faixa_fim_min] )
+			VAR qtd = MAXX ( linha, [@qtd] )
+			VAR acum_antes = MAXX ( linha, [@acum] ) - qtd
+			RETURN
+			    IF ( total > 0,
+			        IF ( faixa_alvo = 17, inicio,
+			            inicio + DIVIDE ( alvo - acum_antes, qtd ) * ( fim - inicio ) ) )
+			
+			```
+		formatString: #,##0.0
+		displayFolder: Espera
+		lineageTag: e8cf1094-8cab-4c87-8b41-c247239c2978
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
 	column hora_do_dia
 		dataType: int64
 		isHidden
@@ -72,6 +189,7 @@ table fct_espera_histograma
 
 	column qtd_corridas
 		dataType: int64
+		isHidden
 		formatString: #,##0
 		lineageTag: 030d8726-40fa-496a-b97c-d3a9824cc3f5
 		summarizeBy: sum
