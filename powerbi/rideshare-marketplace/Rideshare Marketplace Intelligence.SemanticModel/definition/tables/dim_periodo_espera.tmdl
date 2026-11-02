@@ -1,0 +1,48 @@
+table dim_periodo_espera
+	lineageTag: 412a983c-2913-4372-8630-2b1f26605003
+
+	column periodo_id
+		dataType: string
+		isHidden
+		lineageTag: b6651b03-a4d2-42ec-9bd1-083dc09fac0e
+		summarizeBy: none
+		sourceColumn: periodo_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_mes
+		dataType: string
+		lineageTag: 73bc646f-9bee-4d88-afe9-c300990112b4
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column hora_do_dia
+		dataType: int64
+		formatString: 0
+		lineageTag: 089237ac-5aa7-45bd-840a-204c44472cbb
+		summarizeBy: none
+		sourceColumn: hora_do_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_dia
+		dataType: string
+		lineageTag: 63e8db33-1995-432d-a842-539f46bf044c
+		summarizeBy: none
+		sourceColumn: tipo_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_periodo_espera = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_periodo_espera_Table = gold_Schema{[Name="dim_periodo_espera",Kind="Table"]}[Data]
+				in
+				    dim_periodo_espera_Table
+

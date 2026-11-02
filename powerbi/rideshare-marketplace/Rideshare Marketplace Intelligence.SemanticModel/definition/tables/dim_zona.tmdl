@@ -1,0 +1,83 @@
+table dim_zona
+	lineageTag: 99677487-7013-4bff-8982-dca518c63028
+
+	column zona_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 5d2f57b8-ecbc-4822-b5ef-2c2fb119f165
+		summarizeBy: none
+		sourceColumn: zona_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column borough
+		dataType: string
+		lineageTag: 735198eb-56ad-4d41-9210-fd13fd1eea09
+		summarizeBy: none
+		sourceColumn: borough
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona
+		dataType: string
+		lineageTag: a2ae6c2f-f265-4237-b39f-26f2d0cd471a
+		summarizeBy: none
+		sourceColumn: zona
+
+		annotation SummarizationSetBy = Automatic
+
+	column service_zone
+		dataType: string
+		lineageTag: dd5e3d17-757c-469e-8212-78b204c15a7f
+		summarizeBy: none
+		sourceColumn: service_zone
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_cbd
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a0cdae0e-b4d8-4084-9554-f60eceb1abf8
+		summarizeBy: none
+		sourceColumn: is_cbd
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_aeroporto
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 9e68df16-ad79-43fe-8372-30bc30a2058f
+		summarizeBy: none
+		sourceColumn: is_aeroporto
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_zona_conhecida
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 91dccd15-ff20-4696-b489-570f0d0c3a39
+		summarizeBy: none
+		sourceColumn: is_zona_conhecida
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_fora_de_nyc
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a86af52a-f71f-4997-a03b-a70c3b828097
+		summarizeBy: none
+		sourceColumn: is_fora_de_nyc
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_zona = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_zona_Table = gold_Schema{[Name="dim_zona",Kind="Table"]}[Data]
+				in
+				    dim_zona_Table
+

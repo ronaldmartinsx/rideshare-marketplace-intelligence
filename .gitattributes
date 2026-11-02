@@ -1,0 +1,9 @@
+# PBIP (ADR 0011): texto guardado com LF no Git e entregue com CRLF na cópia
+# de trabalho, como o Power BI Desktop grava. Restrito a powerbi/ de propósito:
+# não renormaliza os seeds do dbt.
+powerbi/**/*.tmdl   text eol=crlf
+powerbi/**/*.json   text eol=crlf
+powerbi/**/*.pbip   text eol=crlf
+powerbi/**/*.pbir   text eol=crlf
+powerbi/**/*.pbism  text eol=crlf
+powerbi/**/.platform text eol=crlf

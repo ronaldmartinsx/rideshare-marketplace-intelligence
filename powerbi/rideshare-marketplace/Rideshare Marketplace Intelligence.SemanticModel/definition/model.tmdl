@@ -1,0 +1,28 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["dim_mes","dim_operadora","dim_faixa_espera","dim_periodo_espera","dim_tempo_hora","dim_zona","fct_demanda_zona_hora","fct_espera_histograma","fct_od_mensal"]
+
+annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling"]
+
+ref table dim_mes
+ref table dim_operadora
+ref table dim_faixa_espera
+ref table dim_periodo_espera
+ref table dim_tempo_hora
+ref table dim_zona
+ref table fct_demanda_zona_hora
+ref table fct_espera_histograma
+ref table fct_od_mensal
+ref table dim_zona_destino
+
+ref cultureInfo en-US
+

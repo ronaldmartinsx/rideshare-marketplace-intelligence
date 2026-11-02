@@ -1,0 +1,109 @@
+table fct_espera_histograma
+	lineageTag: 73e266e0-8be5-4a0d-b60b-e2e27cfbc504
+
+	column hora_do_dia
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9cb00cc8-8af5-418e-accd-93d09e1d9ba4
+		summarizeBy: none
+		sourceColumn: hora_do_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_dia
+		dataType: string
+		isHidden
+		lineageTag: 48fd6d5f-b7da-418c-926b-d3aa5e8f838a
+		summarizeBy: none
+		sourceColumn: tipo_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_origem_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: de22403f-11c3-41d5-aa43-799250f9aa55
+		summarizeBy: none
+		sourceColumn: zona_origem_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column licenca_operadora
+		dataType: string
+		isHidden
+		lineageTag: 1bf1417d-fc71-47ec-a2ce-4a7b4e843687
+		summarizeBy: none
+		sourceColumn: licenca_operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0780de60-e70c-4edf-abce-3a787eeefa95
+		summarizeBy: none
+		sourceColumn: faixa_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_inicio_min
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 66da9375-81c3-45e3-9bbd-29c252388462
+		summarizeBy: none
+		sourceColumn: faixa_inicio_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_fim_min
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 616b7a8d-80ed-40f5-a083-1df2aa46b7e3
+		summarizeBy: none
+		sourceColumn: faixa_fim_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 030d8726-40fa-496a-b97c-d3a9824cc3f5
+		summarizeBy: sum
+		sourceColumn: qtd_corridas
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_month
+		dataType: string
+		isHidden
+		lineageTag: 7136e279-3d08-4d83-a05a-68fb7b5601c3
+		summarizeBy: none
+		sourceColumn: source_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column periodo_id
+		dataType: string
+		isHidden
+		lineageTag: b106549b-5681-4724-a6b1-fbc528417d8a
+		summarizeBy: none
+		sourceColumn: periodo_id
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_espera_histograma = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    fct_espera_histograma_Table = gold_Schema{[Name="fct_espera_histograma",Kind="Table"]}[Data]
+				in
+				    fct_espera_histograma_Table
+

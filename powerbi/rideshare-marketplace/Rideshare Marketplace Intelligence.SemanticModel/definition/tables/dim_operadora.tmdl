@@ -1,0 +1,40 @@
+table dim_operadora
+	lineageTag: b3096aa7-56d4-42e3-aa5d-ad739de620c7
+
+	column operadora_id
+		dataType: string
+		isHidden
+		lineageTag: 2c863e0f-10ae-4fdc-981c-d1bb5d583325
+		summarizeBy: none
+		sourceColumn: operadora_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column operadora
+		dataType: string
+		lineageTag: b0176efd-8e1c-436b-8dfa-a5fa58ca0633
+		summarizeBy: none
+		sourceColumn: operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_ativa
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: e66fac60-140e-4b44-9f74-7c53e6c33be2
+		summarizeBy: none
+		sourceColumn: is_ativa
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_operadora = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_operadora_Table = gold_Schema{[Name="dim_operadora",Kind="Table"]}[Data]
+				in
+				    dim_operadora_Table
+

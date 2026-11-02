@@ -1,0 +1,172 @@
+table fct_demanda_zona_hora
+	lineageTag: 079a40e8-eefc-45e1-b8f3-45485aa20d1d
+
+	column hora_embarque
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 22d9bd09-2e6e-4c5c-9d8e-240792cda24e
+		summarizeBy: none
+		sourceColumn: hora_embarque
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_origem_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d5665ad2-5125-4c11-a1e7-4d839197f5f5
+		summarizeBy: none
+		sourceColumn: zona_origem_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column licenca_operadora
+		dataType: string
+		isHidden
+		lineageTag: 8a68003c-f744-4c77-8d6d-e41a2e497863
+		summarizeBy: none
+		sourceColumn: licenca_operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas
+		dataType: int64
+		formatString: #,##0
+		lineageTag: ec7c880b-99af-4d00-b60e-a173cf26ac4b
+		summarizeBy: sum
+		sourceColumn: qtd_corridas
+
+		annotation SummarizationSetBy = Automatic
+
+	column milhas_total
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 7dc54c3e-b069-42d9-89dd-a2b97859f6e1
+		summarizeBy: sum
+		sourceColumn: milhas_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column segundos_corrida_total
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 4b9e3b4e-202d-4cdf-83c0-9cea034dd164
+		summarizeBy: sum
+		sourceColumn: segundos_corrida_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column gorjetas_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: d6eb452a-1878-4865-9f41-b46584f39d22
+		summarizeBy: sum
+		sourceColumn: gorjetas_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column taxa_cbd_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: 9d63a172-a97e-4530-823c-ea3cda18cff1
+		summarizeBy: sum
+		sourceColumn: taxa_cbd_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column qtd_corridas_compartilhadas
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 340f0c68-5cfc-46c2-b04a-388f755664e3
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_compartilhadas
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas_destino_cbd
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 7695841f-1ce9-4949-9f80-4fa68bd46760
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_destino_cbd
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas_tarifa_valida
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 42b9218a-78e8-4765-8d80-f4c335e1bd13
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_tarifa_valida
+
+		annotation SummarizationSetBy = Automatic
+
+	column tarifa_base_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: d489d782-9e5b-4c43-978a-3bc90f95b1e7
+		summarizeBy: sum
+		sourceColumn: tarifa_base_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column repasse_motorista_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: 90eb7b19-9a1a-401e-9462-e1504f87bd33
+		summarizeBy: sum
+		sourceColumn: repasse_motorista_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column milhas_tarifa_valida_total
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 3e1c96f5-c204-4ece-8cc6-8b4dc19f0b45
+		summarizeBy: sum
+		sourceColumn: milhas_tarifa_valida_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column segundos_tarifa_valida_total
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 6e2d463c-8f92-4b0f-9b54-abd3f1b2df40
+		summarizeBy: sum
+		sourceColumn: segundos_tarifa_valida_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_month
+		dataType: string
+		isHidden
+		lineageTag: 8ec3b251-fe44-40bf-81d3-5eb441470bb3
+		summarizeBy: none
+		sourceColumn: source_month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_demanda_zona_hora = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    fct_demanda_zona_hora_Table = gold_Schema{[Name="fct_demanda_zona_hora",Kind="Table"]}[Data]
+				in
+				    fct_demanda_zona_hora_Table
+

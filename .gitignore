@@ -66,6 +66,14 @@ data/
 *.zip
 
 # =============================================================
+# Power BI (PBIP, ADR 0011)
+# =============================================================
+# Dados importados (centenas de MB): o dado mora no S3, não no Git
+**/.pbi/cache.abf
+# Configuração local criptografada desta máquina (não vale em outra)
+**/.pbi/localSettings.json
+
+# =============================================================
 # Sistema operacional
 # =============================================================
 .DS_Store

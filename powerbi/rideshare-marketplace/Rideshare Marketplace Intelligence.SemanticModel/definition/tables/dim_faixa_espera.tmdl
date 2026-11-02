@@ -1,0 +1,51 @@
+table dim_faixa_espera
+	lineageTag: 18c59cf5-ce60-41b4-856b-ee8195368b80
+
+	column faixa_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 743c40ff-dd57-45f5-ab6b-177376710725
+		summarizeBy: none
+		sourceColumn: faixa_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_inicio_min
+		dataType: int64
+		formatString: 0
+		lineageTag: 856e572b-73f1-40d7-809e-cd8ed36525ec
+		summarizeBy: none
+		sourceColumn: faixa_inicio_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_fim_min
+		dataType: int64
+		formatString: 0
+		lineageTag: f90d6193-d421-4cda-9685-a86bf88a1d3a
+		summarizeBy: none
+		sourceColumn: faixa_fim_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column rotulo
+		dataType: string
+		lineageTag: 86de9165-5fa1-44f3-b6b2-714d004d26dd
+		summarizeBy: none
+		sourceColumn: rotulo
+		sortByColumn: faixa_id
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_faixa_espera = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_faixa_espera_Table = gold_Schema{[Name="dim_faixa_espera",Kind="Table"]}[Data]
+				in
+				    dim_faixa_espera_Table
+

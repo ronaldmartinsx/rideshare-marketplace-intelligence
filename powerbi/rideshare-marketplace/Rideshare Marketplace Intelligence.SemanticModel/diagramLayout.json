@@ -1,0 +1,152 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 50,
+            "y": -25.697727016559156
+          },
+          "nodeIndex": "dim_faixa_espera",
+          "nodeLineageTag": "18c59cf5-ce60-41b4-856b-ee8195368b80",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 972.60625734671271,
+            "y": -22.786518664854952
+          },
+          "nodeIndex": "dim_mes",
+          "nodeLineageTag": "47e45969-5b79-42eb-b664-bce28f54a8d9",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1206.6062573467127,
+            "y": 202.13239857818235
+          },
+          "nodeIndex": "dim_operadora",
+          "nodeLineageTag": "b3096aa7-56d4-42e3-aa5d-ad739de620c7",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 618.45173157378281,
+            "y": 64.725348288890473
+          },
+          "nodeIndex": "dim_periodo_espera",
+          "nodeLineageTag": "412a983c-2913-4372-8630-2b1f26605003",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 905.470781041081,
+            "y": 206.26479715636475
+          },
+          "nodeIndex": "dim_tempo_hora",
+          "nodeLineageTag": "2f16101e-753a-48f3-b44d-9379bddae773",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1490.6062573467127,
+            "y": 142.13239857818235
+          },
+          "nodeIndex": "dim_zona",
+          "nodeLineageTag": "99677487-7013-4bff-8982-dca518c63028",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1774.6062573467127,
+            "y": 128.13239857818235
+          },
+          "nodeIndex": "fct_demanda_zona_hora",
+          "nodeLineageTag": "079a40e8-eefc-45e1-b8f3-45485aa20d1d",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 334.21842018304017,
+            "y": -50
+          },
+          "nodeIndex": "fct_espera_histograma",
+          "nodeLineageTag": "73e266e0-8be5-4a0d-b60b-e2e27cfbc504",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2058.6062573467125,
+            "y": 130.13239857818235
+          },
+          "nodeIndex": "fct_od_mensal",
+          "nodeLineageTag": "59385602-9b8f-419b-89d0-538dac752ed5",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2292.6062573467125,
+            "y": 142.13239857818235
+          },
+          "nodeIndex": "dim_zona_destino",
+          "nodeLineageTag": "35666549-fae7-41ef-9742-0a8bb0fa6de3",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}
