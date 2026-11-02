@@ -2,11 +2,33 @@
 
 > **Para quem:** o Ronald, na máquina Windows, e o Claude Code que o acompanhar lá.
 > **Por que este guia existe:** a memória do Claude Code fica no Mac e não vai para o Windows. **Este arquivo é a fonte do estado da Fase 4.** Combinados de trabalho: `CLAUDE.md`. Evidências: `docs/validacao/fase-4.md`. Spec: `docs/PROJECT_SPEC.md` (Seção 10 e Fase 4 na Seção 12).
-> **Atualizado em:** 01/11/2026, ao parar no Mac.
+> **Atualizado em:** 02/11/2026, ao parar no Windows (passos 5 e 6 concluídos; passo 7 parcial).
 
-## 1. Onde paramos
+## 0. Comece por aqui (estado em 02/11/2026)
 
-**Branch:** `fase-4-power-bi` (no GitHub). Último commit da engenharia no Mac: o que adicionou este guia.
+**Feito no Windows em 02/11:** passo 5 (PBIP, importação, 13 relacionamentos, ADR 0011) e passo 6 (as 15 medidas dos Blocos A, B e C). Evidências: `docs/validacao/fase-4.md`, seções 4 a 6.
+
+**Próximo passo: 7 (reconciliação do P90).** Os 2 recortes da Fase 3 já bateram. Faltam 7 recortes de mai/2026 contra `approx_percentile` na Silver: consulta pronta na **seção 9**. Rodar pelo console (papel `AdministratorAccess`, workgroup `rideshare`) ou pelo Mac com `scripts/athena_roda.py`.
+
+**⚠️ DSN com papel PROVISÓRIO.** No Windows, o DSN `rideshare-athena` está com Role name **`AdministratorAccess`**, e não com `RideshareLeituraGold`. Motivo: mesmo com o driver 2.5.0.0, listar as tabelas do `gold` chama `athena:ListDataCatalogs`, e o papel de leitura não tem essa ação. **Tarefa no Mac:**
+1. acrescentar `athena:ListDataCatalogs` à política do `RideshareLeituraGold` em `infra/terraform/iam_powerbi.tf`. O formato do `Resource` (provavelmente `"*"`) precisa ser conferido na referência oficial do IAM. Plan do Claude, apply do Ronald;
+2. no Windows, voltar o Role name do DSN para `RideshareLeituraGold` (janela ODBC de **64 bits**);
+3. no Desktop, uma atualização completa como teste final, registrada na validação.
+
+**Decisões tomadas em 02/11 (sem ADR novo; entram na spec e no `_gold.yml` no passo 10):**
+| # | Decisão |
+|---|---|
+| D7 | Zona de destino como **segunda tabela** (`dim_zona_destino`, Referência da `dim_zona`), não relacionamento inativo. Corrigir a descrição da `fct_od_diario` no `_gold.yml` |
+| D8 | **Receita por minuto** entra no contrato: `sum(tarifa_base_total) / (sum(segundos_tarifa_valida_total) / 60)` (spec 2.5 e `meta`) |
+| D9 | Tabelas e colunas do Power BI com os **nomes do dbt**; medidas com nomes de negócio, **sem acento** (escolha do Ronald) |
+| D10 | P50/P90 na faixa 30+ devolvem **30** (piso). No passo 8, talvez exibir "≥ 30" com formato dinâmico |
+| — | Driver ODBC da Athena atualizado para **2.5.0.0** no Windows; `UseSingleCatalogAndSchema=1` no DSN |
+
+**Para `docs/aprendizados/fase-4.md` (quem escreveu o quê):** medidas dos Blocos A e B escritas pelo Ronald. Ajustes depois da revisão: `DIVIDE` sem o terceiro argumento (o Ronald chegou à resposta pela pista) e `KEEPFILTERS` (explicado pelo Claude, porque a pista não bastou; o Ronald acertou a pergunta de fixação sobre o share). Bloco C: total do recorte, acumulado e interpolação do Ronald; a escolha da faixa-alvo foi correção do Claude após duas pistas. Formatos fixos, descrições e acabamento feitos pelo Claude via MCP, a pedido. Candidatos ao gate: o P90 por histograma e "substituir × restringir" no `CALCULATE`.
+
+## 1. Onde paramos (plano de 31/10)
+
+**Branch:** `fase-4-power-bi` (no GitHub). Último commit: o que atualizou este guia, no Windows, em 02/11/2026.
 
 **Plano aprovado (31/10/2026), decisões D1 a D6:**
 
@@ -14,10 +36,10 @@
 |---|---|---|
 | D1 | Ligar o histograma a dimensões do grão dele: `dim_periodo_espera` (mês × hora do dia × tipo de dia) e `dim_faixa_espera` | ✅ feito (passo 2) |
 | D2 | `fct_od_mensal` (3,7 milhões de linhas) no lugar da `fct_od_diario` (55 milhões) no Power BI | ✅ feito (passo 2) |
-| D3 | Página 5 vira **"Uber × Lyft por zona"**; o Forecast vai para a Fase 5 (ajuste na spec, sem ADR) | a fazer (passo 8; spec no passo 10) |
+| D3 | Página 5 vira **"Uber × Lyft por zona"**; o Forecast vai para a Fase 5 (ajuste na spec, sem ADR) | a fazer (passo 8; spec no passo 10). Medidas de share já existem |
 | D4 | HTML Content (edição **certificada**) só para cartões de insight e antes × depois | a fazer (passo 8) |
 | D5 | Identidade somente leitura do Power BI em Terraform | ✅ feito (passo 3) |
-| D6 | ADR 0011: PBIP (TMDL + PBIR) em `powerbi/` | a fazer (passo 5) |
+| D6 | ADR 0011: PBIP (TMDL + PBIR) em `powerbi/` | ✅ feito (passo 5) |
 
 **Decisões do passo 3 (P1 a P4):** permission set do Identity Center (sem chave); workgroup próprio `rideshare-bi` (1 GiB por consulta, resultados em `bi/`); só o banco `gold`; sessão de 8 h.
 
@@ -29,10 +51,10 @@
 | 1 | Tarifa ≤ 0 por operadora (regra mantida) | Mac | ✅ (validação, seção 1) |
 | 2 | Modelos dbt novos + reconstrução dos 32 meses em produção | Mac | ✅ (validação, seção 2) |
 | 3 | Papel de leitura `RideshareLeituraGold` + workgroup `rideshare-bi` | Mac | ✅ (validação, seção 3; 12/12 testes) |
-| 4 | TopoJSON das zonas para o mapa | Mac **ou** Windows | **a fazer** |
-| 5 | PBIP: atualizar o DSN, importar a Gold, relacionamentos, formatos; ADR 0011 | **Windows** | **a fazer: comece por aqui** |
-| 6 | Medidas DAX ✍️ (o Ronald escreve; o Claude revisa com pistas antes da correção) | Windows | a fazer |
-| 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows | a fazer |
+| 4 | TopoJSON das zonas para o mapa | Mac **ou** Windows (Node v24 instalado no Windows) | a fazer |
+| 5 | PBIP: atualizar o DSN, importar a Gold, relacionamentos, formatos; ADR 0011 | Windows | ✅ 02/11 (validação, seção 4; commit `49ccef5`) |
+| 6 | Medidas DAX ✍️ (o Ronald escreve; o Claude revisa com pistas antes da correção) | Windows | ✅ 02/11 (validação, seção 5; commits `5bafcf1`, `2b7fd8a`, `affe731`) |
+| 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows ou Mac | **parcial: comece por aqui** (seção 9) |
 | 8 | As 5 páginas, com um insight escrito em cada | Windows | a fazer |
 | 9 | Prints, vídeo curto, README | Windows | a fazer |
 | 10 | ADRs 0011, 0017 (dimensões do período) e 0018 (identidade de leitura); spec (D3, novas tabelas na 6.4); glossário; `docs/aprendizados/fase-4.md`; gate; PR | ambas | a fazer |
@@ -172,3 +194,49 @@ No Shape Map, a chave é `LocationID` = `zona_id`, com o **mesmo tipo** dos dois
 | Erro citando `ListDataCatalogs` ou `ListWorkGroups` | Permissão deixada de fora de propósito: anotar o erro e acrescentar no Terraform (Mac) |
 | Consulta cancelada por limite | Passou de 1 GiB: provavelmente a `fct_od_diario`, que não deve ser importada |
 | `git switch` reclama de alterações locais | Há mudanças não commitadas no Windows: pare e veja o que é antes de descartar |
+| Botão **Configurar** cinza no DSN | Janela ODBC de 32 bits aberta. Abra `C:\Windows\System32\odbcad32.exe` (64 bits) |
+| `ListDataCatalogs` negado mesmo com `UseSingleCatalogAndSchema=1` | Driver anterior ao 2.5.0.0. E, mesmo no 2.5, a listagem de tabelas ainda pede a ação (seção 0) |
+| MCP do Power BI não enxerga medidas novas | Visão em cache: desconectar e conectar de novo (`connection_operations`) |
+| Pasta `TMDLScripts/` no `git status` | Script vazio da exibição TMDL do Desktop. Fica fora dos commits; feche a aba "Script 1" e salve |
+
+## 9. Passo 7: consulta da reconciliação (pronta para rodar)
+
+Sete recortes de mai/2026, do maior ao menor, inclusive faixas largas, onde a interpolação é mais grosseira. Valores do DAX medidos em 02/11/2026:
+
+| # | Recorte | Corridas (DAX) | Faixa do P90 | P90 DAX |
+|---|---|---|---|---|
+| R1 | Cidade | 21.848.060 | 9–10 | 9,93 |
+| R2 | Lyft, cidade | 6.682.562 | 8–9 | 8,87 |
+| R3 | Seaport (209), 14h, fim de semana, Lyft | 220 | 9–10 | 9,14 |
+| R4 | JFK (132), 17h, fim de semana, Lyft | 1.919 | 15–20 | 19,79 |
+| R5 | LaGuardia (138), 1h, dia útil, Lyft | 1.810 | 20–30 | 27,88 |
+| R6 | Flushing Meadows (93), 22h, fim de semana, Lyft | 202 | 20–30 | 27,13 |
+| R7 | Breezy Point (27), 22h, dia útil, Uber | 21 | 20–30 | 29,00 |
+
+Hipótese: nas faixas de 1 min, poucos segundos de diferença; nas largas, até minutos. Se confirmada, o relatório avisa "P90 acima de 15 min é aproximado". A coluna `n` precisa bater com "Corridas (DAX)".
+
+Rodar com o papel `AdministratorAccess`, workgroup `rideshare` (o papel de leitura não lê a Silver). Custo: menos de US$ 0,01.
+
+```sql
+-- Fase 4, passo 7: P90 corrida a corrida (approx_percentile) em 7 recortes de mai/2026
+with c as (
+    select t.pulocationid, t.hvfhs_license_num, t.wait_time_s, d.hora_do_dia, d.tipo_dia
+    from silver.int_trips_enriched as t
+    join gold.dim_tempo_hora as d on d.hora = t.pickup_hour
+    where t.source_month = '2026-05' and t.is_valid and t.is_valid_wait_metric
+)
+select 'R1 cidade' as recorte, count(*) as n, round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) as p90_min from c
+union all select 'R2 Lyft', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where hvfhs_license_num = 'HV0005'
+union all select 'R3 Seaport 14h fds Lyft', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where pulocationid = 209 and hora_do_dia = 14 and tipo_dia = 'fim_de_semana' and hvfhs_license_num = 'HV0005'
+union all select 'R4 JFK 17h fds Lyft', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where pulocationid = 132 and hora_do_dia = 17 and tipo_dia = 'fim_de_semana' and hvfhs_license_num = 'HV0005'
+union all select 'R5 LaGuardia 1h util Lyft', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where pulocationid = 138 and hora_do_dia = 1 and tipo_dia = 'util' and hvfhs_license_num = 'HV0005'
+union all select 'R6 Flushing 22h fds Lyft', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where pulocationid = 93 and hora_do_dia = 22 and tipo_dia = 'fim_de_semana' and hvfhs_license_num = 'HV0005'
+union all select 'R7 Breezy Point 22h util Uber', count(*), round(approx_percentile(wait_time_s, 0.9) / 60.0, 2) from c
+    where pulocationid = 27 and hora_do_dia = 22 and tipo_dia = 'util' and hvfhs_license_num = 'HV0003'
+order by recorte
+```
