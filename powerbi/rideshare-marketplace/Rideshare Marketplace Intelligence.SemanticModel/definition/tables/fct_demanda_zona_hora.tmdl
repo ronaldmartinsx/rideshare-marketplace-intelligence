@@ -82,6 +82,30 @@ table fct_demanda_zona_hora
 		displayFolder: Economia
 		lineageTag: 3b9a7d0e-09fa-44f4-bd62-2ddead75b440
 
+	/// Corridas do recorte atual (zona, período, hora) somando todas as operadoras: denominador do share. Remove só o filtro da dim_operadora.
+	measure 'Corridas do mesmo recorte' = CALCULATE([Corridas], REMOVEFILTERS(dim_operadora))
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 31f6511b-c4ad-44c5-b6de-7b2883b0514f
+
+	/// Corridas da operadora / corridas de todas as operadoras no mesmo recorte de zona e período (spec 2.5). Num visual sem operadora, vale 100%.
+	measure 'Share da operadora' = DIVIDE([Corridas], [Corridas do mesmo recorte])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: Share
+		lineageTag: 08c88f9e-0f02-4f78-bfed-2ea8233d5f39
+
+	/// Corridas com destino numa das 38 zonas do CBD (lista da MTA, ADR 0007), pela zona de origem desta fato. Antes × depois: corte em 05/01/2025; não usar a taxa cbd_congestion_fee.
+	measure 'Corridas com destino no CBD' = SUM(fct_demanda_zona_hora[qtd_corridas_destino_cbd])
+		formatString: #,##0
+		displayFolder: CBD
+		lineageTag: dd042ad7-447b-4177-b3e5-63ef00957586
+
+	/// Corridas com destino no CBD / Corridas, no mesmo recorte.
+	measure '% destino no CBD' = DIVIDE([Corridas com destino no CBD], [Corridas])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: CBD
+		lineageTag: 8bd8000f-beed-4b9e-b02a-3277ed9aec20
+
 	column hora_embarque
 		dataType: dateTime
 		isHidden

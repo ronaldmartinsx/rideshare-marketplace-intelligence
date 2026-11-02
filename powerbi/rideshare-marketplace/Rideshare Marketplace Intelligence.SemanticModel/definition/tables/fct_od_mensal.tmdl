@@ -2,6 +2,24 @@
 table fct_od_mensal
 	lineageTag: 59385602-9b8f-419b-89d0-538dac752ed5
 
+	/// Corridas válidas da fct_od_mensal (grão mensal com origem e destino). No total, igual a [Corridas] da demanda.
+	measure 'Corridas OD' = SUM(fct_od_mensal[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Origem-destino
+		lineageTag: ed09d30d-3daf-4fb6-91cc-7c4095d310be
+
+	/// Corridas com destino no CBD e origem fora dele (dim_zona_destino[is_cbd_destino] e não dim_zona[is_cbd]). jan/2025 mistura 4 dias antes da taxa.
+	measure 'Corridas entrando no CBD' =
+			
+			CALCULATE (
+			    [Corridas OD],
+			    KEEPFILTERS ( dim_zona_destino[is_cbd_destino] = TRUE () ),
+			    KEEPFILTERS ( dim_zona[is_cbd] = FALSE () )
+			)
+		formatString: #,##0
+		displayFolder: CBD
+		lineageTag: 584d4392-b17c-4324-a579-f6ec6388fc8c
+
 	column zona_origem_id
 		dataType: int64
 		isHidden
