@@ -149,11 +149,28 @@ Lições registradas na revisão:
 - `CALCULATE` substitui o filtro do usuário na mesma coluna: com segmentação "origem no CBD", Corridas entrando no CBD mostrava 52.448.518 em vez de vazio. Corrigido com `KEEPFILTERS`.
 - P50/P90: a escolha da faixa-alvo (`ADDCOLUMNS(ALL(dim_faixa_espera), ...)` + `MINX(FILTER(...))`) foi correção do Claude após duas pistas; total do recorte, acumulado e interpolação são do Ronald. Faixa 30+ devolve 30 (piso).
 
-## 6. Reconciliação do P90 (passo 7, parcial)
+## 6. Reconciliação do P90 (passo 7)
 
 | Recorte | DAX | Histograma em SQL (Fase 3) | Corrida a corrida (Fase 3) |
 |---|---|---|---|
 | Cidade, jan/2025 | 8,06 | 8,06 | 8,05 |
 | Manhattan, 18h, dia útil, mai/2026 (319.506 corridas) | 9,30 | 9,30 | 9,25 |
 
-Pendente: 7 recortes de mai/2026, inclusive células pequenas e faixas largas (15–20, 20–30 min), contra `approx_percentile` na Silver. Consulta pronta no guia `docs/guias/fase-4-continuar-no-windows.md` (seção 9).
+**7 recortes de mai/2026 contra `approx_percentile` na Silver** (05/11/2026; console, papel de administrador, workgroup `rideshare`; consulta na seção 9 do guia). A coluna `n` bateu nos 7: os dois lados olham o mesmo recorte.
+
+| # | Recorte | n | Faixa do P90 | DAX | Athena | Diferença |
+|---|---|---|---|---|---|---|
+| R1 | Cidade | 21.848.060 | 9–10 (1 min) | 9,93 | 9,90 | +0,03 min (2 s) |
+| R2 | Lyft, cidade | 6.682.562 | 8–9 (1 min) | 8,87 | 8,87 | 0 |
+| R3 | Seaport, 14h, fim de semana, Lyft | 220 | 9–10 (1 min) | 9,14 | 9,33 | −0,19 min (11 s) |
+| R4 | JFK, 17h, fim de semana, Lyft | 1.919 | 15–20 (5 min) | 19,79 | 19,73 | +0,06 min (4 s) |
+| R5 | LaGuardia, 1h, dia útil, Lyft | 1.810 | 20–30 (10 min) | 27,88 | 26,95 | **+0,93 min (56 s)** |
+| R6 | Flushing Meadows, 22h, fim de semana, Lyft | 202 | 20–30 (10 min) | 27,13 | 27,02 | +0,11 min (7 s) |
+| R7 | Breezy Point, 22h, dia útil, Uber | 21 | 20–30 (10 min) | 29,00 | 28,80 | +0,20 min (12 s) |
+
+Leitura:
+- **Faixas de 1 minuto:** diferença de até 0,19 min (11 s), mesmo numa célula de 220 corridas. Recortes grandes: até 2 s.
+- **Faixa de 20–30 min:** a maior diferença (R5, 56 s, 3,5%). A interpolação supõe as corridas espalhadas por igual em 10 minutos; se elas se concentram no começo da faixa, o DAX superestima.
+- **Para o negócio, a conclusão não muda:** 27,9 ou 27,0 min dizem o mesmo ("falta oferta na LaGuardia à 1h"), e a ordem das zonas se mantém nos recortes testados.
+- O próprio `approx_percentile` é aproximado (erro para estes tamanhos não verificado), e a espera na Silver está em segundos inteiros.
+- **Consequência proposta:** exibir o P90 acima de 15 min como aproximado (erro de até ~1 min nos recortes testados). Evidência nova que não muda a decisão do ADR 0006: entra na spec no passo 10, sem ADR novo.

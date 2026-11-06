@@ -8,7 +8,11 @@
 
 **Feito no Windows em 02/11:** passo 5 (PBIP, importação, 13 relacionamentos, ADR 0011) e passo 6 (as 15 medidas dos Blocos A, B e C). Evidências: `docs/validacao/fase-4.md`, seções 4 a 6.
 
-**Próximo passo: 7 (reconciliação do P90).** Os 2 recortes da Fase 3 já bateram. Faltam 7 recortes de mai/2026 contra `approx_percentile` na Silver: consulta pronta na **seção 9**. Rodar pelo console (papel `AdministratorAccess`, workgroup `rideshare`) ou pelo Mac com `scripts/athena_roda.py`.
+**Passo 7 feito em 05/11/2026:** 9 recortes conferidos (validação, seção 6). Contagens iguais nos 7 de mai/2026; P90 a até 11 s nas faixas de 1 min e a até 56 s na faixa de 20–30 min. Proposta: exibir o P90 acima de 15 min como aproximado.
+
+**Próximo passo: 8 (as 5 páginas).** A página 2 (mapa) depende do passo 4 (TopoJSON). O Node v24 está no Windows, então o passo 4 pode ser feito aqui.
+
+**Login no console:** pelo AWS access portal (Identity Center), não pela tela de usuário IAM. O endereço está no DSN deste Windows (campo `sso_oidc_start_url`) e no `~/.aws/config` do Mac.
 
 **⚠️ DSN com papel PROVISÓRIO.** No Windows, o DSN `rideshare-athena` está com Role name **`AdministratorAccess`**, e não com `RideshareLeituraGold`. Motivo: mesmo com o driver 2.5.0.0, listar as tabelas do `gold` chama `athena:ListDataCatalogs`, e o papel de leitura não tem essa ação. **Tarefa no Mac:**
 1. acrescentar `athena:ListDataCatalogs` à política do `RideshareLeituraGold` em `infra/terraform/iam_powerbi.tf`. O formato do `Resource` (provavelmente `"*"`) precisa ser conferido na referência oficial do IAM. Plan do Claude, apply do Ronald;
@@ -54,8 +58,8 @@
 | 4 | TopoJSON das zonas para o mapa | Mac **ou** Windows (Node v24 instalado no Windows) | a fazer |
 | 5 | PBIP: atualizar o DSN, importar a Gold, relacionamentos, formatos; ADR 0011 | Windows | ✅ 02/11 (validação, seção 4; commit `49ccef5`) |
 | 6 | Medidas DAX ✍️ (o Ronald escreve; o Claude revisa com pistas antes da correção) | Windows | ✅ 02/11 (validação, seção 5; commits `5bafcf1`, `2b7fd8a`, `affe731`) |
-| 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows ou Mac | **parcial: comece por aqui** (seção 9) |
-| 8 | As 5 páginas, com um insight escrito em cada | Windows | a fazer |
+| 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows | ✅ 05/11 (validação, seção 6) |
+| 8 | As 5 páginas, com um insight escrito em cada | Windows | **a fazer: próximo** |
 | 9 | Prints, vídeo curto, README | Windows | a fazer |
 | 10 | ADRs 0011, 0017 (dimensões do período) e 0018 (identidade de leitura); spec (D3, novas tabelas na 6.4); glossário; `docs/aprendizados/fase-4.md`; gate; PR | ambas | a fazer |
 
