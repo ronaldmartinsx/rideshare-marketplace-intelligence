@@ -50,6 +50,17 @@
           "type": "BaseTheme"
         }
       ]
+    },
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "zonas_tlc2877948461527192.json",
+          "path": "zonas_tlc2877948461527192.json",
+          "type": "ShapeMap"
+        }
+      ]
     }
   ],
   "settings": {

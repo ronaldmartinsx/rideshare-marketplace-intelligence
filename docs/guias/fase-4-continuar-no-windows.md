@@ -10,7 +10,11 @@
 
 **Passo 7 feito em 05/11/2026:** 9 recortes conferidos (validação, seção 6). Contagens iguais nos 7 de mai/2026; P90 a até 11 s nas faixas de 1 min e a até 56 s na faixa de 20–30 min. Proposta: exibir o P90 acima de 15 min como aproximado.
 
-**Próximo passo: 8 (as 5 páginas).** A página 2 (mapa) depende do passo 4 (TopoJSON). O Node v24 está no Windows, então o passo 4 pode ser feito aqui.
+**Passo 4 feito em 05/11/2026:** `powerbi/mapas/zonas_tlc.json` (263 formas, WGS84, 132 KB), com o comando e as conferências no README da pasta. No Shape Map, a chave `LocationID` = `dim_zona[zona_id]` casou sem ajuste de tipo.
+
+**Próximo passo: 8 (página única com raias, ADR 0019).** Pontos levantados no teste do mapa, para decidir no passo 8:
+- **Escala de cor:** 237 de 261 zonas têm P90 entre 7 e 12 min, mas a escala automática vai de 6,8 a 30 e deixa o mapa quase uniforme. Usar mínimo e máximo fixos ou uma escala divergente centrada no P90 da cidade.
+- **Amostra mínima (proposta):** Newark tem 28 corridas em 33 meses e P90 = 30 (faixa 30+). Mostrar o P90 só quando o recorte tem um mínimo de corridas (ex.: 100).
 
 **Login no console:** pelo AWS access portal (Identity Center), não pela tela de usuário IAM. O endereço está no DSN deste Windows (campo `sso_oidc_start_url`) e no `~/.aws/config` do Mac.
 
@@ -57,7 +61,7 @@
 | 1 | Tarifa ≤ 0 por operadora (regra mantida) | Mac | ✅ (validação, seção 1) |
 | 2 | Modelos dbt novos + reconstrução dos 32 meses em produção | Mac | ✅ (validação, seção 2) |
 | 3 | Papel de leitura `RideshareLeituraGold` + workgroup `rideshare-bi` | Mac | ✅ (validação, seção 3; 12/12 testes) |
-| 4 | TopoJSON das zonas para o mapa | Mac **ou** Windows (Node v24 instalado no Windows) | a fazer |
+| 4 | TopoJSON das zonas para o mapa | Windows | ✅ 05/11 (`powerbi/mapas/README.md`; Shape Map testado: 261 zonas com cor, 103 e 104 sem corridas) |
 | 5 | PBIP: atualizar o DSN, importar a Gold, relacionamentos, formatos; ADR 0011 | Windows | ✅ 02/11 (validação, seção 4; commit `49ccef5`) |
 | 6 | Medidas DAX ✍️ (o Ronald escreve; o Claude revisa com pistas antes da correção) | Windows | ✅ 02/11 (validação, seção 5; commits `5bafcf1`, `2b7fd8a`, `affe731`) |
 | 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows | ✅ 05/11 (validação, seção 6) |
