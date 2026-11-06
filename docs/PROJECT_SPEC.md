@@ -805,6 +805,7 @@ rideshare-marketplace-intelligence/
 | 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
 | 0015 | Leitura da Bronze por partition projection, com `ingest_ts` obrigatório na consulta | Decidido e validado (Fase 2) |
 | 0016 | Registro de construção do dbt e regra de pendência por mês (substitui a comparação manifesto × Silver) | Decidido e validado (Fase 3) |
+| 0019 | Relatório do Power BI em página única com raias (substitui as 5 páginas da Seção 10) | Decidido (Fase 4) |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 

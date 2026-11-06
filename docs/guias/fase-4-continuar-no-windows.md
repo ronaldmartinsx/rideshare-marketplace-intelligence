@@ -27,6 +27,8 @@
 | D9 | Tabelas e colunas do Power BI com os **nomes do dbt**; medidas com nomes de negócio, **sem acento** (escolha do Ronald) |
 | D10 | P50/P90 na faixa 30+ devolvem **30** (piso). No passo 8, talvez exibir "≥ 30" com formato dinâmico |
 | — | Driver ODBC da Athena atualizado para **2.5.0.0** no Windows; `UseSingleCatalogAndSchema=1` no DSN |
+| D11 | (05/11) Avisar no relatório que o **P90 acima de 15 min é aproximado** (erro de até ~1 min; validação, seção 6). Entra na spec no passo 10 |
+| D12 | (05/11) **Página única com raias**, 1440 de largura e rolagem vertical, uma raia por pergunta: **ADR 0019**. Substitui as 5 páginas da Seção 10 (ajustar a spec no passo 10) |
 
 **Para `docs/aprendizados/fase-4.md` (quem escreveu o quê):** medidas dos Blocos A e B escritas pelo Ronald. Ajustes depois da revisão: `DIVIDE` sem o terceiro argumento (o Ronald chegou à resposta pela pista) e `KEEPFILTERS` (explicado pelo Claude, porque a pista não bastou; o Ronald acertou a pergunta de fixação sobre o share). Bloco C: total do recorte, acumulado e interpolação do Ronald; a escolha da faixa-alvo foi correção do Claude após duas pistas. Formatos fixos, descrições e acabamento feitos pelo Claude via MCP, a pedido. Candidatos ao gate: o P90 por histograma e "substituir × restringir" no `CALCULATE`.
 
