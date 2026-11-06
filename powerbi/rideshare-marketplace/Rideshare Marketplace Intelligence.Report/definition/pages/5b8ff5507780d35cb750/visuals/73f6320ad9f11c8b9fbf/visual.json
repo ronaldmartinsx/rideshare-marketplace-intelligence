@@ -3,11 +3,11 @@
   "name": "73f6320ad9f11c8b9fbf",
   "position": {
     "x": 48,
-    "y": 648,
+    "y": 848,
     "width": 544,
     "height": 776,
-    "z": 13000,
-    "tabOrder": 13000
+    "z": 27000,
+    "tabOrder": 27000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -111,6 +111,13 @@
                         "Value": "'#FBE3D3'"
                       }
                     }
+                  },
+                  "value": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "6D"
+                      }
+                    }
                   }
                 },
                 "max": {
@@ -118,6 +125,13 @@
                     "expr": {
                       "Literal": {
                         "Value": "'#D55E00'"
+                      }
+                    }
+                  },
+                  "value": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "15D"
                       }
                     }
                   }
@@ -247,19 +261,6 @@
           }
         }
       ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
       "title": [
         {
           "properties": {
@@ -277,10 +278,17 @@
                 }
               }
             },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -304,13 +312,58 @@
             }
           }
         }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Periferia e aeroportos esperam mais; Manhattan, menos'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       ]
     }
   },
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter2ef33ac997d1c32a0d05d6e4",
+        "name": "Filtercd45a66531503ba54b9612a9",
         "field": {
           "Measure": {
             "Expression": {

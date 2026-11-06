@@ -3,11 +3,11 @@
   "name": "356e11142394c2a08784",
   "position": {
     "x": 48,
-    "y": 352,
+    "y": 448,
     "width": 320,
-    "height": 176,
-    "z": 5000,
-    "tabOrder": 5000
+    "height": 136,
+    "z": 7000,
+    "tabOrder": 7000
   },
   "visual": {
     "visualType": "textbox",
@@ -21,9 +21,10 @@
                   {
                     "value": "1 · OFERTA",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
+                      "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#B04A00"
+                      "color": "#B04A00",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -136,6 +137,32 @@
               "expr": {
                 "Literal": {
                   "Value": "16D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

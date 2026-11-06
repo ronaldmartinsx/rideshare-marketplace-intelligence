@@ -12,7 +12,22 @@
 
 **Passo 4 feito em 05/11/2026:** `powerbi/mapas/zonas_tlc.json` (263 formas, WGS84, 132 KB), com o comando e as conferências no README da pasta. No Shape Map, a chave `LocationID` = `dim_zona[zona_id]` casou sem ajuste de tipo.
 
-**Próximo passo: 8 (página única com raias, ADR 0019).** Pontos levantados no teste do mapa, para decidir no passo 8:
+**Passo 8 em andamento (05/11/2026):** esqueleto da página única (commit `bbfbfd0`) e **revisão 3** com os refinamentos do Ronald (tema Segoe UI, cabeçalho azul-marinho com ilustração das zonas, faixas de raia, cartões HTML com explicação ao passar o mouse, subtítulos-insight, rodapé com links). Especificação e revisões: `_brief/report-spec.md`. Evidências: `docs/validacao/img/fase-4-pagina-rev3-*.png`.
+
+**Próximas tarefas do passo 8:**
+1. Cultura `pt-BR` do modelo (plano na seção "Revisão 3" de `_brief/report-spec.md`; precisa renomear o `cache.abf` e atualizar os dados).
+2. Ajustes finos de design que o Ronald quiser fazer direto no Desktop. **Depois que ele salvar mudanças próprias, não regerar a página com o gerador**: editar o PBIR pontualmente.
+3. Passo 9 (prints, vídeo, README) e passo 10 (documentação e gate).
+
+**Backlog da Fase 7 (pedido do Ronald em 05/11/2026):** versão do relatório em **inglês**.
+
+**Como trabalhar com o Desktop (aprendido em 05/11):**
+- Quando os arquivos do PBIR mudam por fora, o Desktop mostra a faixa *"changed externally. Apply to view the latest changes"*: basta **Apply**, sem fechar.
+- Ao abrir um PBIP, o Desktop marca "alterações não salvas" por reformatar os JSON (ordem de propriedades, `"active": true`). Recarregar pelo CLI fica bloqueado; usar o Apply, ou fechar com **Não salvar** e reabrir.
+- Medida criada ou alterada pelo MCP só vai para o TMDL com **Ctrl+S**. Salvar só é seguro quando o relatório na memória é igual ao do disco (logo depois de um Apply).
+- A cultura do modelo não muda com o modelo carregado nem via TMDL com cache existente.
+
+Pontos que eram do teste do mapa (resolvidos na revisão 3):
 - **Escala de cor:** 237 de 261 zonas têm P90 entre 7 e 12 min, mas a escala automática vai de 6,8 a 30 e deixa o mapa quase uniforme. Usar mínimo e máximo fixos ou uma escala divergente centrada no P90 da cidade.
 - **Amostra mínima (proposta):** Newark tem 28 corridas em 33 meses e P90 = 30 (faixa 30+). Mostrar o P90 só quando o recorte tem um mínimo de corridas (ex.: 100).
 

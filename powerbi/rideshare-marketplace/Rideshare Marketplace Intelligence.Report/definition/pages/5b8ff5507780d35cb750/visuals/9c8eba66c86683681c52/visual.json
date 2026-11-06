@@ -3,11 +3,11 @@
   "name": "9c8eba66c86683681c52",
   "position": {
     "x": 736,
-    "y": 3952,
+    "y": 4352,
     "width": 664,
     "height": 480,
-    "z": 27000,
-    "tabOrder": 27000
+    "z": 41000,
+    "tabOrder": 41000
   },
   "visual": {
     "visualType": "tableEx",
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_zona.zona",
-              "nativeQueryRef": "zona"
+              "nativeQueryRef": "zona",
+              "displayName": "Zona"
             },
             {
               "field": {
@@ -41,7 +42,8 @@
                 }
               },
               "queryRef": "dim_zona.borough",
-              "nativeQueryRef": "borough"
+              "nativeQueryRef": "borough",
+              "displayName": "Distrito"
             },
             {
               "field": {
@@ -227,19 +229,6 @@
           }
         }
       ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
       "title": [
         {
           "properties": {
@@ -257,10 +246,17 @@
                 }
               }
             },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -284,13 +280,58 @@
             }
           }
         }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Entre as maiores, Park Slope tem o maior share (34%)'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       ]
     }
   },
   "filterConfig": {
     "filters": [
       {
-        "name": "Filtere5ea0befb337772bbdec22e8",
+        "name": "Filter35c2387f314bc3aee82a4075",
         "field": {
           "Column": {
             "Expression": {
@@ -344,7 +385,7 @@
         }
       },
       {
-        "name": "Filterbffa0dc5fb26f660ef85587c",
+        "name": "Filter83157d03bfae84b82245f90d",
         "field": {
           "Column": {
             "Expression": {

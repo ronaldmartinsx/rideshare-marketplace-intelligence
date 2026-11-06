@@ -3,11 +3,11 @@
   "name": "c8b9277831fc6143c7d2",
   "position": {
     "x": 736,
-    "y": 352,
+    "y": 448,
     "width": 320,
-    "height": 176,
-    "z": 7000,
-    "tabOrder": 7000
+    "height": 136,
+    "z": 9000,
+    "tabOrder": 9000
   },
   "visual": {
     "visualType": "textbox",
@@ -21,9 +21,10 @@
                   {
                     "value": "3 · TAXA DO CBD",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
+                      "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#00785A"
+                      "color": "#00785A",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -136,6 +137,32 @@
               "expr": {
                 "Literal": {
                   "Value": "16D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

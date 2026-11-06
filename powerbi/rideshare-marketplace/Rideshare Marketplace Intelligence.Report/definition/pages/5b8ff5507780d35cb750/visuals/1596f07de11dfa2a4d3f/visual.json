@@ -3,11 +3,11 @@
   "name": "1596f07de11dfa2a4d3f",
   "position": {
     "x": 616,
-    "y": 2552,
+    "y": 2848,
     "width": 776,
     "height": 376,
-    "z": 23000,
-    "tabOrder": 23000
+    "z": 37000,
+    "tabOrder": 37000
   },
   "visual": {
     "visualType": "lineChart",
@@ -180,19 +180,6 @@
           }
         }
       ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
       "title": [
         {
           "properties": {
@@ -206,14 +193,21 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'% das corridas com destino no CBD (mês) — taxa desde 05/01/2025'"
+                  "Value": "'% das corridas com destino no CBD (mês)'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
                 }
               }
             },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -230,6 +224,51 @@
                   "expr": {
                     "Literal": {
                       "Value": "'#1F1F1F'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'A fatia cai de 23,4% para 21,8% após a taxa (05/01/2025)'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
                     }
                   }
                 }

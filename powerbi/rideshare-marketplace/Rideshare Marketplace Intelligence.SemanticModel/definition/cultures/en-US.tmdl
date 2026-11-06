@@ -1,2 +1,179 @@
 cultureInfo en-US
 
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "fct_demanda_zona_hora.tarifa_invalida": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fct_demanda_zona_hora",
+			          "ConceptualProperty": "% tarifa invalida"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "% tarifa ≤ 0": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fct_demanda_zona_hora.share_da_operadora": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fct_demanda_zona_hora",
+			          "ConceptualProperty": "Share da operadora"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Share da Lyft": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fct_demanda_zona_hora.corridas": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fct_demanda_zona_hora",
+			          "ConceptualProperty": "Corridas"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Corridas da Lyft": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_periodo_espera.hora_do_dia": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_periodo_espera",
+			          "ConceptualProperty": "hora_do_dia"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Hora do dia": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_periodo_espera.tipo_dia": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_periodo_espera",
+			          "ConceptualProperty": "tipo_dia"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tipo de dia": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fct_espera_histograma.espera_p90_min": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fct_espera_histograma",
+			          "ConceptualProperty": "Espera P90 (min)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "P90 (min)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_zona.zona": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_zona",
+			          "ConceptualProperty": "zona"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Zona": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_zona.borough": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_zona",
+			          "ConceptualProperty": "borough"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Distrito": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

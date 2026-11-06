@@ -3,11 +3,11 @@
   "name": "22184a633c37253437ca",
   "position": {
     "x": 392,
-    "y": 352,
+    "y": 448,
     "width": 320,
-    "height": 176,
-    "z": 6000,
-    "tabOrder": 6000
+    "height": 136,
+    "z": 8000,
+    "tabOrder": 8000
   },
   "visual": {
     "visualType": "textbox",
@@ -21,9 +21,10 @@
                   {
                     "value": "2 · ECONOMIA",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
+                      "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#005A8C"
+                      "color": "#005A8C",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -136,6 +137,32 @@
               "expr": {
                 "Literal": {
                   "Value": "16D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

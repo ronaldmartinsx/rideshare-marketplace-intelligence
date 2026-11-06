@@ -106,6 +106,45 @@ table fct_demanda_zona_hora
 		displayFolder: CBD
 		lineageTag: 8bd8000f-beed-4b9e-b02a-3277ed9aec20
 
+	/// Faixa de 6 cartões KPI em HTML para o visual HTML Content (abertura do relatório). Ao passar o mouse, cada cartão mostra o que é o número e como é calculado. Medida de apresentação escrita pelo Claude (exceção à regra ✍️ autorizada pelo Ronald em 05/11/2026).
+	measure 'HTML Cartoes KPI' =
+			VAR fmt = "pt-BR"
+			VAR corridas = [Corridas]
+			VAR dias = COUNTROWS ( FILTER ( VALUES ( dim_tempo_hora[data] ), CALCULATE ( [Corridas] ) > 0 ) )
+			VAR por_dia = DIVIDE ( corridas, dias )
+			VAR p90 = [Espera P90 (min)]
+			VAR p90_u = CALCULATE ( [Espera P90 (min)], dim_operadora[operadora_id] = "HV0003" )
+			VAR p90_l = CALCULATE ( [Espera P90 (min)], dim_operadora[operadora_id] = "HV0005" )
+			VAR take = [Take rate]
+			VAR take_u = CALCULATE ( [Take rate], dim_operadora[operadora_id] = "HV0003" )
+			VAR take_l = CALCULATE ( [Take rate], dim_operadora[operadora_id] = "HV0005" )
+			VAR rmilha = [Receita por milha]
+			VAR rmin = [Receita por minuto]
+			VAR pcbd = [% destino no CBD]
+			VAR entrando = [Corridas entrando no CBD]
+			VAR share_l = CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0005" )
+			VAR share_u = CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0003" )
+			-- um cartão: rótulo, valor, contexto e a explicação que aparece ao passar o mouse
+			VAR estilo = "<style>"
+			    & ".kpis{display:flex;gap:12px;height:150px;font-family:'Segoe UI',sans-serif;box-sizing:border-box}"
+			    & ".k{flex:1;position:relative;background:#FFFFFF;border:1px solid #E1DFDD;border-left-width:5px;border-radius:8px;padding:14px 16px;overflow:hidden;cursor:help}"
+			    & ".l{font-size:12px;color:#605E5C;text-transform:uppercase;letter-spacing:.04em}"
+			    & ".v{font-size:32px;font-weight:600;color:#1F1F1F;margin:6px 0 4px}"
+			    & ".c{font-size:12px;color:#605E5C}"
+			    & ".t{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:#1B2A41;color:#FFFFFF;font-size:12px;line-height:1.45;padding:12px 14px}"
+			    & ".k:hover .t{display:block}"
+			    & "</style>"
+			VAR c1 = "<div class='k' style='border-left-color:#4D4D4D'><div class='l'>Corridas</div><div class='v'>" & FORMAT ( corridas / 1e6, "#,##0", fmt ) & " mi</div><div class='c'>média de " & FORMAT ( por_dia / 1e3, "#,##0", fmt ) & " mil por dia</div><div class='t'><b>Corridas válidas</b> de alto volume (Uber, Lyft e inativas) no período. Soma de qtd_corridas da Gold; as inválidas ficam na Silver com o motivo.</div></div>"
+			VAR c2 = "<div class='k' style='border-left-color:#D55E00'><div class='l'>Espera P90</div><div class='v'>" & FORMAT ( p90, "0.0", fmt ) & " min</div><div class='c'>Uber " & FORMAT ( p90_u, "0.0", fmt ) & " · Lyft " & FORMAT ( p90_l, "0.0", fmt ) & " min</div><div class='t'><b>90% das corridas</b> esperaram até este tempo, do pedido ao embarque. Recalculado das faixas do histograma em qualquer recorte (ADR 0006); acima de 15 min é aproximado.</div></div>"
+			VAR c3 = "<div class='k' style='border-left-color:#0072B2'><div class='l'>Take rate</div><div class='v'>" & FORMAT ( take, "0.0%", fmt ) & "</div><div class='c'>Uber " & FORMAT ( take_u, "0.0%", fmt ) & " · Lyft " & FORMAT ( take_l, "0.0%", fmt ) & "</div><div class='t'><b>Parte da tarifa que fica com a operadora:</b> (tarifa base − repasse ao motorista) ÷ tarifa base, somando antes de dividir. Só corridas com tarifa maior que zero.</div></div>"
+			VAR c4 = "<div class='k' style='border-left-color:#0072B2'><div class='l'>Receita por milha</div><div class='v'>US$ " & FORMAT ( rmilha, "0.00", fmt ) & "</div><div class='c'>por minuto: US$ " & FORMAT ( rmin, "0.00", fmt ) & "</div><div class='t'><b>Tarifa base ÷ milhas</b>, nas mesmas corridas (tarifa maior que zero). Não inclui impostos, taxas, pedágios nem gorjetas.</div></div>"
+			VAR c5 = "<div class='k' style='border-left-color:#009E73'><div class='l'>Destino no CBD</div><div class='v'>" & FORMAT ( pcbd, "0.0%", fmt ) & "</div><div class='c'>" & FORMAT ( entrando / 1e6, "#,##0.0", fmt ) & " mi entraram vindas de fora</div><div class='t'><b>Corridas que terminam no CBD</b> (38 zonas da Congestion Relief Zone, lista da MTA) ÷ todas as corridas. A taxa de congestionamento vale desde 05/01/2025.</div></div>"
+			VAR c6 = "<div class='k' style='border-left-color:#CC79A7'><div class='l'>Share da Lyft</div><div class='v'>" & FORMAT ( share_l, "0.0%", fmt ) & "</div><div class='c'>Uber: " & FORMAT ( share_u, "0.0%", fmt ) & "</div><div class='t'><b>Corridas da Lyft ÷ corridas de todas as operadoras</b> no mesmo recorte de zona e período.</div></div>"
+			RETURN
+			    estilo & "<div class='kpis'>" & c1 & c2 & c3 & c4 & c5 & c6 & "</div>"
+		displayFolder: Apresentacao
+		lineageTag: 04372dd3-85fa-499f-80a2-ab3deb7acdd1
+
 	column hora_embarque
 		dataType: dateTime
 		isHidden

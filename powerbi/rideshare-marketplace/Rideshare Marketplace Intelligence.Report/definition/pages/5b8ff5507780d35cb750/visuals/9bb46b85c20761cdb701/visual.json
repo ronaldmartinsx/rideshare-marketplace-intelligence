@@ -3,11 +3,11 @@
   "name": "9bb46b85c20761cdb701",
   "position": {
     "x": 1072,
-    "y": 352,
+    "y": 448,
     "width": 320,
-    "height": 176,
-    "z": 8000,
-    "tabOrder": 8000
+    "height": 136,
+    "z": 10000,
+    "tabOrder": 10000
   },
   "visual": {
     "visualType": "textbox",
@@ -21,9 +21,10 @@
                   {
                     "value": "4 · UBER × LYFT",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
+                      "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#9E4F80"
+                      "color": "#9E4F80",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -136,6 +137,32 @@
               "expr": {
                 "Literal": {
                   "Value": "16D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

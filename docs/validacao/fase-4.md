@@ -174,3 +174,20 @@ Leitura:
 - **Para o negócio, a conclusão não muda:** 27,9 ou 27,0 min dizem o mesmo ("falta oferta na LaGuardia à 1h"), e a ordem das zonas se mantém nos recortes testados.
 - O próprio `approx_percentile` é aproximado (erro para estes tamanhos não verificado), e a espera na Silver está em segundos inteiros.
 - **Consequência proposta:** exibir o P90 acima de 15 min como aproximado (erro de até ~1 min nos recortes testados). Evidência nova que não muda a decisão do ADR 0006: entra na spec no passo 10, sem ADR novo.
+
+## 7. Relatório: página única com raias (passo 8, 05/11/2026)
+
+Especificação travada e revisões: `_brief/report-spec.md` (ADR 0019). Construção pelo CLI `powerbi-report-author` 0.5.0, com validação e captura de tela a cada lote.
+
+| Revisão | Achado na captura | Correção |
+|---|---|---|
+| Esqueleto | Título em 2 linhas com barra de rolagem; respostas com 2/3 vazios; matriz cortada | Grade revista (revisões 1 e 2) |
+| 2 | **Mapas em branco** com o gradiente no formato exigido pelo validador (paradas sem `expr`) | Formato nativo do Desktop (com `expr`): renderiza. Exceção consciente ao `PBIR_FILLRULE_STOP_DOUBLE_WRAP` |
+| 3 | Datas do filtro ilegíveis sobre o azul-marinho; cartões HTML baixos; Queens na cor da Lyft | Campo de data branco; cartões com 150 px; destaque em Manhattan |
+
+- **Filtro TopN não ordena por medida** (aviso do CLI): o ranking virou "zonas com P90 de 12 min ou mais".
+- **Limites fixos de cor no `shapeMap`** funcionam no formato nativo (P90 6–15 min; share 15%–40%).
+- **HTML Content Secure:** `<style>` e `:hover` funcionam (explicação ao passar o mouse testada pelo Ronald no Desktop em 05/11/2026); `title` também é permitido (documentação oficial da edição).
+- **Cultura do modelo:** a troca para `pt-BR` foi recusada pelo motor com o modelo carregado ("Culture and Collation properties ... may be changed only before any other object has been created") e também via TMDL com o `cache.abf` existente. Revertida para `en-US`; plano no `_brief/report-spec.md`.
+- Erros do validador que permanecem: `PBIR_JSON_FILE_NO_SCHEMA` no `.pbip` e no `definition.pbir` (arquivos do Desktop; só afetam publicação no Fabric) e `PBIR_FILLRULE_STOP_DOUBLE_WRAP` nos 3 mapas.
+- Evidências: `docs/validacao/img/fase-4-pagina-esqueleto.png`, `fase-4-pagina-rev3-inteira.png`, `fase-4-pagina-rev3-topo.png`, `fase-4-pagina-rev3-raia3.png`.

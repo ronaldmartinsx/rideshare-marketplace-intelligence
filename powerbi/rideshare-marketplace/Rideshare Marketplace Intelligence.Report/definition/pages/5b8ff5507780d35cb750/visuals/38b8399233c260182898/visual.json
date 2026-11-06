@@ -3,11 +3,11 @@
   "name": "38b8399233c260182898",
   "position": {
     "x": 48,
-    "y": 1648,
+    "y": 1952,
     "width": 664,
     "height": 376,
-    "z": 17000,
-    "tabOrder": 17000
+    "z": 31000,
+    "tabOrder": 31000
   },
   "visual": {
     "visualType": "lineChart",
@@ -265,19 +265,6 @@
           }
         }
       ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
       "title": [
         {
           "properties": {
@@ -295,10 +282,17 @@
                 }
               }
             },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -322,13 +316,58 @@
             }
           }
         }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'O take rate da Lyft oscila bem mais que o da Uber'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       ]
     }
   },
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter2d776bd9e616c0770fb2e364",
+        "name": "Filter9ea717042e8c58a1638ec6b9",
         "field": {
           "Column": {
             "Expression": {

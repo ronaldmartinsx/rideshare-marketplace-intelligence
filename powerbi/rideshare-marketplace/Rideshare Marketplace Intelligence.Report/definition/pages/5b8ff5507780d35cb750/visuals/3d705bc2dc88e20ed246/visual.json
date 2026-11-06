@@ -3,11 +3,11 @@
   "name": "3d705bc2dc88e20ed246",
   "position": {
     "x": 48,
-    "y": 3552,
+    "y": 3952,
     "width": 664,
     "height": 880,
-    "z": 25000,
-    "tabOrder": 25000
+    "z": 39000,
+    "tabOrder": 39000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -111,6 +111,13 @@
                         "Value": "'#F3E1EC'"
                       }
                     }
+                  },
+                  "value": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "0.15D"
+                      }
+                    }
                   }
                 },
                 "max": {
@@ -118,6 +125,13 @@
                     "expr": {
                       "Literal": {
                         "Value": "'#CC79A7'"
+                      }
+                    }
+                  },
+                  "value": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "0.4D"
                       }
                     }
                   }
@@ -240,20 +254,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Mapa: share da Lyft em cada zona; mais escuro = share maior (escala de 15% a 40%).'"
-                }
-              }
-            }
-          }
-        }
-      ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
+                  "Value": "'Mapa: share da Lyft em cada zona; mais escuro = share maior.'"
                 }
               }
             }
@@ -277,10 +278,17 @@
                 }
               }
             },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -304,13 +312,58 @@
             }
           }
         }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Mais forte no sudoeste do Brooklyn (Windsor Terrace 36%); mais fraca em Midtown (21%)'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       ]
     }
   },
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterc749f440c799db090c6ebc40",
+        "name": "Filterfaa8f3163fa6524295e52210",
         "field": {
           "Column": {
             "Expression": {

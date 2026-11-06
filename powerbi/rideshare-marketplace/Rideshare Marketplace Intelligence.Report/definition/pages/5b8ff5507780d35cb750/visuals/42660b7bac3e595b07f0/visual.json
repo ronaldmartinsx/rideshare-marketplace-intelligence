@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "42660b7bac3e595b07f0",
   "position": {
-    "x": 48,
-    "y": 1552,
-    "width": 1344,
-    "height": 80,
-    "z": 10000,
-    "tabOrder": 10000
+    "x": 176,
+    "y": 1760,
+    "width": 1216,
+    "height": 96,
+    "z": 18000,
+    "tabOrder": 18000
   },
   "visual": {
     "visualType": "textbox",
@@ -19,11 +19,12 @@
               {
                 "textRuns": [
                   {
-                    "value": "2 · COMO EVOLUI A ECONOMIA UNITÁRIA?",
+                    "value": "RAIA 2 DE 4 · COMO EVOLUI A ECONOMIA UNITÁRIA?",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
-                      "fontSize": "15px",
-                      "color": "#005A8C"
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "20px",
+                      "color": "#FFFFFF",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -35,7 +36,7 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "14px",
-                      "color": "#1F1F1F"
+                      "color": "#FFFFFF"
                     }
                   }
                 ]
@@ -100,6 +101,32 @@
               "expr": {
                 "Literal": {
                   "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

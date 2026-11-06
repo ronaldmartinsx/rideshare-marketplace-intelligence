@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "906a775d37e0fb6b6d79",
   "position": {
-    "x": 48,
-    "y": 2448,
-    "width": 1344,
-    "height": 80,
-    "z": 11000,
-    "tabOrder": 11000
+    "x": 176,
+    "y": 2664,
+    "width": 1216,
+    "height": 96,
+    "z": 22000,
+    "tabOrder": 22000
   },
   "visual": {
     "visualType": "textbox",
@@ -19,11 +19,12 @@
               {
                 "textRuns": [
                   {
-                    "value": "3 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?",
+                    "value": "RAIA 3 DE 4 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
-                      "fontSize": "15px",
-                      "color": "#00785A"
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "20px",
+                      "color": "#FFFFFF",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -35,7 +36,7 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "14px",
-                      "color": "#1F1F1F"
+                      "color": "#FFFFFF"
                     }
                   }
                 ]
@@ -100,6 +101,32 @@
               "expr": {
                 "Literal": {
                   "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

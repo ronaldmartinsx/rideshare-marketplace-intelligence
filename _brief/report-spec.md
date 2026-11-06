@@ -445,6 +445,26 @@ Aprovado o contrato acima, a construção e as capturas de tela mudaram estes po
 
 Erros do validador que permanecem, conscientemente: `PBIR_JSON_FILE_NO_SCHEMA` no `.pbip` e no `definition.pbir` (arquivos do Desktop; só importam para publicar no Fabric) e `PBIR_FILLRULE_STOP_DOUBLE_WRAP` nos 3 mapas (item 6). Evidência da página inteira: `docs/validacao/img/fase-4-pagina-esqueleto.png`.
 
+## Revisão 3: refinamentos do Ronald (05/11/2026)
+
+Pedidos do Ronald depois do esqueleto e como foram atendidos. O PBIR em `powerbi/` reflete esta lista (página 1440 × **5000**, grade de 49 linhas).
+
+| Pedido | Solução | Evidência |
+|---|---|---|
+| Uma fonte só (Segoe UI) | Tema próprio `RideshareTema-3f9c2a71.json` (textClasses em Segoe UI, paleta Okabe-Ito) registrado no `report.json`; textos sem "Segoe UI Semibold" | Validação sem erro de tema |
+| Subtítulo-insight em cada gráfico | 14 subtítulos estáticos (aprovados pelo Ronald), período completo | Capturas |
+| Raias pouco destacadas | Faixa de abertura de borda a borda (136 px) na cor escura da raia, com o número grande, "RAIA N DE 4 · pergunta" e a resposta em branco; fundo levemente tingido atrás da raia | `docs/validacao/img/fase-4-pagina-rev3-inteira.png` |
+| Título fraco; imagem; logos | Cabeçalho azul-marinho de borda a borda com título de 30 px e ilustração SVG das 263 zonas (CBD em verde) gerada do nosso TopoJSON. **Sem logos da Uber e da Lyft** (marcas registradas; decisão do Ronald) | `fase-4-pagina-rev3-topo.png` |
+| Filtro "largado" | Filtro dentro do cabeçalho, rótulo "Período analisado", campos de data brancos | Idem |
+| Cartões em HTML com explicação ao passar o mouse | Visual HTML Content (edição **Secure**, GUID gravado pelo Desktop do Ronald) com a medida `HTML Cartoes KPI` (**escrita pelo Claude, exceção à regra ✍️ autorizada pelo Ronald**). Explicação por CSS `:hover` (✅ testado pelo Ronald no Desktop) | Idem |
+| Rodapé com LinkedIn, GitHub e portfólio | Faixa azul-marinho com a fonte e três botões (`visualLink` WebUrl) | Captura da raia 4 e rodapé |
+| (achado na revisão) Cores da raia 3 | Manhattan na cor da raia, demais distritos em cinza (técnica de destaque); antes, Queens saía na cor da Lyft | `fase-4-pagina-rev3-raia3.png` |
+| (achado na revisão) Escala dos mapas | Limites fixos (P90 6–15 min; share 15%–40%) no formato nativo do Desktop, que renderiza | Mapa do share com variação visível |
+
+Pendentes desta revisão:
+- **Cultura `pt-BR` do modelo:** não pode ser trocada com o cache de dados existente (o motor recusa mudar a cultura depois de criado o modelo). Caminho previsto: renomear o `cache.abf`, pôr `culture: pt-BR` no TMDL, abrir e atualizar (~500 MB no Athena). Enquanto isso, os gráficos usam o formato `en-US`; os cartões HTML já formatam em `pt-BR`.
+- **Versão em inglês** do relatório: pedido do Ronald, backlog da Fase 7.
+
 ## Implementation notes
 
 - Model changes: nenhuma.

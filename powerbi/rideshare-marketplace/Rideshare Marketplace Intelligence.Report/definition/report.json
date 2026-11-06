@@ -9,6 +9,15 @@
         "page": "2.3.1"
       },
       "type": "SharedResources"
+    },
+    "customTheme": {
+      "name": "RideshareTema-3f9c2a71.json",
+      "reportVersionAtImport": {
+        "visual": "2.14.0",
+        "report": "3.4.0",
+        "page": "2.3.1"
+      },
+      "type": "RegisteredResources"
     }
   },
   "objects": {
@@ -39,6 +48,9 @@
       }
     ]
   },
+  "publicCustomVisuals": [
+    "htmlContent443BE3AD55E043BF878BED274D3A6865"
+  ],
   "resourcePackages": [
     {
       "name": "SharedResources",
@@ -59,6 +71,16 @@
           "name": "zonas_tlc2877948461527192.json",
           "path": "zonas_tlc2877948461527192.json",
           "type": "ShapeMap"
+        },
+        {
+          "name": "RideshareTema-3f9c2a71.json",
+          "path": "RideshareTema-3f9c2a71.json",
+          "type": "CustomTheme"
+        },
+        {
+          "name": "mapa_zonas_cabecalho17624082913.svg",
+          "path": "mapa_zonas_cabecalho17624082913.svg",
+          "type": "Image"
         }
       ]
     }

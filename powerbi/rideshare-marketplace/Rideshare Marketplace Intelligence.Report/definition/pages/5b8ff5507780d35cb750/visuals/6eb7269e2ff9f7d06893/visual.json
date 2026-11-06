@@ -4,10 +4,10 @@
   "position": {
     "x": 48,
     "y": 48,
-    "width": 1000,
-    "height": 80,
-    "z": 1000,
-    "tabOrder": 1000
+    "width": 776,
+    "height": 176,
+    "z": 2000,
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "textbox",
@@ -19,11 +19,12 @@
               {
                 "textRuns": [
                   {
-                    "value": "Rideshare em NY · jan/2024–set/2026 · quatro respostas para o Marketplace da Lyft",
+                    "value": "RIDESHARE EM NOVA YORK · JAN/2024–SET/2026",
                     "textStyle": {
-                      "fontFamily": "Segoe UI Semibold",
-                      "fontSize": "20px",
-                      "color": "#1F1F1F"
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "12px",
+                      "color": "#C9D6E8",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -31,11 +32,24 @@
               {
                 "textRuns": [
                   {
-                    "value": "Viagens de alto volume (Uber e Lyft) registradas pela TLC. Role a página: cada raia responde a uma pergunta.",
+                    "value": "Quatro respostas para o time de Marketplace da Lyft",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
-                      "fontSize": "12px",
-                      "color": "#605E5C"
+                      "fontSize": "30px",
+                      "color": "#FFFFFF",
+                      "fontWeight": "bold"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de 672 milhões de viagens registradas pela TLC.",
+                    "textStyle": {
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "13px",
+                      "color": "#C9D6E8"
                     }
                   }
                 ]
@@ -100,6 +114,32 @@
               "expr": {
                 "Literal": {
                   "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

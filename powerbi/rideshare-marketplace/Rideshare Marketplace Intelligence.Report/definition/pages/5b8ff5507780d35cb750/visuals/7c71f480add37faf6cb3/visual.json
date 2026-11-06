@@ -3,11 +3,11 @@
   "name": "7c71f480add37faf6cb3",
   "position": {
     "x": 616,
-    "y": 648,
+    "y": 848,
     "width": 432,
     "height": 776,
-    "z": 14000,
-    "tabOrder": 14000
+    "z": 28000,
+    "tabOrder": 28000
   },
   "visual": {
     "visualType": "pivotTable",
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_periodo_espera.hora_do_dia",
-              "nativeQueryRef": "hora_do_dia"
+              "nativeQueryRef": "hora_do_dia",
+              "displayName": "Hora do dia"
             }
           ]
         },
@@ -45,7 +46,8 @@
                 }
               },
               "queryRef": "dim_periodo_espera.tipo_dia",
-              "nativeQueryRef": "tipo_dia"
+              "nativeQueryRef": "tipo_dia",
+              "displayName": "Tipo de dia"
             }
           ]
         },
@@ -63,7 +65,8 @@
                 }
               },
               "queryRef": "fct_espera_histograma.Espera P90 (min)",
-              "nativeQueryRef": "Espera P90 (min)"
+              "nativeQueryRef": "Espera P90 (min)",
+              "displayName": "P90 (min)"
             }
           ]
         }
@@ -257,19 +260,6 @@
           }
         }
       ],
-      "subTitle": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
       "title": [
         {
           "properties": {
@@ -287,10 +277,17 @@
                 }
               }
             },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "12D"
+                  "Value": "13D"
                 }
               }
             },
@@ -307,6 +304,51 @@
                   "expr": {
                     "Literal": {
                       "Value": "'#1F1F1F'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Madrugadas de feriado e fim de semana são as piores horas'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#605E5C'"
                     }
                   }
                 }
