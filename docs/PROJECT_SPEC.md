@@ -536,7 +536,7 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 4. **Taxa de congestionamento:** antes e depois, CBD versus não-CBD (com comparação de tendências).
 5. **Forecast × realizado:** com o WAPE do modelo e do baseline.
 
-**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). Fica fora da v1. Plano B: o projeto do Power BI no repositório, com prints e um vídeo curto no README.
+**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). A **atualização agendada** fica fora da v1. Ajuste de 07/11/2026: o relatório é **publicado no Service como foto dos dados** (sem atualização agendada), além do projeto no repositório com prints e um vídeo curto no README.
 
 ---
 
