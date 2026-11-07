@@ -68,9 +68,9 @@
       "type": "RegisteredResources",
       "items": [
         {
-          "name": "zonas_tlc2877948461527192.json",
-          "path": "zonas_tlc2877948461527192.json",
-          "type": "ShapeMap"
+          "name": "mapa_zonas_cabecalho17624082913.svg",
+          "path": "mapa_zonas_cabecalho17624082913.svg",
+          "type": "Image"
         },
         {
           "name": "RideshareTema-3f9c2a71.json",
@@ -78,9 +78,9 @@
           "type": "CustomTheme"
         },
         {
-          "name": "mapa_zonas_cabecalho17624082913.svg",
-          "path": "mapa_zonas_cabecalho17624082913.svg",
-          "type": "Image"
+          "name": "zonas_tlc2877948461527192.json",
+          "path": "zonas_tlc2877948461527192.json",
+          "type": "ShapeMap"
         }
       ]
     }

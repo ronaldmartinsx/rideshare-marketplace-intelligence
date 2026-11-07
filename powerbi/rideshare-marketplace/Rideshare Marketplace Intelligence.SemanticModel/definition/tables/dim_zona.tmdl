@@ -82,3 +82,5 @@ table dim_zona
 				in
 				    dim_zona_Table
 
+	annotation PBI_ResultType = Table
+

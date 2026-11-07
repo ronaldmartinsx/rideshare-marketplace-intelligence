@@ -26,7 +26,10 @@
 - Quando os arquivos do PBIR mudam por fora, o Desktop mostra a faixa *"changed externally. Apply to view the latest changes"*: basta **Apply**, sem fechar.
 - Ao abrir um PBIP, o Desktop marca "alterações não salvas" por reformatar os JSON (ordem de propriedades, `"active": true`). Recarregar pelo CLI fica bloqueado; usar o Apply, ou fechar com **Não salvar** e reabrir.
 - Medida criada ou alterada pelo MCP só vai para o TMDL com **Ctrl+S**. Salvar só é seguro quando o relatório na memória é igual ao do disco (logo depois de um Apply).
-- A cultura do modelo não muda com o modelo carregado nem via TMDL com cache existente.
+- A cultura do modelo não muda com o modelo carregado nem via TMDL com cache existente. **Feito em 07/11/2026:** cache movido para `C:\Users\ronal\Documents\rideshare-backup\` (reserva, fora do repositório), `culture: pt-BR` no TMDL, modelo aberto vazio e atualizado; contagens iguais à validação. O Desktop criou `cultures/pt-BR.tmdl`.
+- **Formato dos números no Desktop segue o Windows/Desktop, não a cultura do modelo** (o Windows do Ronald está em inglês: `3,815,508`, `Jan 2024`). Para os prints em português: Arquivo → Opções → Global → Configurações regionais (rótulos não verificados).
+- **Recarga do zero:** atualizar primeiro **uma tabela pequena** (`dim_operadora`) para fazer o login SSO uma vez e preencher o cache de credencial; depois "Atualizar" tudo. Atualizar tudo de cara abre um login por tabela em paralelo e estoura o tempo limite.
+- O CLI `preview` não encontra o Desktop da Microsoft Store (procura em `Program Files`): abrir o `.pbip` à mão.
 
 Pontos que eram do teste do mapa (resolvidos na revisão 3):
 - **Escala de cor:** 237 de 261 zonas têm P90 entre 7 e 12 min, mas a escala automática vai de 6,8 a 30 e deixa o mapa quase uniforme. Usar mínimo e máximo fixos ou uma escala divergente centrada no P90 da cidade.

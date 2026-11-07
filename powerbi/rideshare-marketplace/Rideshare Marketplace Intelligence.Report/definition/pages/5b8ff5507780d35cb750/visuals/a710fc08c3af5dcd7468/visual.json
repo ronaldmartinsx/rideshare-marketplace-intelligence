@@ -4,9 +4,9 @@
   "position": {
     "x": 220,
     "y": 160,
-    "width": 320,
-    "height": 80,
     "z": 4000,
+    "height": 80,
+    "width": 320,
     "tabOrder": 4000
   },
   "visual": {
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         }
@@ -270,7 +271,6 @@
           }
         },
         "type": "Advanced",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -304,7 +304,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }

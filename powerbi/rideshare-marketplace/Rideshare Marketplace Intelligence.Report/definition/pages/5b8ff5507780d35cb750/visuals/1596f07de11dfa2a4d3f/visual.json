@@ -4,9 +4,9 @@
   "position": {
     "x": 616,
     "y": 2784,
-    "width": 776,
-    "height": 376,
     "z": 34000,
+    "height": 376,
+    "width": 776,
     "tabOrder": 34000
   },
   "visual": {
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         },

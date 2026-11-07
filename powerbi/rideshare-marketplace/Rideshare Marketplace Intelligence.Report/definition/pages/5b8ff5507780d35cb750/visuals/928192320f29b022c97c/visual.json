@@ -4,9 +4,9 @@
   "position": {
     "x": 736,
     "y": 3888,
-    "width": 664,
-    "height": 376,
     "z": 37000,
+    "height": 376,
+    "width": 664,
     "tabOrder": 37000
   },
   "visual": {
@@ -27,25 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "fct_demanda_zona_hora"
-                    }
-                  },
-                  "Property": "Share da operadora"
-                }
-              },
-              "queryRef": "fct_demanda_zona_hora.Share da operadora",
-              "nativeQueryRef": "Share da operadora"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         },
@@ -64,6 +47,24 @@
               },
               "queryRef": "dim_operadora.operadora",
               "nativeQueryRef": "operadora"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Share da operadora"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Share da operadora",
+              "nativeQueryRef": "Share da operadora"
             }
           ]
         }
@@ -379,7 +380,6 @@
           }
         },
         "type": "Categorical",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -425,7 +425,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }
