@@ -4,10 +4,10 @@
   "position": {
     "x": 48,
     "y": 448,
-    "z": 7000,
-    "height": 136,
     "width": 320,
-    "tabOrder": 7000
+    "height": 136,
+    "z": 8000,
+    "tabOrder": 8000
   },
   "visual": {
     "visualType": "textbox",
@@ -21,10 +21,10 @@
                   {
                     "value": "1 · OFERTA",
                     "textStyle": {
-                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#b04a00"
+                      "color": "#B04A00",
+                      "fontWeight": "bold"
                     }
                   }
                 ]
@@ -36,7 +36,19 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "15px",
-                      "color": "#1f1f1f"
+                      "color": "#1F1F1F"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Leitura com dados até set/2026",
+                    "textStyle": {
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "10px",
+                      "color": "#605E5C"
                     }
                   }
                 ]

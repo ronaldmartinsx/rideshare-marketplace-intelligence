@@ -4,57 +4,46 @@
   "position": {
     "x": 48,
     "y": 48,
-    "z": 2000,
-    "height": 176,
     "width": 776,
+    "height": 104,
+    "z": 2000,
     "tabOrder": 2000
   },
   "visual": {
-    "visualType": "textbox",
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "HTML Titulo"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.HTML Titulo",
+              "nativeQueryRef": "HTML Titulo"
+            }
+          ]
+        }
+      }
+    },
     "objects": {
-      "general": [
+      "compatibility": [
         {
           "properties": {
-            "paragraphs": [
-              {
-                "textRuns": [
-                  {
-                    "value": "RIDESHARE EM NOVA YORK · JAN/2024–SET/2026",
-                    "textStyle": {
-                      "fontWeight": "bold",
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "12px",
-                      "color": "#c9d6e8"
-                    }
-                  }
-                ]
-              },
-              {
-                "textRuns": [
-                  {
-                    "value": "Quatro respostas para o time de Marketplace da Lyft",
-                    "textStyle": {
-                      "fontWeight": "bold",
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "30px",
-                      "color": "#ffffff"
-                    }
-                  }
-                ]
-              },
-              {
-                "textRuns": [
-                  {
-                    "value": "Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de 672 milhões de viagens registradas pela TLC.",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "13px",
-                      "color": "#c9d6e8"
-                    }
-                  }
-                ]
+            "legacyRendering": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
               }
-            ]
+            }
           }
         }
       ]
@@ -140,6 +129,32 @@
               "expr": {
                 "Literal": {
                   "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Título: quatro respostas para o time de Marketplace da Lyft, com o período dos dados.'"
                 }
               }
             }

@@ -15,7 +15,7 @@
 **Passo 8 em andamento (05/11/2026):** esqueleto da página única (commit `bbfbfd0`) e **revisão 3** com os refinamentos do Ronald (tema Segoe UI, cabeçalho azul-marinho com ilustração das zonas, faixas de raia, cartões HTML com explicação ao passar o mouse, subtítulos-insight, rodapé com links). Especificação e revisões: `_brief/report-spec.md`. Evidências: `docs/validacao/img/fase-4-pagina-rev3-*.png`.
 
 **Próximas tarefas do passo 8:**
-0. **O Ronald tem vários ajustes de design a passar (05/11/2026: "estamos bem próximos do ideal").** Começar a próxima sessão por eles. O gerador está em `powerbi/gerador/gerar_pagina.js`: enquanto o Ronald não salvar mudanças feitas à mão no Desktop, ajustes estruturais podem ser feitos nele e regerados (validar → Apply no Desktop → captura).
+0. **Revisão 4 feita em 07/11/2026** (título e ficha dinâmicos, filtro só com meses com dados, cartões com borda e ícone, raias sem preenchimento, rodapé e nota sem jargão, formatação condicional na tabela; ver `_brief/report-spec.md`). Perguntar ao Ronald se ainda há ajustes antes do passo 9. O gerador está em `powerbi/gerador/gerar_pagina.js`: enquanto o Ronald não salvar mudanças feitas à mão no Desktop, ajustes estruturais podem ser feitos nele e regerados (validar → Apply no Desktop → captura).
 1. Cultura `pt-BR` do modelo (plano na seção "Revisão 3" de `_brief/report-spec.md`; precisa renomear o `cache.abf` e atualizar os dados).
 2. Ajustes finos de design que o Ronald quiser fazer direto no Desktop. **Depois que ele salvar mudanças próprias, não regerar a página com o gerador**: editar o PBIR pontualmente.
 3. Passo 9 (prints, vídeo, README) e passo 10 (documentação e gate).

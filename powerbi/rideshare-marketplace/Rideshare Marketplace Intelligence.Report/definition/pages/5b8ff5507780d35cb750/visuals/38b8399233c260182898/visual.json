@@ -3,11 +3,11 @@
   "name": "38b8399233c260182898",
   "position": {
     "x": 48,
-    "y": 1952,
-    "z": 31000,
-    "height": 376,
+    "y": 1888,
     "width": 664,
-    "tabOrder": 31000
+    "height": 376,
+    "z": 28000,
+    "tabOrder": 28000
   },
   "visual": {
     "visualType": "lineChart",
@@ -27,26 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
-            }
-          ]
-        },
-        "Series": {
-          "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "dim_operadora"
-                    }
-                  },
-                  "Property": "operadora"
-                }
-              },
-              "queryRef": "dim_operadora.operadora",
-              "nativeQueryRef": "operadora"
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },
@@ -65,6 +46,24 @@
               },
               "queryRef": "fct_demanda_zona_hora.Take rate",
               "nativeQueryRef": "Take rate"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_operadora"
+                    }
+                  },
+                  "Property": "operadora"
+                }
+              },
+              "queryRef": "dim_operadora.operadora",
+              "nativeQueryRef": "operadora"
             }
           ]
         }
@@ -368,7 +367,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter9ea717042e8c58a1638ec6b9",
+        "name": "Filter05b6b1b0b95ccd5339738452",
         "field": {
           "Column": {
             "Expression": {
@@ -380,6 +379,7 @@
           }
         },
         "type": "Categorical",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -425,8 +425,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

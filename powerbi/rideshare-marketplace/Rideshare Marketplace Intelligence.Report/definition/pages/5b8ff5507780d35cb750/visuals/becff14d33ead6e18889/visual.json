@@ -6,8 +6,8 @@
     "y": 2660,
     "width": 104,
     "height": 96,
-    "z": 21000,
-    "tabOrder": 21000
+    "z": 19000,
+    "tabOrder": 19000
   },
   "visual": {
     "visualType": "textbox",
@@ -23,7 +23,7 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "56px",
-                      "color": "#FFFFFF",
+                      "color": "#00785A",
                       "fontWeight": "bold"
                     }
                   }

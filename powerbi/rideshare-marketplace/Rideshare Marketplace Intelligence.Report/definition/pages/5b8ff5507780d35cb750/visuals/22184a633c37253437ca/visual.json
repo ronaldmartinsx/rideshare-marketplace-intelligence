@@ -6,8 +6,8 @@
     "y": 448,
     "width": 320,
     "height": 136,
-    "z": 8000,
-    "tabOrder": 8000
+    "z": 9000,
+    "tabOrder": 9000
   },
   "visual": {
     "visualType": "textbox",
@@ -37,6 +37,18 @@
                       "fontFamily": "Segoe UI",
                       "fontSize": "15px",
                       "color": "#1F1F1F"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Leitura com dados até set/2026",
+                    "textStyle": {
+                      "fontFamily": "Segoe UI",
+                      "fontSize": "10px",
+                      "color": "#605E5C"
                     }
                   }
                 ]

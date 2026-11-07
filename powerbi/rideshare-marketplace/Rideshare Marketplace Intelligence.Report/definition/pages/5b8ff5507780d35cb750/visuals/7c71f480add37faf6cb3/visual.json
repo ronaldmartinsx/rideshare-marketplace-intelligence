@@ -3,36 +3,16 @@
   "name": "7c71f480add37faf6cb3",
   "position": {
     "x": 616,
-    "y": 848,
-    "z": 28000,
-    "height": 776,
+    "y": 784,
     "width": 432,
-    "tabOrder": 28000
+    "height": 840,
+    "z": 25000,
+    "tabOrder": 25000
   },
   "visual": {
     "visualType": "pivotTable",
     "query": {
       "queryState": {
-        "Columns": {
-          "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "dim_periodo_espera"
-                    }
-                  },
-                  "Property": "tipo_dia"
-                }
-              },
-              "queryRef": "dim_periodo_espera.tipo_dia",
-              "nativeQueryRef": "tipo_dia",
-              "active": true,
-              "displayName": "Tipo de dia"
-            }
-          ]
-        },
         "Rows": {
           "projections": [
             {
@@ -48,8 +28,26 @@
               },
               "queryRef": "dim_periodo_espera.hora_do_dia",
               "nativeQueryRef": "hora_do_dia",
-              "active": true,
               "displayName": "Hora do dia"
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_periodo_espera"
+                    }
+                  },
+                  "Property": "tipo_dia"
+                }
+              },
+              "queryRef": "dim_periodo_espera.tipo_dia",
+              "nativeQueryRef": "tipo_dia",
+              "displayName": "Tipo de dia"
             }
           ]
         },

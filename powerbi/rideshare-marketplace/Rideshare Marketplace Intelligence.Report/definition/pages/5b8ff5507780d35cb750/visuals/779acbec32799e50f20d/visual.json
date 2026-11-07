@@ -4,10 +4,10 @@
   "position": {
     "x": 0,
     "y": 4840,
-    "z": 42000,
-    "height": 160,
     "width": 1440,
-    "tabOrder": 42000
+    "height": 160,
+    "z": 39000,
+    "tabOrder": 39000
   },
   "visual": {
     "visualType": "shape",
@@ -75,17 +75,6 @@
           },
           "selector": {
             "id": "default"
-          }
-        },
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
           }
         }
       ]

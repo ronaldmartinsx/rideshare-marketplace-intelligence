@@ -465,6 +465,23 @@ Pendentes desta revisão:
 - **Cultura `pt-BR` do modelo:** não pode ser trocada com o cache de dados existente (o motor recusa mudar a cultura depois de criado o modelo). Caminho previsto: renomear o `cache.abf`, pôr `culture: pt-BR` no TMDL, abrir e atualizar (~500 MB no Athena). Enquanto isso, os gráficos usam o formato `en-US`; os cartões HTML já formatam em `pt-BR`.
 - **Versão em inglês** do relatório: pedido do Ronald, backlog da Fase 7.
 
+## Revisão 4: refinamentos do Ronald (07/11/2026)
+
+Base: posições do cabeçalho ajustadas pelo Ronald no Desktop (commit `96ff690`), incorporadas ao gerador (`powerbi/gerador/gerar_pagina.js`).
+
+| Pedido | Solução |
+|---|---|
+| "JAN/2024–SET/2026" fixo no título | Título em HTML com a medida `Texto Periodo Dados` (primeiro e último mês com dados, ignorando filtros); o volume de viagens do subtítulo também é dinâmico. As 4 respostas, que são leituras fixas, ganharam "Leitura com dados até set/2026" |
+| Espaço ocioso à direita do cabeçalho | Ficha dos dados em HTML (`HTML Ficha Dados`): meses, zonas, viagens e último mês, dinâmicos |
+| Filtro indo até dez/2026 | Filtro no próprio visual da segmentação: só meses com `Corridas > 0` (funcionou sem mexer no dbt) |
+| Cartões mais explorados | Borda inteira na cor da métrica, ícone SVG por cartão, hover no tom escuro da mesma cor (contraste AA), textos sem jargão |
+| Raias "carnaval de cores" | Sem preenchimento nem fundo tingido: linha de 4 px na cor da raia, número e pergunta no tom escuro, resposta em texto normal; visuais a 24 px da abertura e ~64 px até a próxima raia (na raia 1, os 64 px foram para os visuais) |
+| Rodapé com "spec" | `HTML Rodape` em linguagem de negócio, com período dinâmico e a linha do projeto de portfólio |
+| Formatação condicional na tabela | Barras de dados nas corridas da Lyft; gradiente de uma cor no share (20%–35%) |
+| (achado na revisão) Nota de método com "ADR"/"Athena" | Reescrita em linguagem de negócio |
+
+Medidas de apresentação novas (regra de 07/11/2026 no CLAUDE.md: o Claude escreve as que só formatam texto/HTML): `Texto Periodo Dados`, `HTML Titulo`, `HTML Ficha Dados`, `HTML Rodape`; `HTML Cartoes KPI` reescrita. Evidências: `docs/validacao/img/fase-4-pagina-rev4-*.png`.
+
 ## Implementation notes
 
 - Model changes: nenhuma.

@@ -26,6 +26,8 @@ Código que ele não consegue explicar não conta como entregue.
   Peças ✍️ em Python: o Ronald desenha a regra (tabela de cenários); se ele pedir, o Claude escreve o código e os
   testes, explica bloco a bloco com pontes para SQL e fecha com uma checagem de entendimento. Registrar quem
   escreveu o quê em docs/aprendizados/fase-N.md. Peças ✍️ em SQL e DAX continuam sendo escritas por ele.
+  Exceção (07/11/2026): medidas DAX de apresentação (só formatam texto/HTML a partir de métricas existentes,
+  sem calcular métrica nova) o Claude escreve e explica; medidas que calculam métrica seguem ✍️ do Ronald.
 - No fim da fase: gate de domínio (Apêndice C da spec). A fase só fecha quando o gate passa.
 - Ao fechar a fase: docs/aprendizados/fase-N.md, glossário e ADRs atualizados.
 

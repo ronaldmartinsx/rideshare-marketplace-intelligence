@@ -3,11 +3,11 @@
   "name": "8bdcb363f8875a59618a",
   "position": {
     "x": 736,
-    "y": 2352,
-    "z": 34000,
-    "height": 280,
+    "y": 2288,
     "width": 320,
-    "tabOrder": 34000
+    "height": 280,
+    "z": 31000,
+    "tabOrder": 31000
   },
   "visual": {
     "visualType": "clusteredColumnChart",
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.ano",
-              "nativeQueryRef": "ano",
-              "active": true
+              "nativeQueryRef": "ano"
             }
           ]
         },
@@ -66,7 +65,8 @@
             },
             "direction": "Ascending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {

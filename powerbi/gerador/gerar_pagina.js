@@ -105,9 +105,12 @@ function cardVCO(title, subtitle, alt) {
 // ---------- visuais ----------
 const visuals = [];
 let z = 1000;
+const LANE_SHIFT = 64; // revisão 4: visuais da raia sobem 64 px (24 px da abertura; respiro maior antes da próxima raia)
+const alto = reg => { const b = box(reg); return { ...b, height: b.height + LANE_SHIFT }; }; // raia 1: os 64 px vão para os visuais, a nota fica logo abaixo
 function add(id, lane, pos, visual, filters) {
   const name = crypto.createHash('sha1').update(id).digest('hex').slice(0, 20);
-  const position = Array.isArray(pos) ? box(pos) : pos;
+  const position = { ...(Array.isArray(pos) ? box(pos) : pos) };
+  if (typeof lane === 'number' && lane >= 1 && !/_(head|num|line|note)$/.test(id)) position.y -= LANE_SHIFT;
   const json = { $schema: VSCHEMA, name, position: { ...position, z, tabOrder: z }, visual };
   if (filters && filters.length) json.filterConfig = { filters };
   z += 1000;
@@ -176,11 +179,16 @@ function shapeMap(value, loColor, hiColor, lo = null, hi = null) {
 
 // ===== cabeçalho (faixa azul-marinho de borda a borda) =====
 add('hero_band', 'deco', { x: 0, y: 0, width: W, height: snap(M + 2 * ROW - G / 2) }, shape(C.navy));
-add('page_title', 0, R.title, textbox([
-  { textRuns: [run('RIDESHARE EM NOVA YORK · JAN/2024–SET/2026', 12, C.navyTxt, true)] },
-  { textRuns: [run('Quatro respostas para o time de Marketplace da Lyft', 30, '#FFFFFF', true)] },
-  { textRuns: [run('Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de 672 milhões de viagens registradas pela TLC.', 13, C.navyTxt)] }]));
-add('month_slicer', 'slicer', R.slicer, {
+// revisão 4: título e ficha em HTML com período e volume dinâmicos (medidas de apresentação)
+const htmlVis = (measure, alt, extraVCO = {}) => ({ visualType: HTMLVIS,
+  query: { queryState: { content: { projections: [proj(mea(D, measure))] } } },
+  objects: { compatibility: [{ properties: { legacyRendering: lit('true') } }] },
+  visualContainerObjects: Object.assign(noChrome(), { visualTooltip: [{ properties: { show: lit('false') } }],
+    general: [{ properties: { altText: str(alt) } }] }, extraVCO) });
+add('page_title', 0, { x: 48, y: 48, width: 776, height: 104 }, htmlVis('HTML Titulo', 'Título: quatro respostas para o time de Marketplace da Lyft, com o período dos dados.'));
+add('header_ficha', 0, { x: 1104, y: 48, width: 288, height: 176 }, htmlVis('HTML Ficha Dados', 'Ficha dos dados: meses, zonas, viagens e último mês disponível.'));
+// posições do cabeçalho ajustadas pelo Ronald no Desktop (commit 96ff690); legenda com 160 px para não sobrepor o filtro
+add('month_slicer', 'slicer', { x: 220, y: 160, width: 320, height: 80 }, {
   visualType: 'slicer', query: { queryState: { Values: { projections: [proj(F.mes)] } } },
   objects: {
     data: [{ properties: { mode: str('Between') } }],
@@ -191,18 +199,19 @@ add('month_slicer', 'slicer', R.slicer, {
   visualContainerObjects: { background: [{ properties: { show: lit('false') } }], border: [{ properties: { show: lit('false') } }],
     padding: [{ properties: { top: lit('4D'), bottom: lit('4D'), left: lit('0D'), right: lit('0D') } }],
     visualHeader: [{ properties: { show: lit('false') } }],
-    general: [{ properties: { altText: str('Filtro de período analisado (mês inicial e final); filtra todos os visuais da página.') } }] } });
-add('legend_ops', 0, R.legend, textbox([
+    general: [{ properties: { altText: str('Filtro de período analisado (mês inicial e final); filtra todos os visuais da página.') } }] } },
+  [fCmp(F.corridas, 1, '0L')]); // revisão 4: só meses com corridas (o calendário vai até dez/2026)
+add('legend_ops', 0, { x: 48, y: 160, width: 160, height: 80 }, textbox([
   { textRuns: [run('OPERADORAS', 10, C.navyTxt, true)] },
   { textRuns: [run('● ', 14, C.lyft), run('Lyft   ', 13, '#FFFFFF', true), run('● ', 14, '#9AA5B1'), run('Uber', 13, '#FFFFFF', true)] },
   { textRuns: [run('Cores fixas em todos os gráficos', 11, C.navyTxt)] }]));
-add('header_illus', 'deco', R.illus, { visualType: 'image',
+add('header_illus', 'deco', { x: 843.3333333333333, y: 13.333333333333332, width: 236.66666666666666, height: 212.22222222222223 }, { visualType: 'image',
   objects: { general: [{ properties: { imageUrl: { expr: { ResourcePackageItem: { PackageName: 'RegisteredResources', PackageType: 1, ItemName: ILUSTRACAO } } } } }],
     imageScaling: [{ properties: { imageScalingType: str('Fit') } }] },
   visualContainerObjects: Object.assign(noChrome(), { general: [{ properties: { altText: str('Ilustração: as 263 zonas de táxi de Nova York, com as 38 zonas do CBD em verde.') } }] }) });
 
 // ===== abertura: cartões KPI em HTML (explicação ao passar o mouse) =====
-add('kpi_html', 0, R.kpis, { visualType: HTMLVIS,
+add('kpi_html', 0, { x: 48, y: 272, width: 1344, height: 150 }, { visualType: HTMLVIS,
   query: { queryState: { content: { projections: [proj(F.htmlkpi)] } } },
   objects: { compatibility: [{ properties: { legacyRendering: lit('true') } }] },
   visualContainerObjects: Object.assign(noChrome(), { visualTooltip: [{ properties: { show: lit('false') } }],
@@ -214,7 +223,8 @@ const answers = [
   ['4 · UBER × LYFT', 'Share da Lyft de 25,2% para 27,7%, puxado pelo Bronx; perde terreno só em 10 zonas de Manhattan.', 4],
 ];
 answers.forEach(([t, txt, n], i) => add(`answer_${n}`, 0, { ...box(R.answers, i + 1, 4), height: 136 }, textbox([ // 3c: sem vazio embaixo
-  { textRuns: [run(t, 12, LANE[n], true)] }, { textRuns: [run(txt, 15, C.texto)] }], {
+  { textRuns: [run(t, 12, LANE[n], true)] }, { textRuns: [run(txt, 15, C.texto)] },
+  { textRuns: [run('Leitura com dados até set/2026', 10, C.sub)] }], { // revisão 4: o texto é fixo; o período fica explícito
   background: [{ properties: { show: lit('true'), color: fill('#FFFFFF'), transparency: lit('0D') } }],
   border: [{ properties: { show: lit('true'), color: fill(C.borda), radius: lit('8D') } }],
   padding: [{ properties: { top: lit('16D'), bottom: lit('16D'), left: lit('16D'), right: lit('16D') } }],
@@ -229,21 +239,20 @@ const lanes = {
 };
 for (const n of [1, 2, 3, 4]) {
   const [r0, r1] = LANE_ROWS[n];
-  // revisão 3b: faixa com 136 px (antes ~200, metade vazia); o fundo tingido começa logo abaixo dela
-  const top = snap(M + (r0 - 1) * ROW - G / 2), BAND_H = 136, end = snap(M + (r1 - 1) * ROW - G / 2);
-  add(`l${n}_tint`, 'deco', { x: 0, y: top + BAND_H, width: W, height: end - top - BAND_H }, shape(TINT[n]));
-  add(`l${n}_band`, 'deco', { x: 0, y: top, width: W, height: BAND_H }, shape(LANE[n]));
-  add(`l${n}_num`, n, { x: M, y: top + 20, width: 104, height: BAND_H - 40 }, textbox([{ textRuns: [run(`0${n}`, 56, '#FFFFFF', true)] }]));
-  add(`l${n}_head`, n, { x: M + 128, y: top + 24, width: W - 2 * M - 128, height: BAND_H - 40 }, textbox([
-    { textRuns: [run(`RAIA ${n} DE 4 · ${lanes[n][0]}`, 20, '#FFFFFF', true)] },
-    { textRuns: [run(lanes[n][1], 14, '#FFFFFF')] }]));
+  // revisão 4: sem preenchimento ("carnaval de cores"); linha fina na cor da raia + número e pergunta no tom escuro
+  const top = snap(M + (r0 - 1) * ROW - G / 2);
+  add(`l${n}_line`, 'deco', { x: 0, y: top, width: W, height: 4 }, shape(LANE[n]));
+  add(`l${n}_num`, n, { x: M, y: top + 20, width: 104, height: 96 }, textbox([{ textRuns: [run(`0${n}`, 56, LANE[n], true)] }]));
+  add(`l${n}_head`, n, { x: M + 128, y: top + 24, width: W - 2 * M - 128, height: 96 }, textbox([
+    { textRuns: [run(`RAIA ${n} DE 4 · ${lanes[n][0]}`, 20, LANE[n], true)] },
+    { textRuns: [run(lanes[n][1], 14, C.texto)] }]));
 }
 
 // ===== raia 1: oferta =====
-add('l1_map_p90', 1, R.l1_map, { ...shapeMap(F.p90, C.p90t, C.p90, '6D', '15D'),
+add('l1_map_p90', 1, alto(R.l1_map), { ...shapeMap(F.p90, C.p90t, C.p90, '6D', '15D'),
   visualContainerObjects: cardVCO('Espera P90 por zona de embarque (min)', 'Periferia e aeroportos esperam mais; Manhattan, menos', 'Mapa das zonas de NY coloridas pelo P90 da espera; mais escuro = espera maior. Zonas com menos de 100 corridas ficam sem cor.') },
   [fCmp(F.nesp, 2, '100L')]);
-add('l1_heatmap_hora', 1, R.l1_heatmap, { visualType: 'pivotTable',
+add('l1_heatmap_hora', 1, alto(R.l1_heatmap), { visualType: 'pivotTable',
   query: { queryState: { Rows: { projections: [proj(F.hora, 'Hora do dia')] }, Columns: { projections: [proj(F.tipo, 'Tipo de dia')] }, Values: { projections: [proj(F.p90, 'P90 (min)')] } } },
   objects: {
     columnHeaders: [{ properties: { columnAdjustment: str('growToFit'), autoSizeColumnWidth: lit('true') } }],
@@ -252,13 +261,13 @@ add('l1_heatmap_hora', 1, R.l1_heatmap, { visualType: 'pivotTable',
         nullColoringStrategy: { strategy: { Literal: { Value: "'noColor'" } } } } } } } } } } },
       selector: { data: [{ dataViewWildcard: { matchingOption: 1 } }], metadata: qref(F.p90) } }] },
   visualContainerObjects: cardVCO('P90 por hora do dia e tipo de dia (min)', 'Madrugadas de feriado e fim de semana são as piores horas', 'Matriz de calor: P90 da espera por hora do dia (linhas) e tipo de dia (colunas); célula mais escura = espera maior.') });
-add('l1_ranking_zonas', 1, R.l1_ranking, { visualType: 'clusteredBarChart',
+add('l1_ranking_zonas', 1, alto(R.l1_ranking), { visualType: 'clusteredBarChart',
   query: { queryState: { Category: { projections: [proj(F.zona)] }, Y: { projections: [proj(F.p90)] } },
     sortDefinition: { sort: [{ field: F.p90, direction: 'Descending' }], isDefaultSort: false } },
   objects: { dataPoint: [{ properties: { defaultColor: fill(C.p90) } }], labels: [{ properties: { show: lit('true') } }] },
   visualContainerObjects: cardVCO('Zonas com P90 de 12 min ou mais', 'Breezy Point lidera, com P90 de 19 min', 'Barras: zonas com 1.000 ou mais corridas e P90 de 12 minutos ou mais, da maior para a menor espera.') },
   [fCmp(F.nesp, 2, '1000L'), fCmp(F.p90, 2, '12D'), fCmp(F.zonaId, 4, '263L')]);
-add('l1_note', 1, R.l1_note, textbox([{ textRuns: [run('Método: P90 = 90% das corridas esperaram até este valor (pedido → embarque), recalculado do histograma de faixas (ADR 0006). Acima de 15 min é aproximado (erro de até ~1 min, validado contra o Athena). Zonas com menos de 100 corridas no recorte ficam sem cor.', 11, C.sub)] }]));
+add('l1_note', 1, R.l1_note, textbox([{ textRuns: [run('Como ler: P90 é o tempo até o qual 9 em cada 10 corridas esperaram, do pedido ao embarque. Acima de 15 min, o valor é estimado, com margem de até 1 minuto. Zonas com menos de 100 corridas no período escolhido ficam sem cor.', 11, C.sub)] }]));
 
 // ===== raia 2: economia =====
 add('l2_take_trend', 2, R.l2_take, { ...line(F.mes, F.take, F.op),
@@ -294,15 +303,25 @@ add('l4_share_trend', 4, R.l4_trend, { ...line(F.mes, F.share, F.op),
 add('l4_table_zonas', 4, R.l4_table, { visualType: 'tableEx',
   query: { queryState: { Values: { projections: [proj(F.zona, 'Zona'), proj(F.borough, 'Distrito'), proj(F.corridas, 'Corridas da Lyft'), proj(F.share, 'Share da Lyft')] } },
     sortDefinition: { sort: [{ field: F.corridas, direction: 'Descending' }], isDefaultSort: false } },
-  objects: { columnHeaders: [{ properties: { columnAdjustment: str('growToFit'), autoSizeColumnWidth: lit('true') } }] },
+  objects: {
+    columnHeaders: [{ properties: { columnAdjustment: str('growToFit'), autoSizeColumnWidth: lit('true') } }],
+    // revisão 4: barras de dados nas corridas; gradiente de uma cor no share (escala fixa 20%–35%, coerente com o mapa)
+    columnFormatting: [{ properties: { dataBars: {
+      positiveColor: fill(C.lyftt), negativeColor: fill('#D64554'), axisColor: fill('#999999'),
+      reverseDirection: lit('false'), hideText: lit('false') } }, selector: { metadata: qref(F.corridas) } }],
+    values: [{ properties: { backColor: { solid: { color: { expr: { FillRule: { Input: { SelectRef: { ExpressionName: qref(F.share) } },
+      FillRule: { linearGradient2: { min: { color: { Literal: { Value: "'#FFFFFF'" } }, value: { Literal: { Value: '0.2D' } } },
+        max: { color: { Literal: { Value: `'${C.lyft}'` } }, value: { Literal: { Value: '0.35D' } } },
+        nullColoringStrategy: { strategy: { Literal: { Value: "'noColor'" } } } } } } } } } } },
+      selector: { data: [{ dataViewWildcard: { matchingOption: 1 } }], metadata: qref(F.share) } }],
+  },
   visualContainerObjects: cardVCO('20 zonas com mais corridas da Lyft', 'Entre as maiores, Park Slope tem o maior share (34%)', 'Tabela: as 20 zonas com mais corridas da Lyft, com distrito, corridas e share da Lyft.') },
   [soLyft(), fTopN(F.zona, 20, D, 'qtd_corridas')]);
 
 // ===== rodapé (faixa azul-marinho) com fonte e links =====
 const fy = snap(M + (49 - 1) * ROW - G / 2);
 add('footer_band', 'deco', { x: 0, y: fy, width: W, height: PAGE_H - fy }, shape(C.navy));
-add('footer_text', 0, { x: M, y: fy + 24, width: 880, height: 72 }, textbox([
-  { textRuns: [run('Fonte: NYC TLC, High Volume FHV Trip Records (jan/2024–set/2026), via pipeline AWS (S3, Glue, Athena/Iceberg, dbt). Métricas definidas na spec (Seção 2.5) e reconciliadas com o Athena. Os textos de resposta descrevem o período completo; os gráficos seguem o filtro de período.', 11, C.navyTxt)] }]));
+add('footer_text', 0, { x: M, y: fy + 20, width: 900, height: 80 }, htmlVis('HTML Rodape', 'Fonte dos dados e nota sobre o projeto.')); // revisão 4: texto para o usuário final
 const links = [['Portfólio', LINKS.portfolio], ['GitHub', LINKS.github], ['LinkedIn', LINKS.linkedin]].filter(([, u]) => u);
 links.forEach(([label, url], i) => add(`link_${label}`, 'deco', { x: W - M - (links.length - i) * 128, y: fy + 32, width: 112, height: 40 }, textbox(
   [{ textRuns: [run(`${label} ↗`, 13, '#FFFFFF', true)], horizontalTextAlignment: 'center' }],

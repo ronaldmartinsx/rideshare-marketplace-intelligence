@@ -3,11 +3,11 @@
   "name": "65d20c4dea354322eae6",
   "position": {
     "x": 48,
-    "y": 2352,
-    "z": 33000,
-    "height": 280,
+    "y": 2288,
     "width": 664,
-    "tabOrder": 33000
+    "height": 280,
+    "z": 30000,
+    "tabOrder": 30000
   },
   "visual": {
     "visualType": "lineChart",
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },

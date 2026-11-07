@@ -1,88 +1,46 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
-  "name": "0443864159604ac90a3e",
+  "name": "ce463c595374f63801ec",
   "position": {
-    "x": 0,
-    "y": 3872,
-    "z": 23000,
-    "height": 968,
-    "width": 1440,
-    "tabOrder": 23000
+    "x": 1104,
+    "y": 48,
+    "width": 288,
+    "height": 176,
+    "z": 3000,
+    "tabOrder": 3000
   },
   "visual": {
-    "visualType": "shape",
-    "objects": {
-      "shape": [
-        {
-          "properties": {
-            "tileShape": {
-              "expr": {
-                "Literal": {
-                  "Value": "'rectangle'"
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "HTML Ficha Dados"
                 }
-              }
+              },
+              "queryRef": "fct_demanda_zona_hora.HTML Ficha Dados",
+              "nativeQueryRef": "HTML Ficha Dados"
             }
-          },
-          "selector": {
-            "id": "default"
-          }
+          ]
         }
-      ],
-      "fill": [
+      }
+    },
+    "objects": {
+      "compatibility": [
         {
           "properties": {
-            "show": {
+            "legacyRendering": {
               "expr": {
                 "Literal": {
                   "Value": "true"
-                }
-              }
-            },
-            "fillColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#F6ECF2'"
-                    }
-                  }
-                }
-              }
-            },
-            "transparency": {
-              "expr": {
-                "Literal": {
-                  "Value": "0D"
-                }
-              }
-            }
-          },
-          "selector": {
-            "id": "default"
-          }
-        }
-      ],
-      "outline": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          },
-          "selector": {
-            "id": "default"
-          }
-        },
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
                 }
               }
             }
@@ -171,6 +129,32 @@
               "expr": {
                 "Literal": {
                   "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Ficha dos dados: meses, zonas, viagens e último mês disponível.'"
                 }
               }
             }

@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "f93ccbd887e56a02098d",
   "position": {
-    "x": 1080,
-    "y": 846.66666666666663,
-    "z": 29000,
-    "height": 776,
+    "x": 1072,
+    "y": 784,
     "width": 320,
-    "tabOrder": 29000
+    "height": 840,
+    "z": 26000,
+    "tabOrder": 26000
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_zona.zona",
-              "nativeQueryRef": "zona",
-              "active": true
+              "nativeQueryRef": "zona"
             }
           ]
         },
@@ -66,7 +65,8 @@
             },
             "direction": "Descending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -94,19 +94,6 @@
               "expr": {
                 "Literal": {
                   "Value": "true"
-                }
-              }
-            }
-          }
-        }
-      ],
-      "categoryAxis": [
-        {
-          "properties": {
-            "maxMarginFactor": {
-              "expr": {
-                "Literal": {
-                  "Value": "50L"
                 }
               }
             }
@@ -326,7 +313,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter4e0edc65998f5b6965733cbb",
+        "name": "Filter3c9610de1a8f8c209636f3d6",
         "field": {
           "Measure": {
             "Expression": {
@@ -338,6 +325,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -371,11 +359,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filterbf9018f03b43a9594570a00c",
+        "name": "Filter80a19a73de6f1a3ef6c0631a",
         "field": {
           "Measure": {
             "Expression": {
@@ -387,6 +374,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -420,11 +408,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filtera791c36c70061b345fe6b700",
+        "name": "Filter9baaa89a1c0d09eef278710c",
         "field": {
           "Column": {
             "Expression": {
@@ -436,6 +423,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -469,8 +457,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

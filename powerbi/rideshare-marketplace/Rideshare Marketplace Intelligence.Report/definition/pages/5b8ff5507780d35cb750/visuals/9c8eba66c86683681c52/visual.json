@@ -3,11 +3,11 @@
   "name": "9c8eba66c86683681c52",
   "position": {
     "x": 736,
-    "y": 4352,
-    "z": 41000,
-    "height": 480,
+    "y": 4288,
     "width": 664,
-    "tabOrder": 41000
+    "height": 480,
+    "z": 38000,
+    "tabOrder": 38000
   },
   "visual": {
     "visualType": "tableEx",
@@ -93,7 +93,8 @@
             },
             "direction": "Descending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -114,6 +115,130 @@
                 }
               }
             }
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "dataBars": {
+              "positiveColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#F3E1EC'"
+                      }
+                    }
+                  }
+                }
+              },
+              "negativeColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#D64554'"
+                      }
+                    }
+                  }
+                }
+              },
+              "axisColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#999999'"
+                      }
+                    }
+                  }
+                }
+              },
+              "reverseDirection": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              },
+              "hideText": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "fct_demanda_zona_hora.Corridas"
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "FillRule": {
+                      "Input": {
+                        "SelectRef": {
+                          "ExpressionName": "fct_demanda_zona_hora.Share da operadora"
+                        }
+                      },
+                      "FillRule": {
+                        "linearGradient2": {
+                          "min": {
+                            "color": {
+                              "Literal": {
+                                "Value": "'#FFFFFF'"
+                              }
+                            },
+                            "value": {
+                              "Literal": {
+                                "Value": "0.2D"
+                              }
+                            }
+                          },
+                          "max": {
+                            "color": {
+                              "Literal": {
+                                "Value": "'#CC79A7'"
+                              }
+                            },
+                            "value": {
+                              "Literal": {
+                                "Value": "0.35D"
+                              }
+                            }
+                          },
+                          "nullColoringStrategy": {
+                            "strategy": {
+                              "Literal": {
+                                "Value": "'noColor'"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "fct_demanda_zona_hora.Share da operadora"
           }
         }
       ]
@@ -330,7 +455,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter35c2387f314bc3aee82a4075",
+        "name": "Filter31ca08611fefc83d68eaebee",
         "field": {
           "Column": {
             "Expression": {
@@ -342,6 +467,7 @@
           }
         },
         "type": "Categorical",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -380,11 +506,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filter83157d03bfae84b82245f90d",
+        "name": "Filter1a8eb2a3dbb78c33a517b2d4",
         "field": {
           "Column": {
             "Expression": {
@@ -396,11 +521,13 @@
           }
         },
         "type": "TopN",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
             {
               "Name": "subquery",
+              "Type": 2,
               "Expression": {
                 "Subquery": {
                   "Query": {
@@ -453,8 +580,7 @@
                     "Top": 20
                   }
                 }
-              },
-              "Type": 2
+              }
             },
             {
               "Name": "a",
@@ -487,8 +613,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

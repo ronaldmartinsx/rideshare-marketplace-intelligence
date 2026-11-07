@@ -191,3 +191,12 @@ Especificação travada e revisões: `_brief/report-spec.md` (ADR 0019). Constru
 - **Cultura do modelo:** a troca para `pt-BR` foi recusada pelo motor com o modelo carregado ("Culture and Collation properties ... may be changed only before any other object has been created") e também via TMDL com o `cache.abf` existente. Revertida para `en-US`; plano no `_brief/report-spec.md`.
 - Erros do validador que permanecem: `PBIR_JSON_FILE_NO_SCHEMA` no `.pbip` e no `definition.pbir` (arquivos do Desktop; só afetam publicação no Fabric) e `PBIR_FILLRULE_STOP_DOUBLE_WRAP` nos 3 mapas.
 - Evidências: `docs/validacao/img/fase-4-pagina-esqueleto.png`, `fase-4-pagina-rev3-inteira.png`, `fase-4-pagina-rev3-topo.png`, `fase-4-pagina-rev3-raia3.png`.
+
+### 7.1 Revisão 4 (07/11/2026)
+
+- **Filtro por medida na segmentação funciona:** `Corridas > 0` no filtro do visual limitou o período a jan/2024–set/2026, sem coluna nova no dbt.
+- **Medidas de apresentação conferidas:** `Texto Periodo Dados` devolve `JAN/2024–SET/2026` mesmo com filtro de 2025 aplicado (ignora filtros, como pretendido); ficha com 33 meses, 263 zonas, 672 mi de viagens e SET/2026.
+- **Ícones SVG** (`svg`, `path`, `circle` com atributos de traço) renderizam no HTML Content Secure.
+- **Linha divisória das raias:** sem contorno e sem borda de contêiner nos arquivos; na captura, cor única em toda a espessura e fundo da página logo acima e abaixo.
+- Nenhum texto visível com "ADR", "Athena", "Gold", "spec" ou "dbt".
+- Evidências: `docs/validacao/img/fase-4-pagina-rev4-inteira.png`, `fase-4-pagina-rev4-topo.png`, `fase-4-pagina-rev4-raia1-raia2.png`.
