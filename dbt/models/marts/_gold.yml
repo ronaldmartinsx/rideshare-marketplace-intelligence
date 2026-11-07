@@ -125,6 +125,9 @@ models:
         receita_por_milha:
           formula: "sum(tarifa_base_total) / sum(milhas_tarifa_valida_total)"
           cuidado: "Numerador e denominador das mesmas corridas (tarifa válida)."
+        receita_por_minuto:
+          formula: "sum(tarifa_base_total) / (sum(segundos_tarifa_valida_total) / 60)"
+          cuidado: "Minuto de corrida (embarque ao desembarque), das mesmas corridas com tarifa válida. Fase 4, D8."
         repasse_por_hora_de_corrida:
           formula: "sum(repasse_motorista_total) / (sum(segundos_tarifa_valida_total) / 3600)"
           cuidado: "NÃO é o ganho por hora do motorista: o dado não tem tempo ocioso nem id de motorista."
@@ -237,8 +240,8 @@ models:
   - name: fct_od_diario
     description: >
       Fluxos de origem-destino por dia × zona de origem × zona de destino × operadora. Só corridas
-      válidas. A dim_zona entra em dois papéis (origem e destino): no Power BI, um relacionamento
-      inativo ligado com USERELATIONSHIP. Base do mapa de fluxos e da análise do CBD (destino).
+      válidas. A dim_zona entra em dois papéis (origem e destino). Fica só no Athena: o Power BI usa a
+      fct_od_mensal (Fase 4, D2).
     meta:
       grao: "dia de embarque × zona de origem × zona de destino × operadora"
       metricas:
@@ -263,7 +266,7 @@ models:
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
       - name: zona_destino_id
-        description: "Papel 'destino' da dim_zona (relacionamento inativo no Power BI)."
+        description: "Papel 'destino' da dim_zona (no Power BI, a tabela dim_zona_destino; Fase 4, D7)."
         data_tests:
           - relationships:
               arguments:
@@ -284,6 +287,8 @@ models:
     description: >
       Fluxos de origem-destino por mês × zona de origem × zona de destino × operadora, somados da
       fct_od_diario (Fase 4, D2). É a tabela de origem-destino do Power BI: a diária fica no Athena.
+      No Power BI, o papel destino é uma segunda tabela (dim_zona_destino, Referência da dim_zona), com
+      relacionamento ativo próprio, em vez de relacionamento inativo com USERELATIONSHIP (Fase 4, D7).
       O corte diário do antes × depois da taxa do CBD (05/01/2025) vem da fct_demanda_zona_hora.
     meta:
       grao: "mês × zona de origem × zona de destino × operadora"
@@ -312,7 +317,7 @@ models:
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
       - name: zona_destino_id
-        description: "Papel 'destino' da dim_zona (relacionamento inativo no Power BI)."
+        description: "Papel 'destino' da dim_zona (no Power BI, a tabela dim_zona_destino; Fase 4, D7)."
         data_tests:
           - relationships:
               arguments:

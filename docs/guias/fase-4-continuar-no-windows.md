@@ -2,9 +2,19 @@
 
 > **Para quem:** o Ronald, na máquina Windows, e o Claude Code que o acompanhar lá.
 > **Por que este guia existe:** a memória do Claude Code fica no Mac e não vai para o Windows. **Este arquivo é a fonte do estado da Fase 4.** Combinados de trabalho: `CLAUDE.md`. Evidências: `docs/validacao/fase-4.md`. Spec: `docs/PROJECT_SPEC.md` (Seção 10 e Fase 4 na Seção 12).
-> **Atualizado em:** 02/11/2026, ao parar no Windows (passos 5 e 6 concluídos; passo 7 parcial).
+> **Atualizado em:** 07/11/2026, ao parar no Windows (passos 0 a 9 concluídos; passo 10 feito, menos o gate).
 
-## 0. Comece por aqui (estado em 02/11/2026)
+## 0. Comece por aqui (estado em 07/11/2026)
+
+**Próxima sessão (08/11/2026): só o gate e o que depende dele.**
+1. **Gate de domínio** (Apêndice C da spec). Candidatos na seção 5 de `docs/aprendizados/fase-4.md`.
+2. Completar `docs/aprendizados/fase-4.md`: seção 5 (resultado do gate), período e os erros das Aulas 2 a 4 (registro no Mac).
+3. `CLAUDE.md`: "Fase atual" de 4 para 5.
+4. Commit, push e PR `fase-4-power-bi` → `main` (o merge é do Ronald).
+
+**Passo 10 feito em 07/11/2026 (sem o gate):** ADR 0017 (dimensões do período e OD mensal) e ADR 0018 (identidade de leitura); spec 2.5 (receita por minuto, aviso do P90 acima de 15 min, piso de 30), 6.4 (tabelas novas), 10 (modelo e página única), 11.5 e tabela de ADRs; `_gold.yml` (`receita_por_minuto` e zona de destino); rascunho de `docs/aprendizados/fase-4.md`. **No Mac:** rodar `dbt parse` para conferir o `_gold.yml`.
+
+**Continua pendente depois da fase (Mac):** `athena:ListDataCatalogs` no papel de leitura e o DSN de volta ao `RideshareLeituraGold` (ver o aviso do DSN provisório abaixo). **Windows:** apagar a reserva do cache só com a confirmação do Ronald.
 
 **Feito no Windows em 02/11:** passo 5 (PBIP, importação, 13 relacionamentos, ADR 0011) e passo 6 (as 15 medidas dos Blocos A, B e C). Evidências: `docs/validacao/fase-4.md`, seções 4 a 6.
 
@@ -85,9 +95,9 @@ Pontos que eram do teste do mapa (resolvidos na revisão 3):
 | 5 | PBIP: atualizar o DSN, importar a Gold, relacionamentos, formatos; ADR 0011 | Windows | ✅ 02/11 (validação, seção 4; commit `49ccef5`) |
 | 6 | Medidas DAX ✍️ (o Ronald escreve; o Claude revisa com pistas antes da correção) | Windows | ✅ 02/11 (validação, seção 5; commits `5bafcf1`, `2b7fd8a`, `affe731`) |
 | 7 | Reconciliação DAX × Athena (P90 do histograma × `approx_percentile`) | Windows | ✅ 05/11 (validação, seção 6) |
-| 8 | As 5 páginas, com um insight escrito em cada | Windows | **a fazer: próximo** |
-| 9 | Prints, vídeo curto, README | Windows | a fazer |
-| 10 | ADRs 0011, 0017 (dimensões do período) e 0018 (identidade de leitura); spec (D3, novas tabelas na 6.4); glossário; `docs/aprendizados/fase-4.md`; gate; PR | ambas | a fazer |
+| 8 | Página única com raias (ADR 0019), com um insight escrito por pergunta | Windows | ✅ 07/11 (revisão 4; validação, seção 7) |
+| 9 | Prints, vídeo curto, README | Windows | ✅ 07/11 (`powerbi/README.md`; publicado no Service como foto) |
+| 10 | ADRs 0011, 0017 (dimensões do período) e 0018 (identidade de leitura); spec (D3, novas tabelas na 6.4); glossário; `docs/aprendizados/fase-4.md`; gate; PR | ambas | 07/11: tudo menos o gate, o fechamento dos aprendizados e o PR (seção 0) |
 
 **Ordem recomendada no Windows:** passo 5 → 6 → 7. O passo 4 só é necessário para a página 2 (mapa) e precisa de Node.js. Faça no Windows se tiver Node (`node -v`); senão, fica para o Mac.
 
