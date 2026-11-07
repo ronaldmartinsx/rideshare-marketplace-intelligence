@@ -4,9 +4,9 @@
   "position": {
     "x": 0,
     "y": 1872,
-    "width": 1440,
-    "height": 768,
     "z": 15000,
+    "height": 768,
+    "width": 1440,
     "tabOrder": 15000
   },
   "visual": {
@@ -75,6 +75,17 @@
           },
           "selector": {
             "id": "default"
+          }
+        },
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
           }
         }
       ]

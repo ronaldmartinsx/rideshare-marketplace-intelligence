@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 48,
-    "width": 776,
-    "height": 176,
     "z": 2000,
+    "height": 176,
+    "width": 776,
     "tabOrder": 2000
   },
   "visual": {
@@ -21,10 +21,10 @@
                   {
                     "value": "RIDESHARE EM NOVA YORK · JAN/2024–SET/2026",
                     "textStyle": {
+                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "12px",
-                      "color": "#C9D6E8",
-                      "fontWeight": "bold"
+                      "color": "#c9d6e8"
                     }
                   }
                 ]
@@ -34,10 +34,10 @@
                   {
                     "value": "Quatro respostas para o time de Marketplace da Lyft",
                     "textStyle": {
+                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "30px",
-                      "color": "#FFFFFF",
-                      "fontWeight": "bold"
+                      "color": "#ffffff"
                     }
                   }
                 ]
@@ -49,7 +49,7 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "13px",
-                      "color": "#C9D6E8"
+                      "color": "#c9d6e8"
                     }
                   }
                 ]

@@ -4,9 +4,9 @@
   "position": {
     "x": 736,
     "y": 4352,
-    "width": 664,
-    "height": 480,
     "z": 41000,
+    "height": 480,
+    "width": 664,
     "tabOrder": 41000
   },
   "visual": {
@@ -93,8 +93,7 @@
             },
             "direction": "Descending"
           }
-        ],
-        "isDefaultSort": false
+        ]
       }
     },
     "objects": {
@@ -343,7 +342,6 @@
           }
         },
         "type": "Categorical",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -382,7 +380,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       },
       {
         "name": "Filter83157d03bfae84b82245f90d",
@@ -397,13 +396,11 @@
           }
         },
         "type": "TopN",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
             {
               "Name": "subquery",
-              "Type": 2,
               "Expression": {
                 "Subquery": {
                   "Query": {
@@ -456,7 +453,8 @@
                     "Top": 20
                   }
                 }
-              }
+              },
+              "Type": 2
             },
             {
               "Name": "a",
@@ -489,7 +487,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }

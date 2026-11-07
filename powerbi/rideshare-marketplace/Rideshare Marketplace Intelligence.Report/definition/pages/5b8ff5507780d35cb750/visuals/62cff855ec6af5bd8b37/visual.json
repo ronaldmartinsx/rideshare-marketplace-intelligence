@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "62cff855ec6af5bd8b37",
   "position": {
-    "x": 848,
-    "y": 152,
-    "width": 320,
-    "height": 80,
+    "x": 47.777777777777779,
+    "y": 160,
     "z": 4000,
+    "height": 80,
+    "width": 320,
     "tabOrder": 4000
   },
   "visual": {
@@ -21,10 +21,10 @@
                   {
                     "value": "OPERADORAS",
                     "textStyle": {
+                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "10px",
-                      "color": "#C9D6E8",
-                      "fontWeight": "bold"
+                      "color": "#c9d6e8"
                     }
                   }
                 ]
@@ -36,16 +36,16 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "14px",
-                      "color": "#CC79A7"
+                      "color": "#cc79a7"
                     }
                   },
                   {
                     "value": "Lyft   ",
                     "textStyle": {
+                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "13px",
-                      "color": "#FFFFFF",
-                      "fontWeight": "bold"
+                      "color": "#ffffff"
                     }
                   },
                   {
@@ -53,16 +53,16 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "14px",
-                      "color": "#9AA5B1"
+                      "color": "#9aa5b1"
                     }
                   },
                   {
                     "value": "Uber",
                     "textStyle": {
+                      "fontWeight": "bold",
                       "fontFamily": "Segoe UI",
                       "fontSize": "13px",
-                      "color": "#FFFFFF",
-                      "fontWeight": "bold"
+                      "color": "#ffffff"
                     }
                   }
                 ]
@@ -74,7 +74,7 @@
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",
-                      "color": "#C9D6E8"
+                      "color": "#c9d6e8"
                     }
                   }
                 ]

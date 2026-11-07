@@ -4,9 +4,9 @@
   "position": {
     "x": 616,
     "y": 3248,
-    "width": 776,
-    "height": 480,
     "z": 38000,
+    "height": 480,
+    "width": 776,
     "tabOrder": 38000
   },
   "visual": {
@@ -27,25 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "fct_od_mensal"
-                    }
-                  },
-                  "Property": "Corridas entrando no CBD"
-                }
-              },
-              "queryRef": "fct_od_mensal.Corridas entrando no CBD",
-              "nativeQueryRef": "Corridas entrando no CBD"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         },
@@ -64,6 +47,24 @@
               },
               "queryRef": "dim_zona.borough",
               "nativeQueryRef": "borough"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_od_mensal"
+                    }
+                  },
+                  "Property": "Corridas entrando no CBD"
+                }
+              },
+              "queryRef": "fct_od_mensal.Corridas entrando no CBD",
+              "nativeQueryRef": "Corridas entrando no CBD"
             }
           ]
         }
@@ -461,7 +462,6 @@
           }
         },
         "type": "Categorical",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -521,7 +521,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }

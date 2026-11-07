@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "a710fc08c3af5dcd7468",
   "position": {
-    "x": 848,
-    "y": 48,
-    "width": 320,
-    "height": 80,
+    "x": 220,
+    "y": 160,
     "z": 3000,
+    "height": 80,
+    "width": 320,
     "tabOrder": 3000
   },
   "visual": {
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         }

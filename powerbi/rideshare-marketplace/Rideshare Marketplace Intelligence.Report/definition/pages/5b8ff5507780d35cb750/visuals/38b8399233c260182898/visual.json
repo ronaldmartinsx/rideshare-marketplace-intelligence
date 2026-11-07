@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 1952,
-    "width": 664,
-    "height": 376,
     "z": 31000,
+    "height": 376,
+    "width": 664,
     "tabOrder": 31000
   },
   "visual": {
@@ -27,25 +27,8 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "fct_demanda_zona_hora"
-                    }
-                  },
-                  "Property": "Take rate"
-                }
-              },
-              "queryRef": "fct_demanda_zona_hora.Take rate",
-              "nativeQueryRef": "Take rate"
+              "nativeQueryRef": "mes_inicio",
+              "active": true
             }
           ]
         },
@@ -64,6 +47,24 @@
               },
               "queryRef": "dim_operadora.operadora",
               "nativeQueryRef": "operadora"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Take rate"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Take rate",
+              "nativeQueryRef": "Take rate"
             }
           ]
         }
@@ -379,7 +380,6 @@
           }
         },
         "type": "Categorical",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -425,7 +425,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }
