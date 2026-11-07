@@ -200,3 +200,4 @@ Especificação travada e revisões: `_brief/report-spec.md` (ADR 0019). Constru
 - **Linha divisória das raias:** sem contorno e sem borda de contêiner nos arquivos; na captura, cor única em toda a espessura e fundo da página logo acima e abaixo.
 - Nenhum texto visível com "ADR", "Athena", "Gold", "spec" ou "dbt".
 - Evidências: `docs/validacao/img/fase-4-pagina-rev4-inteira.png`, `fase-4-pagina-rev4-topo.png`, `fase-4-pagina-rev4-raia1-raia2.png`.
+- **Nome da zona nos mapas:** o `shapeMap` não tem objeto de rótulos (CLI: `dataPoint`, `defaultColors`, `general`, `legend`, `shape`, `zoom`). Medida `Nome da zona` na dica de ferramenta: testada pelo Ronald ao passar o mouse nos 3 mapas (07/11/2026).

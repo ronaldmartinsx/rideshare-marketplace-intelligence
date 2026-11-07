@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_zona.zona_id",
-              "nativeQueryRef": "zona_id"
+              "nativeQueryRef": "zona_id",
+              "displayName": "Código da zona"
             }
           ]
         },
@@ -46,6 +47,25 @@
               },
               "queryRef": "fct_od_mensal.Corridas entrando no CBD",
               "nativeQueryRef": "Corridas entrando no CBD"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Nome da zona"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Nome da zona",
+              "nativeQueryRef": "Nome da zona",
+              "displayName": "Zona"
             }
           ]
         }

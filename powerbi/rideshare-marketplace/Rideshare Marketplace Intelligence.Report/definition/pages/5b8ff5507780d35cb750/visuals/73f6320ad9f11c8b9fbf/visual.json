@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_zona.zona_id",
-              "nativeQueryRef": "zona_id"
+              "nativeQueryRef": "zona_id",
+              "displayName": "Código da zona"
             }
           ]
         },
@@ -46,6 +47,25 @@
               },
               "queryRef": "fct_espera_histograma.Espera P90 (min)",
               "nativeQueryRef": "Espera P90 (min)"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Nome da zona"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Nome da zona",
+              "nativeQueryRef": "Nome da zona",
+              "displayName": "Zona"
             }
           ]
         }
@@ -363,7 +383,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterb420f582ec2ae5b509da64ca",
+        "name": "Filterb2fa19ed242a3e9ed4c41faf",
         "field": {
           "Measure": {
             "Expression": {

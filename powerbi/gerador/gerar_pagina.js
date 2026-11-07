@@ -164,7 +164,9 @@ function line(cat, y, series, color) {
 function shapeMap(value, loColor, hiColor, lo = null, hi = null) {
   // formato que o Desktop grava (paradas com expr); o formato sem expr deixou o mapa em branco (revisão 2)
   return { visualType: 'shapeMap',
-    query: { queryState: { Category: { projections: [proj(F.zonaId)] }, Value: { projections: [proj(value)] } } },
+    // revisão 4b: o visual não tem rótulos; o nome da zona aparece na dica de ferramenta (medida de apresentação)
+    query: { queryState: { Category: { projections: [proj(F.zonaId, 'Código da zona')] }, Value: { projections: [proj(value)] },
+      Tooltips: { projections: [proj(mea(D, 'Nome da zona'), 'Zona')] } } },
     objects: {
       shape: [{ properties: { datasourceType: str('file_upload'), projectionEnum: str('albersUsa'),
         map: { geoJson: { type: str('packaged'), name: str('zonas_tlc.json'),

@@ -210,6 +210,15 @@ table fct_demanda_zona_hora
 		displayFolder: Apresentacao
 		lineageTag: c9e02a0e-958b-418f-bd29-973daaa5ded0
 
+	/// Nome e distrito da zona selecionada (ex.: Park Slope · Brooklyn), para a dica de ferramenta dos mapas. Vazio quando há mais de uma zona no contexto. Medida de apresentação (Claude).
+	measure 'Nome da zona' =
+			VAR nome = SELECTEDVALUE ( dim_zona[zona] )
+			VAR distrito = SELECTEDVALUE ( dim_zona[borough] )
+			RETURN
+			    IF ( NOT ISBLANK ( nome ), nome & " · " & distrito )
+		displayFolder: Apresentacao
+		lineageTag: 371924f6-d32c-4251-bc45-045db804f582
+
 	column hora_embarque
 		dataType: dateTime
 		isHidden

@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_zona.zona_id",
-              "nativeQueryRef": "zona_id"
+              "nativeQueryRef": "zona_id",
+              "displayName": "Código da zona"
             }
           ]
         },
@@ -46,6 +47,25 @@
               },
               "queryRef": "fct_demanda_zona_hora.Share da operadora",
               "nativeQueryRef": "Share da operadora"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Nome da zona"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.Nome da zona",
+              "nativeQueryRef": "Nome da zona",
+              "displayName": "Zona"
             }
           ]
         }
@@ -363,7 +383,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter09d66aa45d0177b2fcf238c2",
+        "name": "Filterdb99cd55741bd847ac737900",
         "field": {
           "Column": {
             "Expression": {

@@ -479,6 +479,7 @@ Base: posições do cabeçalho ajustadas pelo Ronald no Desktop (commit `96ff690
 | Rodapé com "spec" | `HTML Rodape` em linguagem de negócio, com período dinâmico e a linha do projeto de portfólio |
 | Formatação condicional na tabela | Barras de dados nas corridas da Lyft; gradiente de uma cor no share (20%–35%) |
 | (achado na revisão) Nota de método com "ADR"/"Athena" | Reescrita em linguagem de negócio |
+| Nome da zona no mapa (pedido do Ronald) | O `shapeMap` não tem rótulos (e 263 nomes fixos seriam ilegíveis): o nome e o distrito entram na dica de ferramenta dos 3 mapas pela medida de apresentação `Nome da zona`; o código da zona aparece como "Código da zona". Zoom pela roda do mouse descartado (conflita com a rolagem da página) |
 
 Medidas de apresentação novas (regra de 07/11/2026 no CLAUDE.md: o Claude escreve as que só formatam texto/HTML): `Texto Periodo Dados`, `HTML Titulo`, `HTML Ficha Dados`, `HTML Rodape`; `HTML Cartoes KPI` reescrita. Evidências: `docs/validacao/img/fase-4-pagina-rev4-*.png`.
 
