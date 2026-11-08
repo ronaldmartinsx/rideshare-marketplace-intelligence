@@ -2,7 +2,7 @@
 
 Projeto de portfólio de engenharia de dados sobre as corridas de aplicativo (Uber, Lyft) de Nova York: um lakehouse na AWS (S3, Glue, Athena com Apache Iceberg), transformação com dbt, orquestração com Airflow, painel no Power BI e, nas próximas fases, previsão de demanda e um agente em linguagem natural.
 
-> Em construção. Fase atual: **4**, relatório no Power BI ([veja o relatório](powerbi/README.md)). A especificação completa está em [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md), e as decisões de arquitetura em [`docs/adr/`](docs/adr/).
+> Em construção. Fase atual: **5**, previsão de demanda. A Fase 4 entregou o relatório no Power BI ([veja o relatório](powerbi/README.md)). A especificação completa está em [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md), e as decisões de arquitetura em [`docs/adr/`](docs/adr/).
 
 ## O relatório
 

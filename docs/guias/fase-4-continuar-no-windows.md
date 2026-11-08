@@ -2,11 +2,13 @@
 
 > **Para quem:** o Ronald, na máquina Windows, e o Claude Code que o acompanhar lá.
 > **Por que este guia existe:** a memória do Claude Code fica no Mac e não vai para o Windows. **Este arquivo é a fonte do estado da Fase 4.** Combinados de trabalho: `CLAUDE.md`. Evidências: `docs/validacao/fase-4.md`. Spec: `docs/PROJECT_SPEC.md` (Seção 10 e Fase 4 na Seção 12).
-> **Atualizado em:** 07/11/2026, ao parar no Windows (passos 0 a 9 concluídos; passo 10 feito, menos o gate).
+> **Atualizado em:** 08/11/2026. **Fase 4 fechada:** gate aprovado; PR `fase-4-power-bi` → `main` aberto (merge do Ronald).
 
 ## 0. Comece por aqui (estado em 07/11/2026)
 
-**Próxima sessão (08/11/2026): só o gate e o que depende dele.**
+**Feito em 08/11/2026:** gate aprovado (`docs/aprendizados/fase-4.md`, seção 5), `CLAUDE.md` na Fase 5 e PR aberto. Pendências que sobram: seção 6 dos aprendizados.
+
+**Lista da sessão de 08/11 (concluída):**
 1. **Gate de domínio** (Apêndice C da spec). Candidatos na seção 5 de `docs/aprendizados/fase-4.md`.
 2. Completar `docs/aprendizados/fase-4.md`: seção 5 (resultado do gate), período e os erros das Aulas 2 a 4 (registro no Mac).
 3. `CLAUDE.md`: "Fase atual" de 4 para 5.

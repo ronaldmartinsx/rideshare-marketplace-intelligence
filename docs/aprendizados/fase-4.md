@@ -1,10 +1,8 @@
 # Fase 4: Power BI — registro de aprendizado
 
-- **Período:** 31/10/2026 a ⏳ (gate de domínio previsto para 08/11/2026)
+- **Período:** 31/10/2026 a 08/11/2026
 - **Objetivo:** responder às 4 perguntas de negócio da Seção 2.4 da spec.
-- **Resultado:** "pronto quando" cumprido. As 4 perguntas têm resposta visível e insight escrito, numa página única com raias (ADR 0019), publicada no Power BI Service como foto dos dados. Prints e vídeo em [`powerbi/README.md`](../../powerbi/README.md). ⏳ Gate de domínio: seção 5.
-
-> **Rascunho (07/11/2026).** Tudo, menos o resultado do gate, está registrado. A seção 5 e o período entram depois do gate.
+- **Resultado:** "pronto quando" cumprido. As 4 perguntas têm resposta visível e insight escrito, numa página única com raias (ADR 0019), publicada no Power BI Service como foto dos dados. Prints e vídeo em [`powerbi/README.md`](../../powerbi/README.md). Gate de domínio aprovado, com cinco reforços (seção 5).
 
 ---
 
@@ -69,7 +67,7 @@
 
 **Do Ronald:**
 - **Aula 1:** na pergunta rápida, não previu que o P90 ignoraria o filtro de data **em silêncio** sem ligação do histograma ao tempo. Virou a decisão D1 (ADR 0017).
-- ⏳ **Aulas 2 a 4 (dadas no Mac):** completar com o registro das perguntas rápidas que ficou na memória do Claude Code no Mac.
+- **Aulas 2 a 4 (dadas no Mac):** o resultado das perguntas rápidas ficou na memória do Claude Code no Mac e não foi reproduzido aqui (pendência na seção 6).
 - **✍️ Bloco A/B:**
   - usou `DIVIDE(..., 0)`; chegou sozinho à versão sem o terceiro argumento depois da pista;
   - o `CALCULATE` das corridas entrando no CBD substituía a segmentação do usuário (52.448.518 com "origem no CBD"). A pista não bastou; o Claude explicou o `KEEPFILTERS`, e o Ronald acertou a pergunta de fixação sobre o share.
@@ -132,17 +130,56 @@
 
 ## 5. Gate de domínio
 
-⏳ **A preencher depois do gate** (formato do Apêndice C da spec).
+Formato híbrido (o mesmo das Fases 1 a 3), em 08/11/2026.
 
-Candidatos levantados durante a fase:
-- P90 pelo histograma: por que não dá para tirar média, e os passos no DAX (reforço 4 da Fase 3);
-- "substituir × restringir" no `CALCULATE` (`KEEPFILTERS`);
-- cadeia de tempo e o relacionamento ambíguo desativado em silêncio;
-- Import × DirectQuery com cobrança por dado lido;
-- menor privilégio e o `ListDataCatalogs`;
-- consistência semântica entre o dbt e o DAX;
-- reforços herdados: "quem faz o quê na esteira" e "fechar com evidência medida".
+### Explicação com as próprias palavras (resumo da avaliação)
 
+| Item | Avaliação |
+|---|---|
+| Driver ODBC e DSN | ✅ Certo. Faltou que o projeto guarda só o nome do DSN (trocar o papel não muda o PBIP) |
+| Import × DirectQuery | ✅ Certo, com o motivo de custo. Ajuste: paga-se a leitura a cada atualização, não uma vez só |
+| Identidade de leitura | ⚠️ Leitura só da Gold, SSO, ligação SSO × atualização agendada e custo por workgroup certos. **Errado:** "limite maior" no `rideshare-bi` (é menor: 1 GiB × 3 GiB do dbt). Faltou o porquê de SSO × chave de acesso |
+| Modelagem com grãos diferentes | ❌ Motivos trocados: atribuiu a desativação à regra "um relacionamento ativo entre duas tabelas" e a cadeia a uma solução para isso. A cadeia existe porque o histograma não tem hora real; a desativação veio de **dois caminhos** criados pelo atalho da detecção automática |
+| Consistência semântica | ⚠️ Definição certa; faltaram a razão das somas e onde a fórmula mora (`meta` e spec 2.5) |
+| `DIVIDE` | ✅ |
+| `CALCULATE` / `KEEPFILTERS` | ❌ **Invertido:** disse que o `KEEPFILTERS` substitui o filtro do usuário (quem substitui é o `CALCULATE` sozinho). Reexplicado em SQL (`WHERE` trocado × `AND`) |
+| P90 pelo histograma | ❌ Só "a média distorce"; faltaram o porquê, os passos e onde é aproximado |
+| TopoJSON | ⚠️ Chamou de programa (é formato; o programa foi o mapshaper); faltaram os passos |
+| PBIP | ⚠️ TMDL e PBIR certos; faltaram o que é o PBIP e o porquê |
+| Gateway | ✅ |
+
+### Autoavaliação (quiz)
+
+| # | Tipo | Resultado |
+|---|---|---|
+| 1 | Conceitual: take rate como razão das somas | ⚠️ Conceito certo; contas erradas (15% no mês 2, 12,5% × 13,3%) |
+| 2 | Conceitual: OD mensal × diária | ⚠️ Volume e custo certos; atribuiu à pergunta 1 (é a 3, a do CBD); "grão maior" (é mais grosso) |
+| 3 | Aplicada: chegada de out/2026 | ⚠️ Service sem mudança e ordem da recarga certos; achou que as respostas escritas mudam (são texto fixo); desligar a atualização da `dim_operadora` é desnecessário e arriscado |
+| 4 | Aplicada: "origem no CBD" com e sem `KEEPFILTERS` | ❌ Escolheu "com" pelo motivo errado (o resultado é vazio, não as corridas com origem no CBD). Reexplicado com a analogia dos dois carimbos |
+| 5 | Diagnóstico: "tipo de dia" muda o P90, mas não as corridas | ❌ Não soube (ligação da cadeia inativa pelo atalho recriado na recarga) |
+
+**Pergunta de entrevista:** "Como garante que o número do dashboard é o mesmo do SQL, e como sabe que está certo?"
+- ✅ Fonte única no `meta`, reconciliação contra o Athena e **fechamento com evidência medida** (672 milhões; P90 a até 56 s). O reforço das Fases 2 e 3 apareceu.
+- Faltaram: o DAX é reescrito à mão (por isso a reconciliação é a garantia), o exemplo da razão das somas e as conferências por recorte. Resposta-modelo entregue.
+
+**Mini-checagem:**
+
+| Item | Resultado |
+|---|---|
+| A1: por que o histograma não liga à `dim_tempo_hora` e o que acontece sem a `dim_periodo_espera` | ✅ (o P90 mostraria os 33 meses sem avisar) |
+| A2: por que o atalho desativou a cadeia | ⚠️ Ideia certa; trocar "dois relacionamentos" por "dois **caminhos**" |
+| B1: `CALCULATE` por borough, com e sem `KEEPFILTERS` | ✅ |
+| C1: ordem dos passos do P90 | ✅ (o Ronald pediu outro formato no lugar da conta; trocado por ordenação) |
+| C2: por que a faixa de 20–30 é menos precisa | ✅ |
+
+**Resultado:** ✅ Passou. Os três pontos errados na primeira rodada (cadeia de tempo, `KEEPFILTERS`, P90) foram acertados na mini-checagem.
+
+**Reforços para as próximas fases:**
+1. **Vocabulário preciso:** caminho × relacionamento; grão mais grosso × "maior"; formato × programa (TopoJSON × mapshaper).
+2. **Conferir a conta antes de concluir:** o conceito do take rate estava certo, mas as contas não.
+3. **Filtro substituído × mantido:** volta na Fase 6, quando o agente montar consultas com filtros do usuário.
+4. **O que não atualiza sozinho:** textos fixos, a foto publicada no Service e os pré-requisitos (a Gold construída no Mac antes da recarga).
+5. **Manter o fechamento com evidência medida**, que apareceu pela primeira vez na entrevista.
 ---
 
 ## 6. Pendências e melhorias anotadas
@@ -150,6 +187,7 @@ Candidatos levantados durante a fase:
 - **Mac:**
   - `athena:ListDataCatalogs` no `RideshareLeituraGold` (plan do Claude, apply do Ronald); depois, DSN de volta ao papel de leitura e uma atualização completa como teste;
   - `dbt parse` para conferir o `_gold.yml` alterado na Fase 4 (receita por minuto e zona de destino).
+- **Mac:** completar a seção 3 com os erros das perguntas rápidas das Aulas 2 a 4, se estiverem na memória de lá.
 - **Windows:** apagar a reserva do cache (`cache.abf` de 548 MB, fora do repositório) só com a confirmação do Ronald.
 - **Fase 7:** versão do relatório em inglês (pedido do Ronald em 05/11/2026).
 - **Limitações aceitas:** formato `en-US` dos números nos gráficos para quem tem o sistema em inglês; respostas escritas fixas com dados até set/2026; relatório publicado sem atualização agendada.

@@ -3,9 +3,10 @@
 ## Contexto
 Projeto de portfólio de engenharia de dados (AWS S3 + Glue + Athena/Iceberg, dbt, Airflow, Power BI, IA).
 Especificação completa: docs/PROJECT_SPEC.md. Antes de cada fase, leia a Seção 1 e a fase atual na Seção 12.
-Fase atual: 4  ← atualizar ao avançar
-Estado da Fase 4 (onde paramos, próximos passos, decisões em aberto): docs/guias/fase-4-continuar-no-windows.md.
-Ler antes de começar, principalmente no Windows (a memória do Claude Code fica no Mac). Atualizar ao fim de cada sessão.
+Fase atual: 5  ← atualizar ao avançar
+Fase 4 fechada em 08/11/2026. Pendências dela (Mac: ListDataCatalogs, DSN de volta ao papel de leitura, dbt parse):
+docs/aprendizados/fase-4.md, seção 6. No Windows, ler antes docs/guias/fase-4-continuar-no-windows.md (a memória do
+Claude Code fica no Mac).
 
 ## Objetivo duplo (inegociável)
 1. Construir o sistema com qualidade de mercado.
