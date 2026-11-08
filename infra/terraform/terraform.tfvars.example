@@ -5,5 +5,8 @@
 email_alertas = "seu-email@exemplo.com"
 prefixo       = "seu-prefixo"
 
+# Usuário do Identity Center que recebe o papel de leitura do Power BI (iam_powerbi.tf)
+usuario_identity_center = "seu-usuario"
+
 # Opcional (padrão: 10)
 # budget_limite_usd = 10

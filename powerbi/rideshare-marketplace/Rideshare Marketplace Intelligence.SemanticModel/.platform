@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Rideshare Marketplace Intelligence"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "73b86835-1703-4de6-9703-f0bb0ee60ebb"
+  }
+}

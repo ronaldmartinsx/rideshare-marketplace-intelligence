@@ -1,0 +1,71 @@
+/// Zona de DESTINO da corrida: Referência da dim_zona no Power Query, com as colunas renomeadas com _destino. Existe porque a fct_od_mensal tem duas zonas (dimensão com papéis): permite filtrar o destino (ex.: is_cbd_destino) e agrupar pela origem (dim_zona) no mesmo visual. Liga só à fct_od_mensal.
+table dim_zona_destino
+	lineageTag: 35666549-fae7-41ef-9742-0a8bb0fa6de3
+
+	column zona_destino_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 13a8aa47-29cd-435d-b328-0b5db555ee95
+		summarizeBy: none
+		sourceColumn: zona_destino_id
+
+	column borough_destino
+		dataType: string
+		lineageTag: 794516e0-47ba-4f09-9ea0-cb1a7c61398f
+		summarizeBy: none
+		sourceColumn: borough_destino
+
+	column zona_destino
+		dataType: string
+		lineageTag: 88df212e-7858-42f3-921a-4acb1b970d27
+		summarizeBy: none
+		sourceColumn: zona_destino
+
+	column service_zone_destino
+		dataType: string
+		lineageTag: b2d7bb5b-e95b-47ff-8356-d0f918f6c329
+		summarizeBy: none
+		sourceColumn: service_zone_destino
+
+	column is_cbd_destino
+		dataType: boolean
+		lineageTag: 4177b6a8-a193-4054-ad3d-e58bc868322a
+		summarizeBy: none
+		sourceColumn: is_cbd_destino
+
+	column is_aeroporto_destino
+		dataType: boolean
+		lineageTag: 2ae65206-3098-4f50-b829-39a69903bcc7
+		summarizeBy: none
+		sourceColumn: is_aeroporto_destino
+
+	column is_zona_conhecida_destino
+		dataType: boolean
+		lineageTag: d4ef473c-50f0-485e-8d22-fcc4fccf3d83
+		summarizeBy: none
+		sourceColumn: is_zona_conhecida_destino
+
+	column is_fora_de_nyc_destino
+		dataType: boolean
+		lineageTag: d214526e-49c9-4891-b781-c853693fbc35
+		summarizeBy: none
+		sourceColumn: is_fora_de_nyc_destino
+
+	partition dim_zona_destino = m
+		mode: import
+		source =
+				let
+				    Source = dim_zona,
+				    Renomeado = Table.RenameColumns(Source, {
+				        {"zona_id", "zona_destino_id"},
+				        {"borough", "borough_destino"},
+				        {"zona", "zona_destino"},
+				        {"service_zone", "service_zone_destino"},
+				        {"is_cbd", "is_cbd_destino"},
+				        {"is_aeroporto", "is_aeroporto_destino"},
+				        {"is_zona_conhecida", "is_zona_conhecida_destino"},
+				        {"is_fora_de_nyc", "is_fora_de_nyc_destino"}
+				    })
+				in
+				    Renomeado
+

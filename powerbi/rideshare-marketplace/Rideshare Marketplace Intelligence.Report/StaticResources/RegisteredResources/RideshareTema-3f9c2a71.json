@@ -1,0 +1,55 @@
+{
+  "name": "RideshareTema-3f9c2a71.json",
+  "dataColors": [
+    "#0072B2",
+    "#D55E00",
+    "#009E73",
+    "#CC79A7",
+    "#56B4E9",
+    "#E69F00",
+    "#4D4D4D",
+    "#F0E442"
+  ],
+  "foreground": "#1F1F1F",
+  "background": "#FFFFFF",
+  "tableAccent": "#0072B2",
+  "textClasses": {
+    "callout": {
+      "fontFace": "Segoe UI",
+      "fontSize": 28,
+      "color": "#1F1F1F"
+    },
+    "title": {
+      "fontFace": "Segoe UI",
+      "fontSize": 12,
+      "color": "#1F1F1F"
+    },
+    "header": {
+      "fontFace": "Segoe UI",
+      "fontSize": 12,
+      "color": "#1F1F1F"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#1F1F1F"
+    },
+    "largeTitle": {
+      "fontFace": "Segoe UI",
+      "fontSize": 14,
+      "color": "#1F1F1F"
+    },
+    "semiboldLabel": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#1F1F1F",
+      "bold": true
+    },
+    "boldLabel": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#1F1F1F",
+      "bold": true
+    }
+  }
+}

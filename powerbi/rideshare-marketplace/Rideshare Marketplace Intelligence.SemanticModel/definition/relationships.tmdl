@@ -1,0 +1,52 @@
+relationship dim_periodo_espera_ano_mes_dim_mes_ano_mes
+	fromColumn: dim_periodo_espera.ano_mes
+	toColumn: dim_mes.ano_mes
+
+relationship fct_espera_histograma_faixa_id_dim_faixa_espera_faixa_id
+	fromColumn: fct_espera_histograma.faixa_id
+	toColumn: dim_faixa_espera.faixa_id
+
+relationship dim_tempo_hora_periodo_id_dim_periodo_espera_periodo_id
+	fromColumn: dim_tempo_hora.periodo_id
+	toColumn: dim_periodo_espera.periodo_id
+
+relationship fct_espera_histograma_periodo_id_dim_periodo_espera_periodo_id
+	fromColumn: fct_espera_histograma.periodo_id
+	toColumn: dim_periodo_espera.periodo_id
+
+relationship fct_demanda_zona_hora_hora_embarque_dim_tempo_hora_hora
+	fromColumn: fct_demanda_zona_hora.hora_embarque
+	toColumn: dim_tempo_hora.hora
+
+relationship fct_od_mensal_source_month_dim_mes_ano_mes
+	fromColumn: fct_od_mensal.source_month
+	toColumn: dim_mes.ano_mes
+
+relationship fct_demanda_zona_hora_zona_origem_id_dim_zona_zona_id
+	fromColumn: fct_demanda_zona_hora.zona_origem_id
+	toColumn: dim_zona.zona_id
+
+relationship fct_espera_histograma_zona_origem_id_dim_zona_zona_id
+	fromColumn: fct_espera_histograma.zona_origem_id
+	toColumn: dim_zona.zona_id
+
+relationship fct_od_mensal_zona_origem_id_dim_zona_zona_id
+	fromColumn: fct_od_mensal.zona_origem_id
+	toColumn: dim_zona.zona_id
+
+relationship fct_od_mensal_zona_destino_id_dim_zona_destino_zona_destino_id
+	fromColumn: fct_od_mensal.zona_destino_id
+	toColumn: dim_zona_destino.zona_destino_id
+
+relationship fct_demanda_zona_hora_licenca_operadora_dim_operadora_operadora_id
+	fromColumn: fct_demanda_zona_hora.licenca_operadora
+	toColumn: dim_operadora.operadora_id
+
+relationship fct_espera_histograma_licenca_operadora_dim_operadora_operadora_id
+	fromColumn: fct_espera_histograma.licenca_operadora
+	toColumn: dim_operadora.operadora_id
+
+relationship fct_od_mensal_licenca_operadora_dim_operadora_operadora_id
+	fromColumn: fct_od_mensal.licenca_operadora
+	toColumn: dim_operadora.operadora_id
+

@@ -1,0 +1,125 @@
+/// Origem-destino por mês × zona de origem × zona de destino × operadora (soma da fct_od_diario, decisão D2). Base das corridas que entram no CBD. A origem vem da dim_zona e o destino, da dim_zona_destino. Fonte: gold.fct_od_mensal.
+table fct_od_mensal
+	lineageTag: 59385602-9b8f-419b-89d0-538dac752ed5
+
+	/// Corridas válidas da fct_od_mensal (grão mensal com origem e destino). No total, igual a [Corridas] da demanda.
+	measure 'Corridas OD' = SUM(fct_od_mensal[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Origem-destino
+		lineageTag: ed09d30d-3daf-4fb6-91cc-7c4095d310be
+
+	/// Corridas com destino no CBD e origem fora dele (dim_zona_destino[is_cbd_destino] e não dim_zona[is_cbd]). jan/2025 mistura 4 dias antes da taxa.
+	measure 'Corridas entrando no CBD' =
+			
+			CALCULATE (
+			    [Corridas OD],
+			    KEEPFILTERS ( dim_zona_destino[is_cbd_destino] = TRUE () ),
+			    KEEPFILTERS ( dim_zona[is_cbd] = FALSE () )
+			)
+		formatString: #,##0
+		displayFolder: CBD
+		lineageTag: 584d4392-b17c-4324-a579-f6ec6388fc8c
+
+	column zona_origem_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4969deab-b5e7-484a-b126-0c8c53f69e24
+		summarizeBy: none
+		sourceColumn: zona_origem_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_destino_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ee693708-a37d-48cf-9e68-5e68f5e5e296
+		summarizeBy: none
+		sourceColumn: zona_destino_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column licenca_operadora
+		dataType: string
+		isHidden
+		lineageTag: 3928260c-c4ca-4fd5-9271-f1f089050e93
+		summarizeBy: none
+		sourceColumn: licenca_operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: da27d3dd-b13d-48f4-8bb7-c2f900bd29dd
+		summarizeBy: sum
+		sourceColumn: qtd_corridas
+
+		annotation SummarizationSetBy = Automatic
+
+	column milhas_total
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 9c45cb88-36e3-4850-a537-2ded96689019
+		summarizeBy: sum
+		sourceColumn: milhas_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column qtd_corridas_tarifa_valida
+		dataType: int64
+		formatString: #,##0
+		lineageTag: e190ccab-e518-4246-b03d-030a40c80152
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_tarifa_valida
+
+		annotation SummarizationSetBy = Automatic
+
+	column tarifa_base_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: 515fcbda-9101-4141-b5d4-5127a4a0a741
+		summarizeBy: sum
+		sourceColumn: tarifa_base_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column milhas_tarifa_valida_total
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: bdc5229b-f96a-44ee-b719-a990090d2650
+		summarizeBy: sum
+		sourceColumn: milhas_tarifa_valida_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column source_month
+		dataType: string
+		isHidden
+		lineageTag: a7ff9795-5f93-4da9-85ff-36633f2c4c53
+		summarizeBy: none
+		sourceColumn: source_month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_od_mensal = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    fct_od_mensal_Table = gold_Schema{[Name="fct_od_mensal",Kind="Table"]}[Data]
+				in
+				    fct_od_mensal_Table
+
+	annotation PBI_ResultType = Table
+

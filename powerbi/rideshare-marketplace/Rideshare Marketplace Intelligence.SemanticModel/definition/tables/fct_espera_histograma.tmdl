@@ -1,0 +1,228 @@
+/// Histograma do tempo de espera (pedido → embarque): mês × hora do dia × tipo de dia × zona de origem × operadora × faixa de espera. Só corridas com espera válida (0 a 2 h). P50 e P90 saem por interpolação entre as faixas; percentil nunca soma nem tira média (ADR 0006). Fonte: gold.fct_espera_histograma.
+table fct_espera_histograma
+	lineageTag: 73e266e0-8be5-4a0d-b60b-e2e27cfbc504
+
+	/// Corridas válidas com espera válida (0 a 2 h), pelo histograma. Menor que [Corridas] da demanda: só entram as esperas válidas.
+	measure 'Corridas com espera valida' = SUM(fct_espera_histograma[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Espera
+		lineageTag: aeeb338a-a776-43f5-8964-d8d0c01b9ec3
+
+	/// Mediana do tempo de espera (pedido → embarque), em minutos, pelo histograma: acumula as faixas até 50% do recorte e interpola dentro da faixa (ADR 0006). Na faixa 30+ devolve 30 (piso: ≥ 30 min). Recorte sem corridas: vazio.
+	measure 'Espera P50 (min)' = ```
+			
+			VAR p = 0.5
+			VAR total = [Corridas com espera valida do recorte]
+			VAR alvo = p * total
+			VAR faixas =
+			    ADDCOLUMNS (
+			        ALL ( dim_faixa_espera ),
+			        "@qtd", [Corridas com espera valida],
+			        "@acum", [Corridas com espera valida acumulada]
+			    )
+			VAR faixa_alvo =
+			    MINX ( FILTER ( faixas, [@acum] >= alvo ), dim_faixa_espera[faixa_id] )
+			VAR linha = FILTER ( faixas, dim_faixa_espera[faixa_id] = faixa_alvo )
+			VAR inicio = MAXX ( linha, dim_faixa_espera[faixa_inicio_min] )
+			VAR fim = MAXX ( linha, dim_faixa_espera[faixa_fim_min] )
+			VAR qtd = MAXX ( linha, [@qtd] )
+			VAR acum_antes = MAXX ( linha, [@acum] ) - qtd
+			RETURN
+			    IF ( total > 0,
+			        IF ( faixa_alvo = 17, inicio,
+			            inicio + DIVIDE ( alvo - acum_antes, qtd ) * ( fim - inicio ) ) )
+			
+			```
+		formatString: #,##0.0
+		displayFolder: Espera
+		lineageTag: 70f9a6df-dd29-47a6-94df-284504004522
+
+	/// Corridas das faixas até a faixa atual (inclusive), no recorte. Usada pelo P50/P90.
+	measure 'Corridas com espera valida acumulada' = ```
+			
+			VAR faixa_contexto = MAX(dim_faixa_espera[faixa_id])
+			
+			RETURN
+			CALCULATE( 
+			    [Corridas com espera valida],
+			    FILTER(
+			        ALL(dim_faixa_espera),
+			        dim_faixa_espera[faixa_id] <= faixa_contexto
+			    )
+			)
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: ffe43855-0f43-43f4-95a4-2a990d143aed
+
+	/// Total do recorte sem o filtro da faixa de espera: o 100% do percentil.
+	measure 'Corridas com espera valida do recorte' = ```
+			CALCULATE( [Corridas com espera valida], REMOVEFILTERS(dim_faixa_espera) )
+			
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: e1f0cd11-3d07-437a-94da-4393f0f1758b
+
+	/// Corridas das faixas anteriores à faixa atual, no recorte. Auxiliar de conferência num visual por faixa.
+	measure 'Corridas com espera valida acumulada antes' = ```
+			
+			VAR faixa_contexto = MAX(dim_faixa_espera[faixa_id])
+			
+			RETURN
+			CALCULATE( 
+			    [Corridas com espera valida],
+			    FILTER(
+			        ALL(dim_faixa_espera),
+			        dim_faixa_espera[faixa_id] < faixa_contexto
+			    )
+			)
+			```
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 31c2d0bf-3ac3-4c44-8e89-879655f133f7
+
+	/// Acumulado até a faixa atual / total do recorte. Mostra onde o 50% e o 90% caem num visual por faixa.
+	measure '% corridas espera valida acumulado' = DIVIDE([Corridas com espera valida acumulada], [Corridas com espera valida do recorte])
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Base
+		lineageTag: 5fe3270e-7dad-4d7a-95f7-3996135a124a
+
+	/// P90 do tempo de espera, em minutos: 90% das corridas do recorte esperaram até este valor. Mesmo algoritmo do P50 com p = 0,9. Percentil não soma nem tira média entre recortes: sempre recalculado das faixas. Na faixa 30+ devolve 30 (piso).
+	measure 'Espera P90 (min)' = ```
+			
+			VAR p = 0.9
+			VAR total = [Corridas com espera valida do recorte]
+			VAR alvo = p * total
+			VAR faixas =
+			    ADDCOLUMNS (
+			        ALL ( dim_faixa_espera ),
+			        "@qtd", [Corridas com espera valida],
+			        "@acum", [Corridas com espera valida acumulada]
+			    )
+			VAR faixa_alvo =
+			    MINX ( FILTER ( faixas, [@acum] >= alvo ), dim_faixa_espera[faixa_id] )
+			VAR linha = FILTER ( faixas, dim_faixa_espera[faixa_id] = faixa_alvo )
+			VAR inicio = MAXX ( linha, dim_faixa_espera[faixa_inicio_min] )
+			VAR fim = MAXX ( linha, dim_faixa_espera[faixa_fim_min] )
+			VAR qtd = MAXX ( linha, [@qtd] )
+			VAR acum_antes = MAXX ( linha, [@acum] ) - qtd
+			RETURN
+			    IF ( total > 0,
+			        IF ( faixa_alvo = 17, inicio,
+			            inicio + DIVIDE ( alvo - acum_antes, qtd ) * ( fim - inicio ) ) )
+			
+			```
+		formatString: #,##0.0
+		displayFolder: Espera
+		lineageTag: e8cf1094-8cab-4c87-8b41-c247239c2978
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column hora_do_dia
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9cb00cc8-8af5-418e-accd-93d09e1d9ba4
+		summarizeBy: none
+		sourceColumn: hora_do_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_dia
+		dataType: string
+		isHidden
+		lineageTag: 48fd6d5f-b7da-418c-926b-d3aa5e8f838a
+		summarizeBy: none
+		sourceColumn: tipo_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_origem_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: de22403f-11c3-41d5-aa43-799250f9aa55
+		summarizeBy: none
+		sourceColumn: zona_origem_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column licenca_operadora
+		dataType: string
+		isHidden
+		lineageTag: 1bf1417d-fc71-47ec-a2ce-4a7b4e843687
+		summarizeBy: none
+		sourceColumn: licenca_operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0780de60-e70c-4edf-abce-3a787eeefa95
+		summarizeBy: none
+		sourceColumn: faixa_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_inicio_min
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 66da9375-81c3-45e3-9bbd-29c252388462
+		summarizeBy: none
+		sourceColumn: faixa_inicio_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_fim_min
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 616b7a8d-80ed-40f5-a083-1df2aa46b7e3
+		summarizeBy: none
+		sourceColumn: faixa_fim_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: 030d8726-40fa-496a-b97c-d3a9824cc3f5
+		summarizeBy: sum
+		sourceColumn: qtd_corridas
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_month
+		dataType: string
+		isHidden
+		lineageTag: 7136e279-3d08-4d83-a05a-68fb7b5601c3
+		summarizeBy: none
+		sourceColumn: source_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column periodo_id
+		dataType: string
+		isHidden
+		lineageTag: b106549b-5681-4724-a6b1-fbc528417d8a
+		summarizeBy: none
+		sourceColumn: periodo_id
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_espera_histograma = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    fct_espera_histograma_Table = gold_Schema{[Name="fct_espera_histograma",Kind="Table"]}[Data]
+				in
+				    fct_espera_histograma_Table
+

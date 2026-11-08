@@ -59,3 +59,32 @@ resource "aws_athena_workgroup" "rideshare" {
     }
   }
 }
+
+# ---------------------------------------------------------------
+# Workgroup do Power BI (Fase 4, decisão P2): só o papel de leitura
+# (iam_powerbi.tf) consulta por aqui. Separa o custo do BI do custo
+# do dbt e tem um freio menor que o do workgroup principal.
+# ---------------------------------------------------------------
+resource "aws_athena_workgroup" "bi" {
+  name        = "rideshare-bi"
+  description = "Workgroup do Power BI: leitura da Gold, com limite proprio por consulta"
+
+  configuration {
+    enforce_workgroup_configuration = true
+
+    # Publica as métricas de bytes lidos no CloudWatch, por workgroup: o custo do BI aparece
+    # separado do custo do dbt
+    publish_cloudwatch_metrics_enabled = true
+
+    bytes_scanned_cutoff_per_query = var.athena_bi_limite_bytes_por_consulta
+
+    result_configuration {
+      # Prefixo próprio: a política do papel de leitura só grava aqui
+      output_location = "s3://${aws_s3_bucket.athena_results.bucket}/bi/"
+
+      encryption_configuration {
+        encryption_option = "SSE_S3"
+      }
+    }
+  }
+}

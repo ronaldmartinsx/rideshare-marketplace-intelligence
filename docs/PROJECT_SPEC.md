@@ -198,9 +198,10 @@ O fluxo é este:
 |---|---|---|
 | **Corridas válidas** | Contagem de corridas com `is_valid = true` | Inválidas ficam na Silver com o motivo, mas não entram na Gold |
 | **Tempo de espera (s)** | `pickup_datetime − request_datetime` | **Não usar `on_scene_datetime`**: o dicionário diz "só veículos acessíveis", mas nos dados de 2025-01 está preenchido em 100% das corridas da Uber e em 0,3% das da Lyft. Usá-lo mediria só a Uber (✅ VERIFICADO nos dados; ver `docs/validacao/fase-1.md`) |
-| **Espera P50 / P90** | Percentis do tempo de espera | **Percentil não soma nem tira média entre zonas.** Por isso a Gold guarda um histograma de faixas de espera (ver 6.4) |
+| **Espera P50 / P90** | Percentis do tempo de espera | **Percentil não soma nem tira média entre zonas.** Por isso a Gold guarda um histograma de faixas de espera (ver 6.4). **Acima de 15 min o valor é aproximado:** as faixas passam a ter 5 e 10 min, e a interpolação errou até ~1 min nos recortes testados contra o Athena (validação da Fase 4, seção 6). Na faixa 30+ o resultado é 30 (piso) |
 | **Take rate** | `(base_passenger_fare − driver_pay) / base_passenger_fare` | `driver_pay` exclui pedágios e gorjetas e é líquido de comissão, sobretaxas e impostos (✅ VERIFICADO). Impostos e taxas são repassados e ficam fora |
 | **Receita por milha** | `base_passenger_fare / trip_miles` | Excluir `trip_miles = 0` (já marcado como inválido na Silver) |
+| **Receita por minuto** | `base_passenger_fare / (trip_time / 60)` | Minuto de corrida (embarque ao desembarque), não o tempo do motorista conectado. Mesmas corridas com tarifa válida (entrou na Fase 4, D8) |
 | **Repasse por hora de corrida** | `driver_pay / (trip_time / 3600)` | **Não é o ganho por hora do motorista**: o dado não tem tempo ocioso nem identificador de motorista |
 | **Share da operadora** | Corridas da operadora / corridas totais (mesmo recorte) | Calcular sobre o mesmo recorte de zona e período |
 | **Corrida com destino no CBD** | `DOLocationID` dentro da lista de zonas do CBD (seed) | **Não usar `cbd_congestion_fee > 0`** para comparar antes e depois: a coluna só existe a partir de 2025 (✅ VERIFICADO). O corte de antes × depois é **05/01/2025**: os dias 1 a 4 de janeiro de 2025 ainda são "antes" |
@@ -404,6 +405,7 @@ flowchart TD
    - **Métrica** ("esta medida serve para a análise?"): `is_valid_wait_metric = false` para espera < 0 ou ≥ 2 h; `is_valid_economic_metrics = false` para tarifa base ≤ 0. A corrida conta na demanda, mas fica fora da espera ou da economia.
    - Zona desconhecida (264/265, ~4% das corridas, viagens reais): não invalida. Vira `is_zona_conhecida` na `dim_zona`.
    - Produção (32 meses): 83.012 corridas inválidas (0,013%), sendo 82.785 por milhas ≤ 0.
+   - Tarifa ≤ 0, investigada por operadora na Fase 4: são dois fenômenos. **Lyft:** tarifa zerada com repasse normal ao motorista (média US$ 19,94, 100% com repasse) concentrada em poucos dias (ago/2025: 183.494 corridas, 99,99% entre 16 e 18/08); inferência: falha de registro da tarifa. **Uber:** zeros e negativos com repasse quase nulo, em todos os meses e crescendo em 2026. A regra de nível métrica **foi mantida**: nos dois casos a tarifa não mede a corrida. A página de economia mostra o "% tarifa inválida" ao lado das medidas (validação da Fase 4, seção 1).
 3. **Incremental idempotente por partição.**
    - A tabela Iceberg é particionada por **`source_month`**, e não pelo mês do embarque, porque corridas na virada do mês e dados ruins podem cair fora do mês do arquivo.
    - ✅ Validado (ADR 0005): o teste "mês do embarque = `source_month`" passou nos 32 meses. A premissa virou teste com severidade erro.
@@ -418,10 +420,14 @@ flowchart TD
 |---|---|---|
 | `dim_zona` | zona | borough, nome, `service_zone`, `is_cbd`, `is_aeroporto`, `is_zona_conhecida`, `is_fora_de_nyc` |
 | `dim_operadora` | operadora | código da licença, nome |
-| `dim_tempo_hora` | hora (local de NY) | data, hora, dia da semana, tipo de dia (útil / fim de semana / feriado), variáveis de clima, `hora_troca_horario_verao` |
+| `dim_tempo_hora` | hora (local de NY) | data, hora, dia da semana, tipo de dia (útil / fim de semana / feriado), variáveis de clima, `hora_troca_horario_verao`, `periodo_id` (Fase 4) |
 | `fct_demanda_zona_hora` | hora × zona de origem × operadora | corridas, milhas, segundos de corrida, tarifa base, repasse, gorjetas, taxa CBD, corridas com destino no CBD, corridas compartilhadas. Economia só de corridas com tarifa válida |
 | `fct_espera_histograma` | mês × hora do dia × tipo de dia × zona de origem × operadora × faixa de espera (**mudou na Fase 3, ADR 0006**) | corridas por faixa, em 18 faixas (1 min até 15, 15–20, 20–30, 30+), com início e fim da faixa. Permite **calcular percentis aproximados em qualquer nível de agregação** (P90 8,06 × 8,05 real). ~435 mil linhas/mês |
-| `fct_od_diario` | dia × zona de origem × zona de destino × operadora | corridas, tarifa base, milhas |
+| `fct_od_diario` | dia × zona de origem × zona de destino × operadora | corridas, tarifa base, milhas. Fica no Athena (55 milhões de linhas) |
+| `dim_mes` | mês | `ano_mes` (AAAA-MM). Topo da cadeia de tempo do Power BI (**Fase 4, ADR 0017**) |
+| `dim_periodo_espera` | mês × hora do dia × tipo de dia | `periodo_id`. Dimensão encolhida da `dim_tempo_hora` no grão do histograma; liga o histograma ao tempo (ADR 0017) |
+| `dim_faixa_espera` | faixa de espera | limites em minutos e rótulo das 18 faixas (ADR 0017) |
+| `fct_od_mensal` | mês × zona de origem × zona de destino × operadora | soma da `fct_od_diario`, conferida por teste de reconciliação; é a origem-destino do Power BI (3,7 milhões de linhas; ADR 0017) |
 | `ml_forecast_demanda` | hora-alvo × zona × execução | previsão, intervalo, versão do modelo |
 | `ml_backtest_metricas` | execução × janela | WAPE do modelo e do baseline |
 
@@ -524,18 +530,24 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 ## 10. Power BI
 
 - **Conexão:** conector nativo do Amazon Athena (via driver ODBC), em modo **Import** sobre a Gold.
-- **Modelo:** estrela, com `fct_*` ligadas a `dim_zona`, `dim_operadora` e `dim_tempo_hora`.
-- **Medidas DAX** seguem a Seção 2.5. O P50 e o P90 vêm de `fct_espera_histograma`, por interpolação entre as faixas.
+- **Modelo (revisto na Fase 4, ADR 0017):** estrela com 3 fatos importadas (`fct_demanda_zona_hora`, `fct_espera_histograma`, `fct_od_mensal`) e 13 relacionamentos, todos 1 → N em direção única.
+  - Tempo em cadeia: `dim_mes` → `dim_periodo_espera` → `dim_tempo_hora`. Um filtro de mês chega às três fatos; hora do dia e tipo de dia vêm da `dim_periodo_espera` (o histograma não tem hora real).
+  - `dim_zona` e `dim_operadora` nas três fatos; `dim_faixa_espera` no histograma; zona de destino como segunda tabela (`dim_zona_destino`), só na `fct_od_mensal`.
+  - Detecção automática de relacionamentos desligada: ela cria atalhos que desativam a cadeia em silêncio.
+  - A `fct_od_diario` fica no Athena.
+- **Identidade:** papel somente leitura `RideshareLeituraGold` e workgroup `rideshare-bi` (ADR 0018).
+- **Medidas DAX** seguem a Seção 2.5. O P50 e o P90 vêm de `fct_espera_histograma`, por interpolação entre as faixas; o relatório avisa que o P90 acima de 15 min é aproximado.
+- **Versionamento:** PBIP (TMDL + PBIR) em `powerbi/` (ADR 0011).
 
-**Páginas:**
+**Página (revisto na Fase 4, ADR 0019):** uma página única, 1440 px de largura, com rolagem vertical e uma raia por pergunta de negócio da Seção 2.4. Cada raia traz a pergunta, a resposta numa frase e os visuais como evidência.
 
-1. **Visão executiva:** KPIs principais e tendência.
-2. **Oferta × demanda:** mapa de zonas com a espera P90 por hora e dia da semana.
-3. **Economia unitária:** take rate, receita por milha, repasse por hora de corrida.
-4. **Taxa de congestionamento:** antes e depois, CBD versus não-CBD (com comparação de tendências).
-5. **Forecast × realizado:** com o WAPE do modelo e do baseline.
+0. **Cabeçalho:** título, período dos dados, segmentação de mês e cartões de KPI com a explicação ao passar o mouse.
+1. **Onde e quando falta oferta?** Mapa do P90 por zona, hora do dia × tipo de dia, distribuição da espera.
+2. **Como evolui a economia unitária?** Take rate, receita por milha e por minuto, repasse por hora de corrida, % tarifa inválida.
+3. **Qual foi o impacto da taxa do CBD?** Antes × depois, CBD × não-CBD, origem das corridas que entram no centro.
+4. **Onde a Lyft perde terreno para a Uber?** Share por zona e evolução (substitui o "Forecast × realizado", que vai para a Fase 5).
 
-**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). Fica fora da v1. Plano B: o projeto do Power BI no repositório, com prints e um vídeo curto no README.
+**Publicação:** a atualização no Service exige on-premises data gateway com System DSN (confirmado na documentação da Microsoft na Fase 1; ver `docs/validacao/fase-1.md`, seção 8). A **atualização agendada** fica fora da v1. Ajuste de 07/11/2026: o relatório é **publicado no Service como foto dos dados** (sem atualização agendada), além do projeto no repositório com prints e um vídeo curto no README.
 
 ---
 
@@ -585,6 +597,7 @@ rideshare-marketplace-intelligence/
 ### 11.5 Segurança
 
 - IAM com **menor privilégio**: um usuário ou role para o Airflow e outro, somente leitura, para o Power BI e o agente.
+  - Power BI (Fase 4, ADR 0018): permission set `RideshareLeituraGold` do Identity Center (sem chave, sessão de 8 h), só o banco `gold`, só o workgroup `rideshare-bi`. Pendente: `athena:ListDataCatalogs`, que o driver ODBC 2.5 pede para listar tabelas; até lá o DSN usa o papel de administrador, com o banco, o workgroup e a saída do BI.
 - Root com MFA e nunca usado no dia a dia.
 - Buckets privados, com bloqueio de acesso público.
 - Segredos fora do Git.
@@ -710,7 +723,7 @@ rideshare-marketplace-intelligence/
   - percentil a partir de histograma em DAX;
   - mapa com TopoJSON;
   - gateway.
-- **Entregas:** as 5 páginas da Seção 10, as medidas DAX documentadas, prints e o vídeo curto.
+- **Entregas:** a página da Seção 10 (página única com raias, ADR 0019; antes eram 5 páginas), as medidas DAX documentadas, prints e o vídeo curto.
 - **✍️ Ronald escreve:** todas as medidas DAX (é a sua área de domínio; o Claude Code revisa).
 - **Pronto quando:** cada pergunta de negócio tem uma resposta visível e um insight escrito.
 
@@ -798,12 +811,15 @@ rideshare-marketplace-intelligence/
 | 0008 | Airflow local (Astro) em vez de serviço gerenciado, e a identidade dele na AWS | Decidido (ADR escrito na Fase 2, com a credencial D8) |
 | 0009 | Fuso horário: corridas no horário local de NY; momentos de máquina e clima em UTC | Decidido (Fase 2) |
 | 0010 | Interface do agente (CLI × Streamlit) | Decidido: Streamlit (antecipado em 15/10/2026; o Power BI segue como dashboard de negócio). Escrever o ADR na Fase 6 |
-| 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | A decidir (Fase 4) |
+| 0011 | PBIP (Power BI Project, em texto) no lugar do `.pbix` | Decidido e aplicado (Fase 4) |
 | 0012 | Estado do Terraform no S3, com versionamento e trava nativa | Decidido |
 | 0013 | Layout de dev no S3: prefixo = nome do banco no Glue (`dev_silver/`, `dev_gold/`); dev lê a Bronze de prod | Decidido (revisado nas Fases 1 e 2: banco `controle` e ambiente de teste) |
 | 0014 | Estratégia incremental da Silver: `append` + `pre_hook` com delete do `source_month` | Decidido e validado |
 | 0015 | Leitura da Bronze por partition projection, com `ingest_ts` obrigatório na consulta | Decidido e validado (Fase 2) |
 | 0016 | Registro de construção do dbt e regra de pendência por mês (substitui a comparação manifesto × Silver) | Decidido e validado (Fase 3) |
+| 0017 | Dimensões do período para o histograma (`dim_mes`, `dim_periodo_espera`, `dim_faixa_espera`) e origem-destino mensal no Power BI | Decidido e validado (Fase 4) |
+| 0018 | Identidade somente leitura do Power BI (permission set + workgroup `rideshare-bi`) | Decidido e aplicado (Fase 4); `ListDataCatalogs` pendente |
+| 0019 | Relatório do Power BI em página única com raias (substitui as 5 páginas da Seção 10) | Decidido e aplicado (Fase 4) |
 
 **Formato de ADR:** Contexto → Decisão → Alternativas consideradas → Consequências (o que ganhamos e o que perdemos).
 

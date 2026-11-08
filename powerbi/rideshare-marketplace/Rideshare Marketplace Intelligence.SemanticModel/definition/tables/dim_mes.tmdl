@@ -1,0 +1,52 @@
+/// Uma linha por mês (2024 a 2026). Topo da hierarquia de tempo: filtra as três fatos com o mesmo recorte.
+table dim_mes
+	lineageTag: 47e45969-5b79-42eb-b664-bce28f54a8d9
+
+	column ano_mes
+		dataType: string
+		lineageTag: b9884f39-271d-46ff-9da8-e710e52afe35
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano
+		dataType: int64
+		formatString: 0
+		lineageTag: b21577b0-6bce-46ab-8613-dd356ce76efc
+		summarizeBy: none
+		sourceColumn: ano
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes
+		dataType: int64
+		formatString: 0
+		lineageTag: 2160a8d1-7b05-46ab-9bcb-1a422c7b014b
+		summarizeBy: none
+		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes_inicio
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d97c038d-7e4a-42b5-981d-0e3441b3f2d5
+		summarizeBy: none
+		sourceColumn: mes_inicio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition dim_mes = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_mes_Table = gold_Schema{[Name="dim_mes",Kind="Table"]}[Data]
+				in
+				    dim_mes_Table
+

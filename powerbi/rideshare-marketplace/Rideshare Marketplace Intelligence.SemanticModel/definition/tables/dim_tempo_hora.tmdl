@@ -1,0 +1,190 @@
+/// Uma linha por hora local de Nova York (2024 a 2026), com feriado, tipo de dia e clima horário. Filtra só a fct_demanda_zona_hora. Para filtrar também o histograma, use a dim_periodo_espera (hora do dia, tipo de dia) e a dim_mes.
+table dim_tempo_hora
+	lineageTag: 2f16101e-753a-48f3-b44d-9379bddae773
+
+	column hora
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: a3a5d115-92b2-406a-ab55-7fa2a1d23d78
+		summarizeBy: none
+		sourceColumn: hora
+
+		annotation SummarizationSetBy = Automatic
+
+	column data
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 60a2dd34-c2aa-4250-aef3-8fcb624fbc24
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ano_mes
+		dataType: string
+		isHidden
+		lineageTag: a99cf9a1-3be3-429b-b901-0fc3876b1d05
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d5b0a330-3235-4d48-8285-03b52cb22622
+		summarizeBy: none
+		sourceColumn: ano
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 329398b6-c54b-43f5-8384-b85932afa597
+		summarizeBy: none
+		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column hora_do_dia
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2d497ef7-7ac1-42cc-a924-4951a468a306
+		summarizeBy: none
+		sourceColumn: hora_do_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column dia_da_semana
+		dataType: int64
+		formatString: 0
+		lineageTag: 391cf140-287a-4a4b-986d-bca2e7af9865
+		summarizeBy: none
+		sourceColumn: dia_da_semana
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_fim_de_semana
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4d892bdb-99db-4092-87fc-3d65f0149c5e
+		summarizeBy: none
+		sourceColumn: is_fim_de_semana
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_feriado
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4c63d184-a696-496e-99e1-85433d1ba715
+		summarizeBy: none
+		sourceColumn: is_feriado
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_feriado
+		dataType: string
+		lineageTag: af83731c-1188-44c8-ab55-a788887fd12a
+		summarizeBy: none
+		sourceColumn: nome_feriado
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_dia
+		dataType: string
+		isHidden
+		lineageTag: 630f440e-86c3-4877-ab62-a400efc6b84d
+		summarizeBy: none
+		sourceColumn: tipo_dia
+
+		annotation SummarizationSetBy = Automatic
+
+	column hora_troca_horario_verao
+		dataType: string
+		lineageTag: 47fd755c-5d43-48df-b6e6-42909e035f14
+		summarizeBy: none
+		sourceColumn: hora_troca_horario_verao
+
+		annotation SummarizationSetBy = Automatic
+
+	column periodo_id
+		dataType: string
+		isHidden
+		lineageTag: 89974288-80cf-4e07-a16c-adbc006d87ba
+		summarizeBy: none
+		sourceColumn: periodo_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column temperatura_c
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 187abcae-f157-4257-b0b8-53ed28414816
+		summarizeBy: none
+		sourceColumn: temperatura_c
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column precipitacao_mm
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 675d9663-310c-4ec8-b4fe-26a618133875
+		summarizeBy: none
+		sourceColumn: precipitacao_mm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column chuva_mm
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 9a3611a9-8586-46a2-9c6b-cad4814366d8
+		summarizeBy: none
+		sourceColumn: chuva_mm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column neve_cm
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: ffe909fe-d865-4379-b384-94ad26884604
+		summarizeBy: none
+		sourceColumn: neve_cm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column vento_kmh
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 819ac673-816a-43cd-8db6-1f489b395461
+		summarizeBy: none
+		sourceColumn: vento_kmh
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition dim_tempo_hora = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    dim_tempo_hora_Table = gold_Schema{[Name="dim_tempo_hora",Kind="Table"]}[Data]
+				in
+				    dim_tempo_hora_Table
+

@@ -69,6 +69,9 @@ calendario as (
 
 select
     c.*,
+    -- Chave do período do histograma de espera (Fase 4, D1): mês × hora do dia × tipo de dia.
+    -- Calculada SÓ aqui: a dim_periodo_espera e a fct_espera_histograma a leem desta tabela.
+    c.ano_mes || '|' || lpad(cast(c.hora_do_dia as varchar), 2, '0') || '|' || c.tipo_dia as periodo_id,
     -- Clima da hora local (nulo onde a Silver do clima ainda não tem o mês)
     w.temperatura_c,
     w.precipitacao_mm,

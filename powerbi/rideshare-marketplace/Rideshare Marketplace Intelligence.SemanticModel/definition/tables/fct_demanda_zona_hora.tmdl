@@ -1,0 +1,397 @@
+/// Demanda por hora de embarque (hora local de Nova York) × zona de origem × operadora. Só corridas válidas. As somas econômicas (tarifa, repasse, milhas e segundos) usam só as corridas com tarifa válida (> 0). Fonte: gold.fct_demanda_zona_hora (dbt).
+table fct_demanda_zona_hora
+	lineageTag: 079a40e8-eefc-45e1-b8f3-45485aa20d1d
+
+	/// Corridas válidas (spec 2.5). Contrato: sum(qtd_corridas).
+	measure Corridas = SUM(fct_demanda_zona_hora[qtd_corridas])
+		formatString: #,##0
+		displayFolder: Volume
+		lineageTag: 9ffa9551-2c05-432c-b67c-281e263e6986
+
+	/// Corridas válidas com tarifa base > 0. É a base de todas as métricas de economia.
+	measure 'Corridas com tarifa valida' = SUM(fct_demanda_zona_hora[qtd_corridas_tarifa_valida])
+		formatString: #,##0
+		displayFolder: Volume
+		lineageTag: fd2509a3-fba5-4650-9b98-6b219afe0cc0
+
+	/// Parcela das corridas válidas com tarifa ≤ 0, que ficam fora das métricas de economia (Fase 4, passo 1). Mostrar na página de economia.
+	measure '% tarifa invalida' = DIVIDE( [Corridas] - [Corridas com tarifa valida], [Corridas])
+		formatString: 0.00%
+		displayFolder: Economia
+		lineageTag: 7bb5660e-0e95-4249-88d1-fdf47dd2018d
+
+	/// (Tarifa − Repasse) / Tarifa. Razão das somas, nunca média de take rates. Só corridas com tarifa válida. Impostos, taxas, pedágios e gorjetas ficam fora (spec 2.5).
+	measure 'Take rate' = DIVIDE( [Tarifa] - [Repasse], [Tarifa])
+		formatString: 0.0%
+		displayFolder: Economia
+		lineageTag: 918afd29-ab09-4867-882f-4ae9241d43f5
+
+	/// Soma da tarifa base (base_passenger_fare) das corridas com tarifa válida. Medida base das métricas de economia.
+	measure Tarifa = SUM(fct_demanda_zona_hora[tarifa_base_total])
+		formatString: $#,##0
+		displayFolder: Base
+		lineageTag: abbc8a97-8001-4c6c-8e78-89236582c14b
+
+	/// Soma do repasse ao motorista (driver_pay) das corridas com tarifa válida. Exclui pedágios e gorjetas. Medida base.
+	measure Repasse = SUM(fct_demanda_zona_hora[repasse_motorista_total])
+		formatString: $#,##0
+		displayFolder: Base
+		lineageTag: 96db544b-27e0-4137-931f-1bb3d968f16a
+
+	/// Soma das milhas das corridas com tarifa válida. Medida base.
+	measure 'Milhas com tarifa valida' = SUM(fct_demanda_zona_hora[milhas_tarifa_valida_total])
+		formatString: #,##0.0
+		displayFolder: Base
+		lineageTag: d6856893-5105-468f-9c1f-e242d70491d8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Tarifa / milhas, nas mesmas corridas (tarifa válida).
+	measure 'Receita por milha' = DIVIDE([Tarifa], [Milhas com tarifa valida])
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: fcf4b0d8-128a-4b7e-97b7-da5fe25c4c0e
+
+	/// Tarifa / (segundos / 60), nas mesmas corridas (tarifa válida). Entrou no contrato em 02/11/2026.
+	measure 'Receita por minuto' =
+			
+			VAR numerador = [Tarifa]
+			VAR denominador = DIVIDE([Segundos tarifa valida], 60)
+			
+			RETURN
+			DIVIDE(numerador, denominador)
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: a2757cbc-8ae6-46d6-b8ac-ce27e1fd44f4
+
+	/// Soma do tempo de corrida, em segundos, das corridas com tarifa válida. Medida base.
+	measure 'Segundos tarifa valida' = SUM(fct_demanda_zona_hora[segundos_tarifa_valida_total])
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: f7b8b3f3-e782-4629-819b-66c32a50637b
+
+	/// Repasse / (segundos / 3600). NÃO é o ganho por hora do motorista: o dado não tem tempo ocioso nem identificador de motorista.
+	measure 'Repasse por hora de corrida' =
+			
+			VAR numerador = [Repasse]
+			VAR denominador = DIVIDE([Segundos tarifa valida], 3600)
+			
+			RETURN
+			DIVIDE(numerador, denominador)
+		formatString: $#,##0.00
+		displayFolder: Economia
+		lineageTag: 3b9a7d0e-09fa-44f4-bd62-2ddead75b440
+
+	/// Corridas do recorte atual (zona, período, hora) somando todas as operadoras: denominador do share. Remove só o filtro da dim_operadora.
+	measure 'Corridas do mesmo recorte' = CALCULATE([Corridas], REMOVEFILTERS(dim_operadora))
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 31f6511b-c4ad-44c5-b6de-7b2883b0514f
+
+	/// Corridas da operadora / corridas de todas as operadoras no mesmo recorte de zona e período (spec 2.5). Num visual sem operadora, vale 100%.
+	measure 'Share da operadora' = DIVIDE([Corridas], [Corridas do mesmo recorte])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: Share
+		lineageTag: 08c88f9e-0f02-4f78-bfed-2ea8233d5f39
+
+	/// Corridas com destino numa das 38 zonas do CBD (lista da MTA, ADR 0007), pela zona de origem desta fato. Antes × depois: corte em 05/01/2025; não usar a taxa cbd_congestion_fee.
+	measure 'Corridas com destino no CBD' = SUM(fct_demanda_zona_hora[qtd_corridas_destino_cbd])
+		formatString: #,##0
+		displayFolder: CBD
+		lineageTag: dd042ad7-447b-4177-b3e5-63ef00957586
+
+	/// Corridas com destino no CBD / Corridas, no mesmo recorte.
+	measure '% destino no CBD' = DIVIDE([Corridas com destino no CBD], [Corridas])
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: CBD
+		lineageTag: 8bd8000f-beed-4b9e-b02a-3277ed9aec20
+
+	/// Faixa de 6 cartões KPI em HTML (HTML Content Secure): borda e ícone na cor da métrica; ao passar o mouse, o cartão é coberto por uma explicação em linguagem de negócio, no tom escuro da mesma cor. Medida de apresentação (Claude).
+	measure 'HTML Cartoes KPI' =
+			VAR fmt = "pt-BR"
+			VAR corridas = [Corridas]
+			VAR dias = COUNTROWS ( FILTER ( VALUES ( dim_tempo_hora[data] ), CALCULATE ( [Corridas] ) > 0 ) )
+			VAR por_dia = DIVIDE ( corridas, dias )
+			VAR p90 = [Espera P90 (min)]
+			VAR p90_u = CALCULATE ( [Espera P90 (min)], dim_operadora[operadora_id] = "HV0003" )
+			VAR p90_l = CALCULATE ( [Espera P90 (min)], dim_operadora[operadora_id] = "HV0005" )
+			VAR take = [Take rate]
+			VAR take_u = CALCULATE ( [Take rate], dim_operadora[operadora_id] = "HV0003" )
+			VAR take_l = CALCULATE ( [Take rate], dim_operadora[operadora_id] = "HV0005" )
+			VAR rmilha = [Receita por milha]
+			VAR rmin = [Receita por minuto]
+			VAR pcbd = [% destino no CBD]
+			VAR entrando = [Corridas entrando no CBD]
+			VAR share_l = CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0005" )
+			VAR share_u = CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0003" )
+			-- ícones em SVG (traço na cor do cartão)
+			VAR ic_carro = "<path d='M3 13l2-6h14l2 6v5H3z'/><path d='M3 13h18'/><circle cx='7.5' cy='16' r='1.2'/><circle cx='16.5' cy='16' r='1.2'/>"
+			VAR ic_relogio = "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3.5 2'/>"
+			VAR ic_fatia = "<circle cx='12' cy='12' r='9'/><path d='M12 3v9h9'/>"
+			VAR ic_cifrao = "<path d='M12 3v18'/><path d='M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.1-4.5 3 2 2.6 4.5 3 4.5 1.1 4.5 3-2 3-4.5 3-4.5-1.1-4.5-3'/>"
+			VAR ic_pino = "<path d='M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z'/><circle cx='12' cy='9.5' r='2.5'/>"
+			VAR ic_pessoas = "<circle cx='9' cy='8' r='3'/><path d='M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6'/><circle cx='17' cy='9' r='2.5'/><path d='M16 14.1c2.9.4 5 2.8 5 5.9'/>"
+			VAR svg0 = "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' stroke='"
+			VAR estilo = "<style>"
+			    & ".kpis{display:flex;gap:12px;height:150px;font-family:'Segoe UI',sans-serif;box-sizing:border-box}"
+			    & ".k{flex:1;position:relative;background:#FFFFFF;border:2px solid #E1DFDD;border-radius:10px;padding:12px 14px;overflow:hidden;cursor:help;box-sizing:border-box}"
+			    & ".h{display:flex;justify-content:space-between;align-items:center}"
+			    & ".l{font-size:12px;color:#605E5C;text-transform:uppercase;letter-spacing:.04em}"
+			    & ".v{font-size:30px;font-weight:600;color:#1F1F1F;margin:6px 0 2px}"
+			    & ".c{font-size:12px;color:#605E5C}"
+			    & ".t{display:none;position:absolute;top:0;left:0;right:0;bottom:0;color:#FFFFFF;font-size:12px;line-height:1.45;padding:12px 14px}"
+			    & ".k:hover .t{display:block}"
+			    & "</style>"
+			-- cartão: cor da borda/ícone, tom escuro do hover, rótulo, ícone, valor, contexto, explicação
+			VAR c1 = "<div class='k' style='border-color:#4D4D4D'><div class='h'><span class='l'>Corridas</span>" & svg0 & "#4D4D4D'>" & ic_carro & "</svg></div><div class='v'>" & FORMAT ( corridas / 1e6, "#,##0", fmt ) & " mi</div><div class='c'>média de " & FORMAT ( por_dia / 1e3, "#,##0", fmt ) & " mil por dia</div><div class='t' style='background:#3A3A3A'><b>Total de viagens</b> de Uber e Lyft no período, já sem os registros com erro. A média por dia considera só os dias com dados.</div></div>"
+			VAR c2 = "<div class='k' style='border-color:#D55E00'><div class='h'><span class='l'>Espera P90</span>" & svg0 & "#D55E00'>" & ic_relogio & "</svg></div><div class='v'>" & FORMAT ( p90, "0.0", fmt ) & " min</div><div class='c'>Uber " & FORMAT ( p90_u, "0.0", fmt ) & " · Lyft " & FORMAT ( p90_l, "0.0", fmt ) & " min</div><div class='t' style='background:#B04A00'><b>9 em cada 10 corridas</b> esperaram até este tempo, do pedido do passageiro ao embarque. Acima de 15 min, o valor é estimado, com margem de até 1 minuto.</div></div>"
+			VAR c3 = "<div class='k' style='border-color:#0072B2'><div class='h'><span class='l'>Take rate</span>" & svg0 & "#0072B2'>" & ic_fatia & "</svg></div><div class='v'>" & FORMAT ( take, "0.0%", fmt ) & "</div><div class='c'>Uber " & FORMAT ( take_u, "0.0%", fmt ) & " · Lyft " & FORMAT ( take_l, "0.0%", fmt ) & "</div><div class='t' style='background:#005A8C'><b>Quanto da tarifa fica com a operadora:</b> (tarifa − repasse ao motorista) ÷ tarifa. Sem impostos, taxas, pedágios e gorjetas; só corridas com tarifa válida.</div></div>"
+			VAR c4 = "<div class='k' style='border-color:#0072B2'><div class='h'><span class='l'>Receita por milha</span>" & svg0 & "#0072B2'>" & ic_cifrao & "</svg></div><div class='v'>US$ " & FORMAT ( rmilha, "0.00", fmt ) & "</div><div class='c'>por minuto: US$ " & FORMAT ( rmin, "0.00", fmt ) & "</div><div class='t' style='background:#005A8C'><b>Tarifa média por milha rodada</b>, nas corridas com tarifa válida. Sem impostos, taxas, pedágios e gorjetas.</div></div>"
+			VAR c5 = "<div class='k' style='border-color:#009E73'><div class='h'><span class='l'>Destino no CBD</span>" & svg0 & "#009E73'>" & ic_pino & "</svg></div><div class='v'>" & FORMAT ( pcbd, "0.0%", fmt ) & "</div><div class='c'>" & FORMAT ( entrando / 1e6, "#,##0.0", fmt ) & " mi entraram vindas de fora</div><div class='t' style='background:#00785A'><b>Parte das corridas que termina no centro de Manhattan</b>, a área da taxa de congestionamento, em vigor desde 05/01/2025.</div></div>"
+			VAR c6 = "<div class='k' style='border-color:#CC79A7'><div class='h'><span class='l'>Share da Lyft</span>" & svg0 & "#CC79A7'>" & ic_pessoas & "</svg></div><div class='v'>" & FORMAT ( share_l, "0.0%", fmt ) & "</div><div class='c'>Uber: " & FORMAT ( share_u, "0.0%", fmt ) & "</div><div class='t' style='background:#9E4F80'><b>Participação da Lyft</b> no total de corridas de Uber e Lyft, no mesmo período e região.</div></div>"
+			RETURN
+			    estilo & "<div class='kpis'>" & c1 & c2 & c3 & c4 & c5 & c6 & "</div>"
+		displayFolder: Apresentacao
+		lineageTag: 04372dd3-85fa-499f-80a2-ab3deb7acdd1
+
+	/// Primeiro e último mês com dados no modelo (ex.: JAN/2024–SET/2026), ignorando qualquer filtro. Medida de apresentação (Claude).
+	measure 'Texto Periodo Dados' =
+			VAR ini = CALCULATE ( MIN ( fct_demanda_zona_hora[source_month] ), REMOVEFILTERS () )
+			VAR fim = CALCULATE ( MAX ( fct_demanda_zona_hora[source_month] ), REMOVEFILTERS () )
+			VAR d0 = DATE ( VALUE ( LEFT ( ini, 4 ) ), VALUE ( RIGHT ( ini, 2 ) ), 1 )
+			VAR d1 = DATE ( VALUE ( LEFT ( fim, 4 ) ), VALUE ( RIGHT ( fim, 2 ) ), 1 )
+			RETURN
+			    UPPER ( FORMAT ( d0, "MMM/yyyy", "pt-BR" ) & "–" & FORMAT ( d1, "MMM/yyyy", "pt-BR" ) )
+		displayFolder: Apresentacao
+		lineageTag: 59b191eb-46e0-43b2-901c-39e5be202c11
+
+	/// Título do relatório em HTML, com período e volume de viagens dinâmicos (ignoram filtros). Medida de apresentação (Claude).
+	measure 'HTML Titulo' =
+			VAR periodo = [Texto Periodo Dados]
+			VAR viagens = CALCULATE ( [Corridas], REMOVEFILTERS () )
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif;color:#FFFFFF'>"
+			    & "<div style='font-size:12px;font-weight:700;color:#C9D6E8;letter-spacing:.04em'>RIDESHARE EM NOVA YORK · " & periodo & "</div>"
+			    & "<div style='font-size:30px;font-weight:700;line-height:1.15;margin:6px 0'>Quatro respostas para o time de Marketplace da Lyft</div>"
+			    & "<div style='font-size:13px;line-height:1.45;color:#C9D6E8'>Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de "
+			    & FORMAT ( viagens / 1e6, "#,##0", "pt-BR" ) & " milhões de viagens registradas pela TLC.</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: fb017612-fd1c-4802-b6ac-70aff5c83f84
+
+	/// Ficha dos dados no cabeçalho: meses, zonas, viagens e último mês, ignorando filtros. Medida de apresentação (Claude).
+	measure 'HTML Ficha Dados' =
+			VAR meses = CALCULATE ( DISTINCTCOUNT ( fct_demanda_zona_hora[source_month] ), REMOVEFILTERS () )
+			VAR zonas = CALCULATE ( COUNTROWS ( dim_zona ), REMOVEFILTERS (), dim_zona[zona_id] <= 263 )
+			VAR viagens = CALCULATE ( [Corridas], REMOVEFILTERS () )
+			VAR fim = CALCULATE ( MAX ( fct_demanda_zona_hora[source_month] ), REMOVEFILTERS () )
+			VAR dfim = DATE ( VALUE ( LEFT ( fim, 4 ) ), VALUE ( RIGHT ( fim, 2 ) ), 1 )
+			VAR celula = "<div style='width:50%;margin-bottom:12px'><div style='font-size:22px;font-weight:700;line-height:1.1'>"
+			VAR rotulo = "</div><div style='font-size:11px;color:#C9D6E8'>"
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif;color:#FFFFFF'>"
+			    & "<div style='font-size:11px;font-weight:700;color:#C9D6E8;letter-spacing:.06em;margin-bottom:10px'>FICHA DOS DADOS</div>"
+			    & "<div style='display:flex;flex-wrap:wrap'>"
+			    & celula & FORMAT ( meses, "0", "pt-BR" ) & rotulo & "meses de dados</div></div>"
+			    & celula & FORMAT ( zonas, "0", "pt-BR" ) & rotulo & "zonas de táxi</div></div>"
+			    & celula & FORMAT ( viagens / 1e6, "#,##0", "pt-BR" ) & " mi" & rotulo & "viagens</div></div>"
+			    & celula & UPPER ( FORMAT ( dfim, "MMM/yyyy", "pt-BR" ) ) & rotulo & "último mês</div></div>"
+			    & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: 9b8f2701-9b67-44d3-afd0-2ba5df198dae
+
+	/// Texto do rodapé em linguagem de negócio, com o período dinâmico. Medida de apresentação (Claude).
+	measure 'HTML Rodape' =
+			VAR periodo = LOWER ( [Texto Periodo Dados] )
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif;font-size:11px;line-height:1.55;color:#C9D6E8'>"
+			    & "Fonte: registros públicos de viagens de alto volume (Uber e Lyft) da Comissão de Táxis e Limusines de Nova York (TLC), " & periodo & ". "
+			    & "Os números foram conferidos contra a base de origem. As leituras em texto usam dados até set/2026; cartões e gráficos seguem o período escolhido.<br>"
+			    & "<span style='color:#FFFFFF;font-weight:600'>Projeto de portfólio de engenharia de dados de Ronald Martins: código e documentação no GitHub.</span></div>"
+		displayFolder: Apresentacao
+		lineageTag: c9e02a0e-958b-418f-bd29-973daaa5ded0
+
+	/// Nome e distrito da zona selecionada (ex.: Park Slope · Brooklyn), para a dica de ferramenta dos mapas. Vazio quando há mais de uma zona no contexto. Medida de apresentação (Claude).
+	measure 'Nome da zona' =
+			VAR nome = SELECTEDVALUE ( dim_zona[zona] )
+			VAR distrito = SELECTEDVALUE ( dim_zona[borough] )
+			RETURN
+			    IF ( NOT ISBLANK ( nome ), nome & " · " & distrito )
+		displayFolder: Apresentacao
+		lineageTag: 371924f6-d32c-4251-bc45-045db804f582
+
+	column hora_embarque
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 22d9bd09-2e6e-4c5c-9d8e-240792cda24e
+		summarizeBy: none
+		sourceColumn: hora_embarque
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_origem_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d5665ad2-5125-4c11-a1e7-4d839197f5f5
+		summarizeBy: none
+		sourceColumn: zona_origem_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column licenca_operadora
+		dataType: string
+		isHidden
+		lineageTag: 8a68003c-f744-4c77-8d6d-e41a2e497863
+		summarizeBy: none
+		sourceColumn: licenca_operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: ec7c880b-99af-4d00-b60e-a173cf26ac4b
+		summarizeBy: sum
+		sourceColumn: qtd_corridas
+
+		annotation SummarizationSetBy = Automatic
+
+	column milhas_total
+		dataType: double
+		formatString: #,##0.0
+		lineageTag: 7dc54c3e-b069-42d9-89dd-a2b97859f6e1
+		summarizeBy: sum
+		sourceColumn: milhas_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column segundos_corrida_total
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 4b9e3b4e-202d-4cdf-83c0-9cea034dd164
+		summarizeBy: sum
+		sourceColumn: segundos_corrida_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column gorjetas_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: d6eb452a-1878-4865-9f41-b46584f39d22
+		summarizeBy: sum
+		sourceColumn: gorjetas_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column taxa_cbd_total
+		dataType: double
+		formatString: $#,##0.00
+		lineageTag: 9d63a172-a97e-4530-823c-ea3cda18cff1
+		summarizeBy: sum
+		sourceColumn: taxa_cbd_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column qtd_corridas_compartilhadas
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 340f0c68-5cfc-46c2-b04a-388f755664e3
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_compartilhadas
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas_destino_cbd
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: 7695841f-1ce9-4949-9f80-4fa68bd46760
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_destino_cbd
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_corridas_tarifa_valida
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: 42b9218a-78e8-4765-8d80-f4c335e1bd13
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_tarifa_valida
+
+		annotation SummarizationSetBy = Automatic
+
+	column tarifa_base_total
+		dataType: double
+		isHidden
+		formatString: $#,##0.00
+		lineageTag: d489d782-9e5b-4c43-978a-3bc90f95b1e7
+		summarizeBy: sum
+		sourceColumn: tarifa_base_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column repasse_motorista_total
+		dataType: double
+		isHidden
+		formatString: $#,##0.00
+		lineageTag: 90eb7b19-9a1a-401e-9462-e1504f87bd33
+		summarizeBy: sum
+		sourceColumn: repasse_motorista_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column milhas_tarifa_valida_total
+		dataType: double
+		isHidden
+		formatString: #,##0.0
+		lineageTag: 3e1c96f5-c204-4ece-8cc6-8b4dc19f0b45
+		summarizeBy: sum
+		sourceColumn: milhas_tarifa_valida_total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column segundos_tarifa_valida_total
+		dataType: int64
+		isHidden
+		formatString: #,##0
+		lineageTag: 6e2d463c-8f92-4b0f-9b54-abd3f1b2df40
+		summarizeBy: sum
+		sourceColumn: segundos_tarifa_valida_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_month
+		dataType: string
+		isHidden
+		lineageTag: 8ec3b251-fe44-40bf-81d3-5eb441470bb3
+		summarizeBy: none
+		sourceColumn: source_month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_demanda_zona_hora = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    fct_demanda_zona_hora_Table = gold_Schema{[Name="fct_demanda_zona_hora",Kind="Table"]}[Data]
+				in
+				    fct_demanda_zona_hora_Table
+

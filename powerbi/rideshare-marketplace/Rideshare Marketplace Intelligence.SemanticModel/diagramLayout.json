@@ -1,0 +1,152 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 50,
+            "y": -25.697727016559156
+          },
+          "nodeIndex": "dim_faixa_espera",
+          "nodeLineageTag": "18c59cf5-ce60-41b4-856b-ee8195368b80",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 383.22852893677714,
+            "y": 0
+          },
+          "nodeIndex": "dim_mes",
+          "nodeLineageTag": "47e45969-5b79-42eb-b664-bce28f54a8d9",
+          "size": {
+            "height": 145,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 40.491609715258363,
+            "y": 636.78076286649878
+          },
+          "nodeIndex": "dim_operadora",
+          "nodeLineageTag": "b3096aa7-56d4-42e3-aa5d-ad739de620c7",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 760.66083494347208,
+            "y": 1.5801011485521066
+          },
+          "nodeIndex": "dim_periodo_espera",
+          "nodeLineageTag": "412a983c-2913-4372-8630-2b1f26605003",
+          "size": {
+            "height": 145.97807817750993,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 1088.7625142731251,
+            "y": 0
+          },
+          "nodeIndex": "dim_tempo_hora",
+          "nodeLineageTag": "2f16101e-753a-48f3-b44d-9379bddae773",
+          "size": {
+            "height": 175.17200926438363,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 46.393807570087574,
+            "y": 210.15345275743013
+          },
+          "nodeIndex": "dim_zona",
+          "nodeLineageTag": "99677487-7013-4bff-8982-dca518c63028",
+          "size": {
+            "height": 180.35413338397782,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 753.86091538205221,
+            "y": 341.44605363271683
+          },
+          "nodeIndex": "fct_demanda_zona_hora",
+          "nodeLineageTag": "079a40e8-eefc-45e1-b8f3-45485aa20d1d",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 438.50509598747936,
+            "y": 339.72174693870284
+          },
+          "nodeIndex": "fct_espera_histograma",
+          "nodeLineageTag": "73e266e0-8be5-4a0d-b60b-e2e27cfbc504",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 1072.6231406501984,
+            "y": 341.86595248416472
+          },
+          "nodeIndex": "fct_od_mensal",
+          "nodeLineageTag": "59385602-9b8f-419b-89d0-538dac752ed5",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 48.862590237077029,
+            "y": 428.20741125762078
+          },
+          "nodeIndex": "dim_zona_destino",
+          "nodeLineageTag": "35666549-fae7-41ef-9742-0a8bb0fa6de3",
+          "size": {
+            "height": 174.03372878976938,
+            "width": 234
+          },
+          "zIndex": 9
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 63.287087723234038,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}
