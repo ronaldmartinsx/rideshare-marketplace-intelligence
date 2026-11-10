@@ -16,7 +16,7 @@
 
 **Passo 10 feito em 07/11/2026 (sem o gate):** ADR 0017 (dimensões do período e OD mensal) e ADR 0018 (identidade de leitura); spec 2.5 (receita por minuto, aviso do P90 acima de 15 min, piso de 30), 6.4 (tabelas novas), 10 (modelo e página única), 11.5 e tabela de ADRs; `_gold.yml` (`receita_por_minuto` e zona de destino); rascunho de `docs/aprendizados/fase-4.md`. **No Mac:** rodar `dbt parse` para conferir o `_gold.yml`.
 
-**Continua pendente depois da fase (Mac):** `athena:ListDataCatalogs` no papel de leitura e o DSN de volta ao `RideshareLeituraGold` (ver o aviso do DSN provisório abaixo). **Windows:** apagar a reserva do cache só com a confirmação do Ronald.
+**Continua pendente depois da fase.** **Mac:** nada — as quatro pendências foram fechadas em 09/11/2026 (`athena:ListDataCatalogs`, `dbt parse`, seção 3 dos aprendizados). **Windows:** o DSN de volta ao `RideshareLeituraGold` com uma atualização completa como teste (ver o aviso do DSN abaixo) e apagar a reserva do cache, só com a confirmação do Ronald.
 
 **Feito no Windows em 02/11:** passo 5 (PBIP, importação, 13 relacionamentos, ADR 0011) e passo 6 (as 15 medidas dos Blocos A, B e C). Evidências: `docs/validacao/fase-4.md`, seções 4 a 6.
 
@@ -50,10 +50,11 @@ Pontos que eram do teste do mapa (resolvidos na revisão 3):
 
 **Login no console:** pelo AWS access portal (Identity Center), não pela tela de usuário IAM. O endereço está no DSN deste Windows (campo `sso_oidc_start_url`) e no `~/.aws/config` do Mac.
 
-**⚠️ DSN com papel PROVISÓRIO.** No Windows, o DSN `rideshare-athena` está com Role name **`AdministratorAccess`**, e não com `RideshareLeituraGold`. Motivo: mesmo com o driver 2.5.0.0, listar as tabelas do `gold` chama `athena:ListDataCatalogs`, e o papel de leitura não tem essa ação. **Tarefa no Mac:**
-1. acrescentar `athena:ListDataCatalogs` à política do `RideshareLeituraGold` em `infra/terraform/iam_powerbi.tf`. O formato do `Resource` (provavelmente `"*"`) precisa ser conferido na referência oficial do IAM. Plan do Claude, apply do Ronald;
-2. no Windows, voltar o Role name do DSN para `RideshareLeituraGold` (janela ODBC de **64 bits**);
-3. no Desktop, uma atualização completa como teste final, registrada na validação.
+**⚠️ DSN com papel PROVISÓRIO — já desbloqueado, falta a troca aqui.** No Windows, o DSN `rideshare-athena` ainda está com Role name **`AdministratorAccess`**, e não com `RideshareLeituraGold`.
+
+1. ✅ **Feito no Mac em 09/11/2026:** `athena:ListDataCatalogs` acrescentado à política do `RideshareLeituraGold` (`infra/terraform/iam_powerbi.tf`, declaração `AthenaListarCatalogos`). O formato do `Resource` era `"*"` mesmo — confirmado na documentação oficial do Athena, porque a ação é de nível de conta e não aceita permissão por recurso. Apply do Ronald, matriz revalidada 4/4 (validação, seção 4).
+2. **Fazer aqui:** voltar o Role name do DSN para `RideshareLeituraGold` (janela ODBC de **64 bits**). Com a permissão liberada, o `UseSingleCatalogAndSchema=1` deixa de ser um contorno obrigatório, mas pode ficar como está — não atrapalha.
+3. **Fazer aqui:** no Desktop, uma atualização completa como teste final, registrada na validação.
 
 **Decisões tomadas em 02/11 (sem ADR novo; entram na spec e no `_gold.yml` no passo 10):**
 | # | Decisão |
@@ -104,7 +105,7 @@ Pontos que eram do teste do mapa (resolvidos na revisão 3):
 **Ordem recomendada no Windows:** passo 5 → 6 → 7. O passo 4 só é necessário para a página 2 (mapa) e precisa de Node.js. Faça no Windows se tiver Node (`node -v`); senão, fica para o Mac.
 
 **Pendências pequenas:**
-- Na política do papel de leitura ficaram de fora `athena:ListDataCatalogs` e `athena:ListWorkGroups` (menor privilégio). Se o Power BI reclamar deles no passo 5, anote o erro exato; a mudança é no Terraform, no Mac (plan do Claude, apply do Ronald).
+- Na política do papel de leitura ficaram de fora `athena:ListDataCatalogs` e `athena:ListWorkGroups` (menor privilégio). O Power BI reclamou do primeiro no passo 5, e ele foi acrescentado em 09/11/2026. O `athena:ListWorkGroups` **continua fora**: se o Power BI reclamar dele, anote o erro exato; a mudança é no Terraform, no Mac (plan do Claude, apply do Ronald).
 - O `on_schema_change` do histograma já voltou para `fail` (commit `bb97a44`).
 
 ## 2. Puxar o código no Windows
@@ -233,7 +234,8 @@ No Shape Map, a chave é `LocationID` = `zona_id`, com o **mesmo tipo** dos dois
 | Consulta negada no Power BI | Workgroup no DSN ainda `rideshare` (o papel só consulta pelo `rideshare-bi`) |
 | Erro de permissão ao gravar o resultado | S3 Output Location ainda em `resultados/` (o papel só grava em `bi/`) |
 | Navegador vazio ou mostrando `dev_gold` | Database no DSN ainda `dev_gold` |
-| Erro citando `ListDataCatalogs` ou `ListWorkGroups` | Permissão deixada de fora de propósito: anotar o erro e acrescentar no Terraform (Mac) |
+| Erro citando `ListDataCatalogs` | Já liberado em 09/11/2026. Se aparecer, a sessão do SSO é anterior ao apply: sair e entrar de novo pelo navegador |
+| Erro citando `ListWorkGroups` | Permissão deixada de fora de propósito: anotar o erro e acrescentar no Terraform (Mac) |
 | Consulta cancelada por limite | Passou de 1 GiB: provavelmente a `fct_od_diario`, que não deve ser importada |
 | `git switch` reclama de alterações locais | Há mudanças não commitadas no Windows: pare e veja o que é antes de descartar |
 | Botão **Configurar** cinza no DSN | Janela ODBC de 32 bits aberta. Abra `C:\Windows\System32\odbcad32.exe` (64 bits) |

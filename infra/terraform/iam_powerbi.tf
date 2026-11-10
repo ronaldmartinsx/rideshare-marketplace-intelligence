@@ -105,6 +105,17 @@ resource "aws_ssoadmin_permission_set_inline_policy" "leitura_gold" {
         ]
         Resource = ["arn:aws:athena:${local.regiao}:${local.conta_id}:datacatalog/AwsDataCatalog"]
       },
+      {
+        # O driver ODBC pergunta "quais catálogos existem?" antes de listar os bancos. Esta ação é de
+        # nível de conta: NÃO recebe "datacatalog" como entrada, então não aceita permissão por recurso
+        # e exige Resource "*" (doc oficial: Athena, "Data Catalog example policies").
+        # O que isso expõe: só os NOMES dos catálogos da conta (aqui, apenas o AwsDataCatalog).
+        # O conteúdo segue protegido pelas permissões de Glue acima, presas ao banco gold.
+        Sid      = "AthenaListarCatalogos"
+        Effect   = "Allow"
+        Action   = ["athena:ListDataCatalogs"]
+        Resource = ["*"]
+      },
 
       # ---------- Glue: só o banco gold, só leitura ----------
       {

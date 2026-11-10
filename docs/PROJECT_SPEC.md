@@ -597,7 +597,7 @@ rideshare-marketplace-intelligence/
 ### 11.5 Segurança
 
 - IAM com **menor privilégio**: um usuário ou role para o Airflow e outro, somente leitura, para o Power BI e o agente.
-  - Power BI (Fase 4, ADR 0018): permission set `RideshareLeituraGold` do Identity Center (sem chave, sessão de 8 h), só o banco `gold`, só o workgroup `rideshare-bi`. Pendente: `athena:ListDataCatalogs`, que o driver ODBC 2.5 pede para listar tabelas; até lá o DSN usa o papel de administrador, com o banco, o workgroup e a saída do BI.
+  - Power BI (Fase 4, ADR 0018): permission set `RideshareLeituraGold` do Identity Center (sem chave, sessão de 8 h), só o banco `gold`, só o workgroup `rideshare-bi`. Em 09/11/2026 ganhou `athena:ListDataCatalogs`, que o driver ODBC 2.5 pede para listar tabelas. Essa ação é de nível de conta e **só aceita `Resource: "*"`** (ela não recebe `datacatalog` como entrada), então fica numa declaração própria: expõe apenas os nomes dos catálogos, e o conteúdo segue preso ao banco `gold` pelas permissões de Glue. Falta apenas voltar o DSN para esse papel no Windows.
 - Root com MFA e nunca usado no dia a dia.
 - Buckets privados, com bloqueio de acesso público.
 - Segredos fora do Git.

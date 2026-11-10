@@ -1,6 +1,6 @@
 # ADR 0018: Identidade somente leitura do Power BI
 
-- **Status:** Decidido e aplicado na Fase 4 (passo 3). Validado pela AWS CLI (12/12 testes). No Power BI, uso **provisório** do papel de administrador até acrescentar `athena:ListDataCatalogs` (ver Consequências)
+- **Status:** Decidido e aplicado na Fase 4 (passo 3). Validado pela AWS CLI (12/12 testes). Em 09/11/2026 a política ganhou `athena:ListDataCatalogs` e a matriz foi revalidada (4/4); falta só voltar o DSN do Windows para o papel de leitura (ver Consequências)
 - **Data:** 01/11/2026
 - **Fase:** 4
 - **Relacionado:** spec 11.5 (menor privilégio), ADR 0008 (identidade do Airflow), ADR 0012 (estado do Terraform), D5 e P1 a P4 do plano da Fase 4
@@ -41,6 +41,7 @@ Tudo em Terraform (`infra/terraform/iam_powerbi.tf` e `athena.tf`). Usuário e i
 - **Perdemos ou passamos a cuidar de:**
   - **Login pelo navegador:** a cada 8 horas e, numa recarga do zero, atualizar primeiro uma tabela pequena para fazer um login só (atualizar tudo de uma vez abre um login por tabela e estoura o tempo limite).
   - **Atualização no Service:** o Browser SSO exige uma pessoa no navegador. Uma atualização agendada pelo gateway precisaria de outra forma de autenticação (inferência; não verificado). Está fora da v1 (spec, Seção 10).
-  - **Menor privilégio se descobre na prática.** A política nasceu sem `athena:ListDataCatalogs` e `athena:ListWorkGroups`, de propósito. Com o driver ODBC 2.5.0.0, listar as tabelas do `gold` no navegador do Power BI ainda chama `athena:ListDataCatalogs` (validação, seção 4). Enquanto isso:
-    - o DSN usa **provisoriamente** o `AdministratorAccess`, mantendo o banco `gold`, o workgroup `rideshare-bi` e a saída `bi/`. O projeto guarda só o nome do DSN, então trocar o papel não muda o PBIP;
-    - **pendente (Mac):** acrescentar `athena:ListDataCatalogs` à política (o formato do `Resource` está não verificado na referência do IAM), voltar o DSN para `RideshareLeituraGold` e testar uma atualização completa.
+  - **Menor privilégio se descobre na prática.** A política nasceu sem `athena:ListDataCatalogs` e `athena:ListWorkGroups`, de propósito. Com o driver ODBC 2.5.0.0, listar as tabelas do `gold` no navegador do Power BI ainda chamava `athena:ListDataCatalogs` (validação, seção 4). Como a ferramenta pediu, a permissão entrou em **09/11/2026**:
+    - a ação é de **nível de conta**: não recebe `datacatalog` como entrada, não aceita permissão por recurso e exige `Resource: "*"` numa declaração própria (`AthenaListarCatalogos`), conforme as políticas de exemplo da documentação do Athena. **O menor privilégio tem um piso aqui:** o preço é expor os nomes dos catálogos da conta (só o `AwsDataCatalog`). O conteúdo segue preso ao banco `gold` pelas permissões de Glue, e a matriz revalidada confirma que a Silver continua negada;
+    - o `athena:ListWorkGroups` **continua fora**, pela mesma regra: entra só se a ferramenta pedir;
+    - **pendente (Windows):** voltar o DSN de `AdministratorAccess` para `RideshareLeituraGold` e testar uma atualização completa. O projeto guarda só o nome do DSN, então trocar o papel não muda o PBIP.
