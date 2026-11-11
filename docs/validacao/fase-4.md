@@ -129,8 +129,10 @@ Pendente para o passo 5 (Windows): trocar no DSN o Role name para `RideshareLeit
 
      Custo da mudança: zero (IAM e Identity Center não cobram). O `athena:ListWorkGroups`, citado no item 3,
      **não** foi acrescentado: segue a mesma regra, entra só se a ferramenta pedir.
-  - **Pendente (Windows):** voltar o DSN para o papel `RideshareLeituraGold` e testar uma atualização completa.
-    Com o `ListDataCatalogs` liberado, o contorno de catálogo fixo deixa de ser necessário.
+  5. **Resolvido (Windows, 09/11/2026):** DSN trocado para o papel `RideshareLeituraGold` e atualização completa
+     bem-sucedida, relatada pelo Ronald ("foi tranquilo, deu tudo certo"). Com isso o uso provisório do
+     `AdministratorAccess` termina e o caminho de leitura do Power BI passa a ser inteiramente de menor
+     privilégio, como projetado no ADR 0018. Sem medição de tempo da atualização registrada.
 
 **Importação (Import, 9 tabelas):** contagens idênticas à foto de 01/11/2026.
 

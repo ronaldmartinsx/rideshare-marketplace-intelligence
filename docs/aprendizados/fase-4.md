@@ -200,9 +200,11 @@ Formato híbrido (o mesmo das Fases 1 a 3), em 08/11/2026.
   aliases dos modelos: todas as colunas citadas existem.
 - ✅ **Mac, 09/11/2026 — seção 3 completada** com as perguntas rápidas das Aulas 2 a 4, recuperadas da memória do
   Claude Code no Mac.
-- **Windows (aberta):** DSN de volta ao papel de leitura (`Role name` = `RideshareLeituraGold`, workgroup
-  `rideshare-bi`, saída `s3://rmartins-rideshare-athena-results/bi/`) e uma atualização completa como teste.
-  Agora com o `ListDataCatalogs` liberado, o DSN não precisa mais do contorno de catálogo fixo.
+- ✅ **Windows, 09/11/2026 — DSN de volta ao papel de leitura.** Resolvida, e com ela **a Fase 4 não tem mais
+  nenhuma pendência**. O DSN `rideshare-athena` passou de `AdministratorAccess` para `RideshareLeituraGold`
+  (workgroup `rideshare-bi`, saída `s3://rmartins-rideshare-athena-results/bi/`) e a atualização completa das 9
+  tabelas funcionou. O caminho de leitura do Power BI passa a ser inteiramente de menor privilégio, encerrando o
+  uso provisório do papel de administrador que vinha desde 02/11.
 - **Windows:** apagar a reserva do cache (`cache.abf` de 548 MB, fora do repositório) só com a confirmação do Ronald.
 - **Fase 7:** versão do relatório em inglês (pedido do Ronald em 05/11/2026).
 - **Limitações aceitas:** formato `en-US` dos números nos gráficos para quem tem o sistema em inglês; respostas escritas fixas com dados até set/2026; relatório publicado sem atualização agendada.

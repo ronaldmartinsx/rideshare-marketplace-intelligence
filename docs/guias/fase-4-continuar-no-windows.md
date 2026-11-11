@@ -16,7 +16,7 @@
 
 **Passo 10 feito em 07/11/2026 (sem o gate):** ADR 0017 (dimensões do período e OD mensal) e ADR 0018 (identidade de leitura); spec 2.5 (receita por minuto, aviso do P90 acima de 15 min, piso de 30), 6.4 (tabelas novas), 10 (modelo e página única), 11.5 e tabela de ADRs; `_gold.yml` (`receita_por_minuto` e zona de destino); rascunho de `docs/aprendizados/fase-4.md`. **No Mac:** rodar `dbt parse` para conferir o `_gold.yml`.
 
-**Continua pendente depois da fase.** **Mac:** nada — as quatro pendências foram fechadas em 09/11/2026 (`athena:ListDataCatalogs`, `dbt parse`, seção 3 dos aprendizados). **Windows:** o DSN de volta ao `RideshareLeituraGold` com uma atualização completa como teste (ver o aviso do DSN abaixo) e apagar a reserva do cache, só com a confirmação do Ronald.
+**Continua pendente depois da fase:** nada da Fase 4. Tudo foi fechado em 09/11/2026 — no Mac o `athena:ListDataCatalogs`, o `dbt parse` e a seção 3 dos aprendizados; no Windows o DSN no papel `RideshareLeituraGold` com a atualização completa. Fica de pé só uma tarefa opcional de faxina no Windows: apagar a reserva do cache (`cache.abf`, 548 MB, fora do repositório), e só com a confirmação do Ronald.
 
 **Feito no Windows em 02/11:** passo 5 (PBIP, importação, 13 relacionamentos, ADR 0011) e passo 6 (as 15 medidas dos Blocos A, B e C). Evidências: `docs/validacao/fase-4.md`, seções 4 a 6.
 
@@ -50,11 +50,12 @@ Pontos que eram do teste do mapa (resolvidos na revisão 3):
 
 **Login no console:** pelo AWS access portal (Identity Center), não pela tela de usuário IAM. O endereço está no DSN deste Windows (campo `sso_oidc_start_url`) e no `~/.aws/config` do Mac.
 
-**⚠️ DSN com papel PROVISÓRIO — já desbloqueado, falta a troca aqui.** No Windows, o DSN `rideshare-athena` ainda está com Role name **`AdministratorAccess`**, e não com `RideshareLeituraGold`.
+**✅ DSN no papel definitivo (resolvido em 09/11/2026).** O DSN `rideshare-athena` usa o Role name
+**`RideshareLeituraGold`**, e não mais o `AdministratorAccess` provisório. Histórico, porque explica o desenho:
 
-1. ✅ **Feito no Mac em 09/11/2026:** `athena:ListDataCatalogs` acrescentado à política do `RideshareLeituraGold` (`infra/terraform/iam_powerbi.tf`, declaração `AthenaListarCatalogos`). O formato do `Resource` era `"*"` mesmo — confirmado na documentação oficial do Athena, porque a ação é de nível de conta e não aceita permissão por recurso. Apply do Ronald, matriz revalidada 4/4 (validação, seção 4).
-2. **Fazer aqui:** voltar o Role name do DSN para `RideshareLeituraGold` (janela ODBC de **64 bits**). Com a permissão liberada, o `UseSingleCatalogAndSchema=1` deixa de ser um contorno obrigatório, mas pode ficar como está — não atrapalha.
-3. **Fazer aqui:** no Desktop, uma atualização completa como teste final, registrada na validação.
+1. ✅ **Mac:** `athena:ListDataCatalogs` acrescentado à política do `RideshareLeituraGold` (`infra/terraform/iam_powerbi.tf`, declaração `AthenaListarCatalogos`). O formato do `Resource` era `"*"` mesmo — confirmado na documentação oficial do Athena, porque a ação é de nível de conta e não aceita permissão por recurso. Apply do Ronald, matriz revalidada 4/4 (validação, seção 4).
+2. ✅ **Windows:** Role name do DSN trocado para `RideshareLeituraGold` (janela ODBC de **64 bits**). O `UseSingleCatalogAndSchema=1` ficou como está: com a permissão liberada ele deixou de ser contorno obrigatório, mas não atrapalha.
+3. ✅ **Windows:** atualização completa das 9 tabelas bem-sucedida. O caminho de leitura do Power BI é inteiramente de menor privilégio.
 
 **Decisões tomadas em 02/11 (sem ADR novo; entram na spec e no `_gold.yml` no passo 10):**
 | # | Decisão |

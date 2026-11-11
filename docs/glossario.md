@@ -419,6 +419,20 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 
 ---
 
+## Previsão de demanda (séries temporais e ML)
+
+| Termo | O que é | Analogia / ponte | Fase |
+|---|---|---|---|
+| **Série temporal** | Sequência de medições da mesma coisa em intervalos regulares, em que a **ordem carrega informação**: o valor de agora depende do valor de antes. Embaralhar as linhas destrói o dado, o que quebra a suposição de independência que a maioria das técnicas de ML faz | A quilometragem de um veículo: 80.000 km hoje só diz algo junto com os 75.000 de três meses atrás. Quebra em que quilometragem só sobe, e demanda sobe e desce | 5 |
+| **Tendência** | O movimento de longo prazo da série, a direção geral | A frota crescendo ano a ano | 5 |
+| **Sazonalidade** | Padrão que se repete em ciclo fixo, independente da tendência | Sexta às 19h sempre tem mais corrida que terça às 10h | 5 |
+| **Sazonalidade múltipla** | Vários ciclos sobrepostos na mesma série. Nesta demanda são três: hora do dia, dia da semana e mês do ano. Modelar só o mais óbvio deixa os outros no erro, disfarçados de ruído | Três relógios girando em velocidades diferentes ao mesmo tempo | 5 |
+| **Baseline** | A previsão mais simples que ainda faz sentido, construída de propósito para servir de régua. Sem ela, um erro de 18% não é bom nem ruim, é só um número | O "mesmo período do ano anterior" do relatório. Quebra em que ali é contexto para o humano, e aqui é **adversário**: o modelo que não vencer não vai para produção | 5 |
+| **Baseline sazonal ingênuo** | O baseline deste projeto (spec 9.1): a média da mesma hora e do mesmo dia da semana nas últimas 4 semanas. Nenhum treino, só uma média com o recorte certo | Uma média móvel com `PARTITION BY`, igual às que você já escreve em SQL e DAX | 5 |
+| **Janela móvel** | Recorte de N períodos anteriores que escorrega junto com a linha atual. Por ser móvel, absorve tendência e mudança lenta de nível de graça. Mas **sempre reage, nunca antecipa**: um feriado fora da janela ele erra sempre | `ROWS BETWEEN 4 PRECEDING AND 1 PRECEDING`. O `1 PRECEDING` é o que impede a janela de ver a própria resposta | 5 |
+
+---
+
 ## IA no desenvolvimento (ferramentas do agente)
 
 | Termo | O que é | Analogia / ponte | Fase |
