@@ -342,3 +342,51 @@ models:
                 field: ano_mes
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+  - name: ml_demanda_hora_zona
+    description: >
+      A série limpa que o ML prevê (Fase 5, passo 2a). Grão: hora local de NY × zona de origem.
+      Soma as operadoras (o alvo da spec 9.1 é "todas as operadoras") e completa a grade com
+      `dim_tempo_hora` × zonas, para que hora sem corrida seja zero EXPLÍCITO e não linha ausente —
+      sem isso o modelo nunca veria demanda zero e o WAPE sairia só das horas movimentadas.
+      Recorte de zonas semântico (`is_zona_conhecida` e não `is_fora_de_nyc`), decidido no passo 1:
+      cobre 99,99% da demanda e, diferente de "top N por volume", não tem como vazar.
+      Cobre só os meses que existem na fato, nunca o intervalo entre o primeiro e o último.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [hora, zona_id]
+    columns:
+      - name: hora
+        description: "Hora local de Nova York. A 2h inexistente da virada de março não entra (ADR 0009)."
+        data_tests:
+          - not_null
+      - name: zona_id
+        description: "Zona de origem, só conhecidas e dentro de NYC."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: qtd_corridas
+        description: "ALVO da previsão: corridas válidas somadas sobre as operadoras. Zero onde não houve corrida."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: zero_por_ausencia
+        description: >
+          Verdadeiro quando a linha não existia na fato, ou seja, o zero vem de ausência e não de medição.
+          Depois do coalesce os dois ficam idênticos; esta marca preserva a diferença para auditoria.
+          Referência medida: ~3,3% das linhas em produção.
+      - name: hora_dobrada
+        description: >
+          Hora repetida da virada do horário de verão em novembro (acontece duas vezes, soma o movimento
+          de duas horas reais). É 1 hora em 26.304; marcada para poder ser tratada ou excluída no treino.
+      - name: ano_mes
+        description: "Mês (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
