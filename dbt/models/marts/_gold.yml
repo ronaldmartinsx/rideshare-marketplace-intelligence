@@ -390,3 +390,85 @@ models:
         description: "Mês (AAAA-MM). Partição da tabela."
         data_tests:
           - not_null
+
+  - name: ml_features_demanda
+    description: >
+      Tabela de features do modelo (Fase 5, passo 2b). Grão: **corte × hora-alvo × zona**.
+      O grão tem três partes porque os lags são medidos a partir do CORTE da previsão, não da hora-alvo
+      (decisão D1): o mesmo par (hora, zona) tem lags diferentes conforme o corte usado.
+      A intuição: no fim do mês você tira UMA foto da rua; perguntam sobre o dia 16 e sobre o dia 30, e
+      você olha a MESMA foto nas duas vezes. O que muda é só quanto ela ajuda, e isso é o
+      `horizonte_horas`. Medir o lag da hora-alvo seria o "jeito fácil": daria para fazer, porque o
+      histórico está no disco, mas treinaria o modelo com informação mais fresca do que a produção tem
+      — desalinhamento treino-produção, que é vazamento disfarçado de inconsistência.
+      O último corte é o "dia de valer": o mês-alvo ainda não aconteceu, `qtd_corridas` é nula e
+      `tem_alvo` é falso. É a previsão de verdade, a única que não dá para conferir.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [corte, hora_alvo, zona_id]
+    columns:
+      - name: corte
+        description: "Última hora do mês do corte. Tudo depois disso é desconhecido para o modelo."
+        data_tests:
+          - not_null
+      - name: hora_alvo
+        description: "Hora que se quer prever, sempre no mês seguinte ao corte."
+        data_tests:
+          - not_null
+      - name: zona_id
+        description: "Zona de origem, só conhecidas e dentro de NYC."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: horizonte_horas
+        description: >
+          Distância em horas entre o corte e a hora-alvo, de 1 a 744. Feature legítima: o modelo aprende
+          sozinho que previsão para 716 horas à frente merece menos confiança que para 380.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 744
+                inclusive: true
+      - name: qtd_corridas
+        description: "ALVO. Nulo no último corte, cujo mês-alvo ainda não aconteceu."
+      - name: tem_alvo
+        description: "Falso só nas linhas do 'dia de valer'. Separa o que serve para treino e backtest."
+        data_tests:
+          - not_null
+      - name: hora_lag_1
+        description: >
+          A data em que a foto foi tirada: hora da última ocorrência daquela hora da semana antes do
+          corte. Guardada para auditoria — é o que torna a ausência de vazamento testável
+          (`ml_features_lag_no_passado`). Os outros três lags são -168, -336 e -504 horas a partir dela.
+      - name: lag_1_semana
+        description: "Demanda naquela hora da semana e zona, 1 semana antes da foto (a própria foto)."
+      - name: lag_4_semanas
+        description: >
+          Demanda 4 semanas antes da foto. Nulo quando o lag aponta para a 2h inexistente da virada de
+          março (ADR 0009) — 1 hora por ano. O LightGBM trata nulo nativamente, então fica nulo de
+          propósito, em vez de virar zero falso.
+      - name: is_feriado_observado
+        description: >
+          Feriado federal pelo dia OBSERVADO, não pelo dia de calendário (decisão D2). Para demanda vale
+          o dia em que as pessoas não trabalharam: 4/7/2026 cai sábado e foi observado na sexta, 3/7.
+          A `dim_tempo_hora` marca o sábado (certo para o histograma de espera da Fase 3); aqui a sexta.
+      - name: clima_obs_chuva_mm
+        description: >
+          Chuva OBSERVADA. O prefixo `clima_obs_` é deliberado: este é o vazamento ACEITO e documentado
+          (spec 9.1). Em produção existiria apenas PREVISÃO do tempo, com erro; no backtest usamos o que
+          de fato aconteceu, o que deixa o resultado otimista. O nome da coluna é a documentação que não
+          se perde.
+      - name: mes_corte
+        description: "Mês do corte (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM), sempre o seguinte ao mes_corte."
+        data_tests:
+          - not_null

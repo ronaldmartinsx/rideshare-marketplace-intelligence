@@ -180,3 +180,95 @@ problema de fuso na Silver.
 **Detalhe de seleção:** o teste de aviso lê a fato direto, sem `ref()` do model, então o seletor
 `ml_demanda_hora_zona+` não o alcançava e ele não rodava. Resolvido com a etiqueta `ml`, a mesma que a DAG
 `ml_forecast` vai usar — e por isso a conferência final foi feita com `--select tag:ml`, a seleção de verdade.
+
+---
+
+## 3. A tabela de features: `ml_features_demanda` (passo 2b)
+
+**Data:** 14/11/2026
+**Arquivos:** [`dbt/models/marts/ml_features_demanda.sql`](../../dbt/models/marts/ml_features_demanda.sql),
+2 testes antivazamento em `dbt/tests/`, documentação e testes genéricos em `_gold.yml`
+**Construído em:** dev (4 meses → 4 cortes), **766.874 linhas**, 12,8 s
+**Custo:** 3,3 MB nas consultas de conferência
+
+### 3.1 O grão tem três partes, e isso é consequência da decisão D1
+
+Os lags são medidos a partir do **corte**, não da hora-alvo. Então o mesmo par (hora, zona) tem lags diferentes
+conforme o corte usado, e o grão precisa ser **corte × hora-alvo × zona**, com `horizonte_horas` como feature.
+
+A intuição que ficou: no fim do mês você tira **uma** foto da rua. Perguntam sobre o dia 16 e sobre o dia 30, e
+você olha a **mesma** foto nas duas vezes. O que muda é só quanto ela ajuda.
+
+O alternativa — medir o lag da hora-alvo — é possível, porque o histórico inteiro está no disco. Mas treinaria o
+modelo com informação mais fresca do que a produção tem: parado no fim de abril, a sexta mais recente é 24/04, três
+semanas antes do alvo de 15/05, e não a sexta de 08/05. Isso é **desalinhamento treino-produção**, vazamento
+disfarçado de inconsistência.
+
+### 3.2 Os cortes, medidos
+
+| `mes_corte` | Corte | `mes_alvo` | Linhas | Horizonte | Com alvo | Sem alvo |
+|---|---|---|---|---|---|---|
+| 2026-02 | 2026-02-28 23:00 | 2026-03 | 194.666 | 1 a 744 | 194.666 | 0 |
+| 2026-03 | 2026-03-31 23:00 | 2026-04 | 188.640 | 1 a 720 | 188.640 | 0 |
+| 2026-04 | 2026-04-30 23:00 | 2026-05 | 194.928 | 1 a 744 | 194.928 | 0 |
+| 2026-05 | 2026-05-31 23:00 | 2026-06 | 188.640 | 1 a 720 | **0** | **188.640** |
+
+O último corte é o **"dia de valer"**: o mês-alvo não existe na amostra de dev, então `tem_alvo` é falso em todas
+as linhas. O caminho da previsão de verdade ficou exercitado em dev, antes de produção.
+
+### 3.3 A prova de que não há vazamento
+
+Duas evidências independentes, as duas viraram teste:
+
+**1. A mesma foto** (`ml_features_mesma_foto`). Para cada corte × zona × hora da semana, o número de valores
+**distintos** de cada lag é exatamente **1**:
+
+| `mes_corte` | Combinações | Valores distintos de `lag_1` | de `lag_4` |
+|---|---|---|---|
+| 2026-02 a 2026-05 | 44.016 cada | 1 | 1 |
+
+As 44.016 combinações são 168 horas da semana × 262 zonas. Se o lag tivesse vindo da hora-alvo, haveria mais de um
+valor por combinação.
+
+**2. A foto está no passado** (`ml_features_lag_no_passado`). A coluna `hora_lag_1` guarda a data em que a foto foi
+tirada, justamente para que a afirmação seja testável e não apenas declarada. O teste falha se `hora_lag_1 > corte`
+ou se `horizonte_horas <= 0`. Passou.
+
+Os dois testes foram rodados por nome, para confirmar que a seleção os alcança.
+
+### 3.4 Os nulos têm explicação exata
+
+| `mes_corte` | Nulos em `lag_4_semanas` | Linhas |
+|---|---|---|
+| 2026-03 | **1.048** | 188.640 |
+| os outros 3 | 0 | — |
+
+A conta: o corte é 31/03 23h; a última ocorrência de "domingo 2h" antes dele é 29/03; voltando 4 semanas cai em
+**2026-03-08 02:00**, a hora que não existe no relógio de NY (ADR 0009, seção 2.1 deste documento). Abril tem 4
+domingos, então 4 horas-alvo × 262 zonas = **1.048**. Nenhum outro nulo em nenhum lag.
+
+Fica nulo de propósito: o LightGBM trata nulo nativamente, e virar zero ensinaria demanda falsa.
+
+### 3.5 Calendário e clima
+
+| Item | Evidência |
+|---|---|
+| Feriado observado (D2) | Memorial Day (segunda, 25/05) e Juneteenth (sexta, 19/06) marcados com 24 horas × 262 zonas. O caso com data deslocada (4/7/2026, sábado, observado na sexta 3/7) está fora da amostra de dev e será conferido em produção |
+| Clima | Colunas com prefixo `clima_obs_*`, deliberado: é o vazamento **aceito** da spec 9.1. Em produção só existiria previsão do tempo, com erro; aqui usamos o observado, o que deixa o resultado otimista |
+
+### 3.6 Sanidade do alvo contra os lags
+
+| `mes_corte` | Média do alvo | Média `lag_1` | Média `lag_4` | Máx. do alvo |
+|---|---|---|---|---|
+| 2026-02 | 113,29 | 99,13 | 118,32 | 1.465 |
+| 2026-03 | 111,29 | 111,31 | 113,99 | 1.563 |
+| 2026-04 | 113,49 | 116,72 | 106,12 | 1.686 |
+| 2026-05 | — (dia de valer) | 107,11 | 114,65 | — |
+
+Mesma ordem de grandeza em todas as colunas, como esperado: a demanda não muda de escala de um mês para o outro.
+
+### 3.7 Cobertura de testes
+
+24 nós pelo seletor `tag:ml` (2 models + 22 testes), todos verdes, zero avisos. Os 12 da `ml_features_demanda`:
+grão único em (corte, hora-alvo, zona); não-nulos nas chaves, em `horizonte_horas`, `tem_alvo`, `mes_corte` e
+`mes_alvo`; `horizonte_horas` entre 1 e 744; relacionamento de zona; e os dois antivazamento.
