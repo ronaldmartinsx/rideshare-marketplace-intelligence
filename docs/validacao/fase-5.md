@@ -272,3 +272,74 @@ Mesma ordem de grandeza em todas as colunas, como esperado: a demanda não muda 
 24 nós pelo seletor `tag:ml` (2 models + 22 testes), todos verdes, zero avisos. Os 12 da `ml_features_demanda`:
 grão único em (corte, hora-alvo, zona); não-nulos nas chaves, em `horizonte_horas`, `tem_alvo`, `mes_corte` e
 `mes_alvo`; `horizonte_horas` entre 1 e 744; relacionamento de zona; e os dois antivazamento.
+
+---
+
+## 4. O baseline: `ml_baseline_demanda` (passo 3, ✍️ Ronald)
+
+**Data:** 14/11/2026
+**Autoria:** lógica do Ronald (array filtrado, regra do nulo, cast para double). Refactor pedido por ele e feito
+pelo Claude: CTE, comentários e padronização de caixa — sem mudança de resultado, provado abaixo.
+**Construído em:** dev, **766.874 linhas** (idêntico à tabela de features: o grão foi preservado)
+
+### 4.1 Os cinco cenários, auditados
+
+| # | Cenário | Decisão | Medido |
+|---|---|---|---|
+| 1 | 4 lags preenchidos | média simples dos quatro | 765.826 linhas, **todas** conferem |
+| 2 | 1 lag nulo | média dos **três** que existem | 1.048 linhas, **todas** conferem |
+| 3 | 4 lags nulos | nulo, protegido por `nullif` | não ocorre (0 linhas), proteção mantida |
+| 4 | média fracionária | não arredondar | 562.391 de 766.874 fracionários (73%) |
+| 5 | linhas do "dia de valer" | entram | 188.640 linhas com palpite e sem gabarito |
+
+765.826 + 1.048 = 766.874: toda linha auditada.
+
+### 4.2 A armadilha de SQL que o cenário 2 esconde
+
+`AVG()` ignora nulos quando agrega **linhas**, mas aritmética entre **colunas** propaga nulo. Então
+`(lag_1 + lag_2 + lag_3 + lag_4) / 4` devolveria **nulo** sempre que um dos quatro fosse nulo, e não a média dos
+outros três. A solução usada: montar um array, filtrar os nulos, somar com `reduce()` e dividir por
+`cardinality()`.
+
+E um detalhe que não é estético: a semente do `reduce` é `cast(0 as double)` porque, em Trino, **divisão entre
+inteiros trunca**. Os lags são `bigint`; com semente inteira o baseline viraria número redondo sem ninguém pedir.
+Os 73% de valores fracionários são a prova de que o cast está fazendo trabalho.
+
+### 4.3 O refactor não mudou o resultado
+
+Impressão digital da tabela antes e depois, idêntica em todos os agregados:
+
+| Medida | Antes | Depois |
+|---|---|---|
+| Linhas | 766.874 | 766.874 |
+| Nulos | 0 | 0 |
+| Soma | 86.263.334,8333 | 86.263.334,8333 |
+| Média | 112,48697287 | 112,48697287 |
+| Soma em milésimos | 86.263.334.852 | 86.263.334.852 |
+
+A soma em milésimos é a medida sensível: qualquer valor alterado em qualquer linha mudaria esse inteiro.
+
+### 4.4 O WAPE do baseline — e por que isso muda o enquadramento da fase
+
+Medição exploratória (o cálculo oficial é o passo 4, peça ✍️ do Ronald):
+
+| Mês previsto | WAPE do baseline |
+|---|---|
+| mar/2026 | **14,37%** |
+| abr/2026 | **13,18%** |
+| mai/2026 | **13,08%** |
+
+**Este é um baseline forte.** Prever demanda por hora e por zona, um mês à frente, errando 13% — com a média de
+quatro números e nada mais. A série tem sazonalidade semanal muito regular e nível estável, e a janela de 4 semanas
+captura quase tudo isso.
+
+É exatamente o cenário anunciado na Aula 1: em muitas séries reais o baseline ganha. A barra para o LightGBM está
+alta, e a possibilidade de o modelo **não** vencer é concreta. A spec 9.1 já prevê essa saída, e o entregável nesse
+caso é o relatório honesto, não um modelo forçado.
+
+### 4.5 Cobertura de testes
+
+35 nós pelo seletor `tag:ml` (3 models + 32 testes), todos verdes. O teste central do baseline é
+`ml_baseline_e_media_dos_lags`: ele recalcula a média por uma fórmula **diferente** da do model (aritmética de
+coluna com `coalesce` e contagem explícita de não-nulos, em vez de array) e exige o mesmo número. Duas fórmulas
+distintas chegando ao mesmo resultado é verificação; a mesma fórmula repetida seria tautologia.

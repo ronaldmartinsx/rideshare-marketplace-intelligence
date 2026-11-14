@@ -472,3 +472,56 @@ models:
         description: "Mês previsto (AAAA-MM), sempre o seguinte ao mes_corte."
         data_tests:
           - not_null
+
+  - name: ml_baseline_demanda
+    description: >
+      O baseline sazonal ingênuo (Fase 5, passo 3). Grão: corte × hora-alvo × zona, o mesmo da
+      `ml_features_demanda`. Uma linha de palpite por questão.
+      É a média da demanda na MESMA hora da semana, naquela zona, nas 4 semanas anteriores ao corte —
+      nenhum treino, nenhum parâmetro. Serve de **régua**: sem ela, "o modelo errou 13%" não é bom nem
+      ruim, é só um número. A spec 9.1 aceita as duas saídas da fase, o modelo vencendo o baseline ou um
+      relatório honesto de que não venceu, e é contra estes números que a comparação acontece.
+      ✍️ Peça do Ronald: a lógica é dele (array filtrado, regra do nulo e cast para double). O Claude fez
+      só o refactor pedido — CTE, comentários e caixa —, conferido como idêntico pela impressão digital.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [corte, hora_alvo, zona_id]
+    columns:
+      - name: corte
+        data_tests:
+          - not_null
+      - name: hora_alvo
+        data_tests:
+          - not_null
+      - name: zona_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: previsao_baseline
+        description: >
+          O palpite: média dos lags que EXISTEM, não dos quatro. Nulo apenas se os quatro forem nulos,
+          o que hoje nunca ocorre (medido). Fracionário de propósito — arredondar jogaria informação
+          fora, e o WAPE lida bem com decimal. 73% dos valores têm casa decimal em dev.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: qtd_corridas
+        description: "O gabarito, carregado adiante para o cálculo do WAPE. Nulo no 'dia de valer'."
+      - name: tem_alvo
+        description: "Falso nas linhas do 'dia de valer'. Define o que é avaliável."
+        data_tests:
+          - not_null
+      - name: mes_corte
+        description: "Mês do corte (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM). Define a rodada do backtest."
+        data_tests:
+          - not_null
