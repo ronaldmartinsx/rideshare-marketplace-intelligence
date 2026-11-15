@@ -29,9 +29,19 @@ PREFIXO_MODELOS = "ml/modelos"
 #   alvo_zero_por_ausencia - auditoria da série limpa
 #   hora_dobrada           - 1 hora em 26.304; não compensa carregar 6,3 M de booleanos por isso
 
-CHAVES = ["corte", "hora_alvo", "zona_id"]       # identificam a linha e religam a previsão à tabela
+CHAVES = ["hora_alvo", "zona_id"]                # identificam a linha e religam a previsão à tabela
 CONTROLE = ["mes_corte", "mes_alvo", "tem_alvo"]  # recortam treino, teste e produção
 COLUNA_ALVO = "qtd_corridas"
+
+# A coluna `corte` (timestamp) NÃO é lida de propósito. Medido em 15/11/2026: ela custava 48,2 MB de
+# memória, a segunda coluna mais pesada da tabela, e não acrescenta nada — existe um corte por mês, e
+# o mes_corte já o identifica. O timestamp é recuperável a qualquer momento (é a última hora do mês).
+# A ml_forecast_demanda da spec 6.4 tem grão hora-alvo × zona × execução, e também não pede o corte.
+
+# Timestamps que precisam de cast na consulta. O Iceberg cria timestamp(6) (microssegundo), e o
+# UNLOAD do Athena só exporta Parquet até precisão de MILISSEGUNDO — sem o cast ele falha com
+# "Incorrect timestamp precision for timestamp(6)". A conversão é sem perda: hora_alvo é hora cheia.
+COLUNAS_TIMESTAMP = ["hora_alvo"]
 
 # As features propriamente ditas, na ordem em que entram no modelo.
 COLUNAS_FEATURE = [
@@ -93,12 +103,16 @@ COLUNAS_LEITURA = _sem_repetir(CHAVES, CONTROLE, [COLUNA_ALVO], COLUNAS_FEATURE)
 # Texto repetitivo vira CATEGORIA. Medido na Aula 4: mes_corte e mes_alvo, com 33 valores distintos
 # cada em 6,3 M de linhas, custam 673 MB como texto e 12 MB como categoria — 56x. O VertiPaq do
 # Power BI faz isso sozinho; o pandas só faz se a gente pedir.
+# SÓ COLUNAS DE TEXTO. Medido em 15/11/2026: pedir o zona_id como categoria na leitura quebra o modo
+# UNLOAD com "NotImplementedError: dictionary<values=int32, indices=int32>" — o leitor de Parquet não
+# converte dicionário de inteiros. E não precisa: o zona_id fica int32 (24 MB, barato) e é declarado
+# como categórico direto para o LightGBM, em CATEGORICAS_LIGHTGBM. O parâmetro `categories` do
+# awswrangler existe para texto, que é onde está o problema de memória de verdade.
 COLUNAS_CATEGORIA = [
     "mes_corte",
     "mes_alvo",
     "tipo_dia_observado",       # 3 valores: util, fim_de_semana, feriado
     "nome_feriado_observado",   # 11 feriados federais
-    "zona_id",                  # 262 zonas
 ]
 
 # float32 em vez de float64 nos números grandes: metade da memória, e exato para inteiro até 16,7
@@ -120,6 +134,10 @@ DTYPES = {
     "hora_da_semana": "int16",    # 0 a 167
     "mes_do_ano": "int8",         # 1 a 12
     "qtd_corridas": "float32",    # pode ser nulo no "dia de valer"
+    # zona_id chega como Int32 ANULÁVEL do pandas (30 MB). Ele nunca é nulo — tem teste not_null
+    # no _gold.yml — então vira int32 simples: 6 MB menos e nenhum tipo anulável chegando ao
+    # LightGBM, que lida mal com os dtypes de extensão do pandas.
+    "zona_id": "int32",
 }
 
 # ---------------------------------------------------------------------------

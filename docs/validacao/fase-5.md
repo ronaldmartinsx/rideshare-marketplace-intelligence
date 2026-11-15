@@ -482,3 +482,91 @@ delas, o WAPE das 32 rodadas com a quebra por mês do ano. Custa quase nada, por
 os 32 cortes, e é onde a informação interessante está: não "o modelo é melhor?", mas "**onde** o modelo é melhor?".
 
 Sem ADR: a spec não é contrariada, apenas complementada.
+
+---
+
+## 7. A leitura do Athena para o pandas: medição dos modos (passo 5, decisão B)
+
+**Data:** 15/11/2026
+**Arquivos:** [`airflow/include/ml/dados.py`](../../airflow/include/ml/dados.py),
+[`scripts/fase-5/medir_leitura.py`](../../scripts/fase-5/medir_leitura.py)
+**Tabela medida:** `gold.ml_features_demanda`, **6.312.366 linhas**, 24 colunas
+
+### 7.1 O resultado
+
+| modo | segundos | memória | efeito colateral |
+|---|---|---|---|
+| csv | 159,5 | 421,4 MB | nenhum |
+| **unload** | **27,6** | **421,4 MB** | nenhum no catálogo |
+| ctas | não medido | — | **cria tabela temporária no banco da consulta** |
+
+**Escolhido: `unload` — 5,8x mais rápido, mesma memória, dado idêntico.** O `ctas`, que é o padrão da
+biblioteca, não foi medido de propósito: ele criaria tabela temporária no `gold` de **produção**, e catálogo de
+produção não é lugar de rascunho para benchmark. Como o `unload` entrega o mesmo Parquet sem tocar o catálogo, o
+`ctas` ficou irrelevante.
+
+Verificação de equivalência embutida no script: as duas leituras devolvem o **mesmo número de linhas** e a **mesma
+soma do alvo**. Modo de transporte não pode mudar conteúdo.
+
+### 7.2 Três obstáculos do UNLOAD, e o que cada um ensinou
+
+| # | Erro | Causa | Conserto |
+|---|---|---|---|
+| 1 | `NOT_SUPPORTED: Incorrect timestamp precision for timestamp(6)` | O Iceberg cria `timestamp(6)` (microssegundo) e o UNLOAD do Athena só exporta Parquet até **milissegundo** | `cast(hora_alvo as timestamp(3))` na consulta. Sem perda: é hora cheia |
+| 2 | `HIVE_PATH_ALREADY_EXISTS` | O UNLOAD exige pasta de destino **vazia**, e o local de resultados do workgroup já tem arquivos | Um prefixo único por leitura, apagado depois (`keep_files=False`) |
+| 3 | `NotImplementedError: dictionary<values=int32, indices=int32>` | Pedir `zona_id` (número) como categoria na leitura: o leitor de Parquet não converte dicionário de inteiros | O parâmetro `categories` passa a receber **só texto**. O `zona_id` fica `int32` e é declarado categórico direto ao LightGBM |
+
+### 7.3 O achado sobre as categorias
+
+O parâmetro `categories` do awswrangler é **respeitado no modo csv e ignorado no modo unload**. No unload o texto
+voltava como `string`:
+
+| Coluna | Como `string` | Como `category` |
+|---|---|---|
+| `mes_corte` | 91,1 MB | desprezível |
+| `mes_alvo` | 91,1 MB | desprezível |
+| `tipo_dia_observado` | 89,0 MB | desprezível |
+| `nome_feriado_observado` | 51,3 MB | desprezível |
+
+Total: **322 MB** de texto, que levavam o unload de 421 MB para **719,7 MB**.
+
+**Conserto:** a conversão para categoria passou a ser garantida **depois** da leitura, em `aplicar_tipos`, e não
+apenas pedida nela. Com isso os dois modos terminam com os mesmos tipos e o mesmo tamanho — o modo de transporte
+não muda o conteúdo **nem a forma**. A conversão é feita coluna por coluna de propósito: um `astype` do DataFrame
+inteiro criaria uma segunda cópia completa antes de liberar a primeira, e pico de memória é o que mata contêiner.
+
+### 7.4 Memória: a estimativa estava boa
+
+Estimado na Aula 4 a partir dos dtypes escolhidos: **457 MB**. Medido: **415,4 MB** (erro de 9%).
+
+Duas colunas foram cortadas no caminho, com a medição na mão:
+
+| Decisão | Economia |
+|---|---|
+| Não ler a coluna `corte` (timestamp): existe um corte por mês e o `mes_corte` já o identifica | **48,2 MB** |
+| `zona_id` como `int32` simples em vez do `Int32` anulável do pandas (ele nunca é nulo, tem teste) | **6,0 MB** |
+
+Conferido ao fim: **nenhum dtype anulável** sobrou no DataFrame. O LightGBM lida mal com os tipos de extensão do
+pandas, e isso evita uma conversão silenciosa na hora do treino.
+
+### 7.5 Correção ao passo 0: o LightGBM não carrega no macOS sem `libomp`
+
+No passo 0 eu conferi que **existe wheel** do `lightgbm` para o Python 3.14 e declarei o risco inexistente. Estava
+**incompleto**: verifiquei que o pacote instala, não que ele carrega.
+
+No Mac, o import falha:
+
+```
+OSError: Library not loaded: @rpath/libomp.dylib
+  tried: '/opt/homebrew/opt/libomp/lib/libomp.dylib' (no such file)
+```
+
+O LightGBM depende de uma biblioteca nativa de paralelismo (OpenMP) que no macOS não vem no pacote. Conserto no
+Mac: `brew install libomp`.
+
+No Linux da imagem do Airflow o OpenMP costuma já estar presente, mas isso está **NÃO VERIFICADO** — será
+conferido antes de afirmar. O ambiente de execução de verdade é o contêiner (spec 9.1), então o Mac só importa
+para desenvolvimento.
+
+**Lição:** "a wheel existe para esta versão de Python" e "a biblioteca carrega nesta máquina" são duas perguntas
+diferentes. A primeira se responde no PyPI; a segunda só com um `import`.
