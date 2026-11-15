@@ -417,3 +417,68 @@ diferentes — uma dizendo "zero", a outra "não sei".
 ### 5.5 Cobertura de testes
 
 45 nós pelo seletor `tag:ml` (4 models + 41 testes), todos verdes, zero avisos.
+
+---
+
+## 6. As tabelas em produção e o baseline sobre 32 rodadas (passo 5.0)
+
+**Data:** 15/11/2026
+**Comando:** `dbt build --select tag:ml --target prod`, com autorização explícita do Ronald
+**Resultado:** 45 nós verdes em **2 min 08 s**, zero avisos. Nenhuma tabela existente foi tocada
+**Tamanhos:** `ml_demanda_hora_zona` e `ml_features_demanda` ~6,3 M linhas; `ml_baseline_demanda` 6.312.366;
+`ml_wape_baseline` **32 rodadas avaliáveis**
+
+### 6.1 As 6 rodadas do backtest — a barra oficial
+
+| Mês previsto | WAPE | Viés |
+|---|---|---|
+| 2026-04 | 13,18% | +2,20 |
+| 2026-05 | 13,08% | −0,66 |
+| 2026-06 | 14,16% | +1,55 |
+| 2026-07 | 14,90% | +3,63 |
+| 2026-08 | 13,13% | +1,73 |
+| 2026-09 | 16,09% | −6,46 |
+
+**Média das seis: 14,09%.** Linhas sem palpite nas 32 rodadas: **0**.
+
+**Correção de um número dado antes.** Com as 3 rodadas de dev (seção 5.2) o viés absoluto médio parecia ~1,4%.
+Sobre as 32 rodadas de produção ele é **3,03%** — três vezes maior. A conclusão qualitativa se mantém (o sinal
+alterna, a maior parte do erro é dispersão e não desvio), mas o número anterior estava otimista por amostra pequena.
+
+### 6.2 O achado: o erro do baseline é SAZONAL e se repete ano a ano
+
+Sobre as 32 rodadas, o WAPE do baseline não é ruído — tem calendário:
+
+| Mês previsto | 2024 | 2025 | 2026 |
+|---|---|---|---|
+| **dezembro** | **20,60%** | **20,86%** | — |
+| **janeiro** | — | **19,37%** | **23,15%** |
+| novembro | 16,15% | 16,61% | — |
+| setembro | 15,74% | 16,46% | 16,09% |
+| julho | 15,98% | 15,32% | 14,90% |
+| abril | 13,57% | 12,15% | 13,18% |
+| outubro | 12,46% | 12,96% | — |
+
+Faixa completa: mínimo **12,15%** (abr/2025), máximo **23,15%** (jan/2026), média **15,09%**.
+
+A repetição entre anos é o que dá confiança ao padrão: dezembro deu 20,60 e 20,86; novembro, 16,15 e 16,61;
+setembro, 15,74 / 16,46 / 16,09.
+
+**A explicação é a frase da Aula 1:** *o baseline reage, nunca antecipa.* As quatro semanas anteriores ao Natal
+não contêm nenhum Natal. O baseline chega em 25 de dezembro olhando quatro quintas-feiras comuns e prevê um dia
+comum. Erra muito, e erra **todo ano no mesmo lugar**.
+
+### 6.3 A consequência para o desenho do experimento
+
+O modelo tem `is_feriado_observado` e `nome_feriado_observado` como features: ele **pode** aprender o
+comportamento do Natal olhando os dezembros anteriores. É exatamente a brecha estrutural onde ele vence o baseline.
+
+Mas as 6 rodadas que a spec 9.1 define são **abril a setembro de 2026** — nenhum dezembro, nenhum janeiro. Por
+acidente de onde os dados terminam, a avaliação oficial cai justamente nos meses em que o baseline está no seu
+melhor (13 a 16%) e o modelo tem o menor espaço para ganhar.
+
+**Decisão (15/11/2026):** manter as **6 rodadas da spec como resultado oficial** da fase e reportar, **além**
+delas, o WAPE das 32 rodadas com a quebra por mês do ano. Custa quase nada, porque a tabela de features já cobre
+os 32 cortes, e é onde a informação interessante está: não "o modelo é melhor?", mas "**onde** o modelo é melhor?".
+
+Sem ADR: a spec não é contrariada, apenas complementada.
