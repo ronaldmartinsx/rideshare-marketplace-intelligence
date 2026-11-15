@@ -343,3 +343,77 @@ caso é o relatório honesto, não um modelo forçado.
 `ml_baseline_e_media_dos_lags`: ele recalcula a média por uma fórmula **diferente** da do model (aritmética de
 coluna com `coalesce` e contagem explícita de não-nulos, em vez de array) e exige o mesmo número. Duas fórmulas
 distintas chegando ao mesmo resultado é verificação; a mesma fórmula repetida seria tautologia.
+
+---
+
+## 5. O WAPE do baseline: `ml_wape_baseline` (passo 4, ✍️ Ronald)
+
+**Data:** 15/11/2026
+**Grão:** `mes_alvo` — uma linha por rodada do backtest
+**Autoria:** fórmula, agregações condicionais e a coluna `vies_pct` do Ronald. O Claude revisou, apontou os erros
+e aplicou o `coalesce` e os comentários a pedido dele.
+
+### 5.1 O resultado
+
+| `mes_alvo` | Linhas avaliadas | `corridas_reais` | `erro_absoluto_total` | `wape_pct` | `vies_pct` |
+|---|---|---|---|---|---|
+| 2026-03 | 194.666 | 22.054.617 | 3.169.491,0 | **14,37** | −1,42 |
+| 2026-04 | 188.640 | 20.993.068 | 2.767.758,2 | **13,18** | +2,20 |
+| 2026-05 | 194.928 | 22.122.269 | 2.894.305,5 | **13,08** | −0,66 |
+
+Linhas e corridas descartadas por falta de palpite: **0** nas três rodadas.
+
+### 5.2 O que o `vies_pct` revelou — e isso muda a leitura da fase
+
+Coluna acrescentada pelo Ronald **fora do contrato pedido**, e é a informação mais importante desta seção.
+
+O WAPE é absoluto, então não distingue dois mundos muito diferentes: errar **sempre 13% para cima** (viés
+sistemático, fácil de corrigir) de errar **13% para lá e para cá** (dispersão, difícil de corrigir).
+
+Medido: −1,42%, +2,20%, −0,66%. Viés pequeno e **alternando de sinal**. O baseline é praticamente **não
+enviesado**, e portanto aqueles 13% não são um desvio esquecido de calibrar — são **ruído intrínseco do grão
+hora × zona**.
+
+Consequência prática: se o viés fosse +10% constante, o LightGBM ganharia fácil só aprendendo a subtrair. Com viés
+de 1% e sinal trocando, os 13% são a variabilidade real da demanda naquele grão. **A barra é mais alta do que o
+WAPE sozinho sugeria.**
+
+### 5.3 O bug encontrado na revisão: numerador e denominador em desacordo
+
+Na primeira versão, se `previsao_baseline` fosse nulo numa linha:
+
+| Peça | Comportamento com nulo |
+|---|---|
+| `count(*)` | **conta** a linha |
+| `sum(qtd_corridas)` | **soma** o real → denominador cresce |
+| `sum(abs(qtd_corridas - previsao_baseline))` | expressão vira nula → `sum` **ignora** → numerador **não** cresce |
+
+Denominador maior, numerador igual: **WAPE artificialmente menor**. Sem erro, sem teste vermelho, e com a métrica
+parecendo **melhor** — a assinatura do vazamento descrita na Aula 2.
+
+A raiz: das quatro agregações, a única que **não mencionava** `previsao_baseline` era `sum(qtd_corridas)`. As
+outras três já se restringiam sozinhas às linhas com palpite, porque expressão com nulo vira nula e o `sum`
+ignora. O bug estava exatamente no único ponto de assimetria.
+
+Hoje não ocorre (0 nulos), mas foi corrigido por dois motivos: as previsões do modelo vêm do Python no passo 5,
+onde nulo é plausível; e esta lógica será reaproveitada na `ml_backtest_metricas` do passo 6.
+
+**Conserto:** agregações condicionais nos dois lados, mais duas colunas que tornam o descarte visível —
+`qtd_linhas_sem_baseline` e `qtd_corridas_sem_baseline`. Cinco linhas descartadas é pouco; cinco linhas com 4.000
+corridas é muito, e só a segunda coluna distingue os dois casos.
+
+### 5.4 Três tropeços do percurso, registrados porque ensinam
+
+| Tropeço | O que ensinou |
+|---|---|
+| `countif` em vez de `count_if` | O Athena respondeu `FUNCTION_NOT_FOUND` e resolveu sozinho |
+| `count_if(previsao_baseline)` e `case when previsao_baseline then` | `previsao_baseline` é **número**, não booleano. Vinha de copiar a forma de `count_if(is_dropoff_cbd)` da Fase 3, onde o argumento já era uma marca `is_*`. Em SQL não existe `sumif`: a condição vai **dentro** do argumento, com `case when` |
+| As duas colunas de descarte calculadas na CTE e ausentes do `select` final | Uma CTE só entrega o que a consulta de fora pede. E a ironia: as colunas cujo trabalho era impedir que algo desaparecesse em silêncio desapareceram em silêncio |
+
+E uma assimetria do SQL que virou `coalesce`: `count_if` sobre conjunto vazio devolve **0**, mas `sum` sobre
+conjunto vazio devolve **nulo**. Sem o `coalesce`, as duas colunas descreveriam a mesma situação com respostas
+diferentes — uma dizendo "zero", a outra "não sei".
+
+### 5.5 Cobertura de testes
+
+45 nós pelo seletor `tag:ml` (4 models + 41 testes), todos verdes, zero avisos.

@@ -525,3 +525,76 @@ models:
         description: "Mês previsto (AAAA-MM). Define a rodada do backtest."
         data_tests:
           - not_null
+
+  - name: ml_wape_baseline
+    description: >
+      O WAPE do baseline por rodada do backtest (Fase 5, passo 4). Grão: `mes_alvo`, uma linha por rodada.
+      WAPE = soma dos erros absolutos ÷ soma do real — **razão das somas**, nunca média das razões. A
+      forma errada, `avg(abs(real - previsto) / real)`, é o MAPE: além de responder outra pergunta, ela
+      estoura na divisão por zero das zonas-hora sem corrida, que aqui entram sem drama.
+      ✍️ Peça do Ronald. Autoria dele: a fórmula, as agregações condicionais e a coluna `vies_pct`, que
+      não estava no contrato. O Claude apontou dois erros (`countif` sem underscore e `previsao_baseline`
+      usado como booleano), a omissão das colunas de descarte no `select` final, e aplicou o `coalesce`
+      e os comentários a pedido dele.
+      As três colunas intermediárias não são enfeite: permitem auditar o `wape_pct` com uma divisão.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [mes_alvo]
+    columns:
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM). Identifica a rodada do backtest."
+        data_tests:
+          - not_null
+      - name: mes_corte
+        description: "Mês do corte usado na rodada: de onde a foto foi tirada."
+        data_tests:
+          - not_null
+      - name: linhas_avaliadas
+        description: "Questões com gabarito E palpite. É o conjunto sobre o qual o WAPE foi calculado."
+        data_tests:
+          - not_null
+      - name: corridas_reais
+        description: >
+          Σ real, o denominador do WAPE. Restrito às linhas com palpite, para numerador e denominador
+          concordarem sobre quais linhas existem — a assimetria entre os dois era o bug encontrado em
+          14/11/2026, e ela deixava o WAPE artificialmente MENOR, sem dar erro nenhum.
+        data_tests:
+          - not_null
+      - name: corridas_previstas
+        description: "Σ previsto. Serve ao `vies_pct`; o WAPE não usa."
+      - name: erro_absoluto_total
+        description: "Σ |real − previsto|, o numerador do WAPE."
+        data_tests:
+          - not_null
+      - name: qtd_linhas_sem_baseline
+        description: >
+          Linhas descartadas por não terem palpite. Hoje 0 nas três rodadas. Existe para que o descarte
+          nunca seja silencioso: linha que sai da conta sem contador é a mesma doença, só mais discreta.
+        data_tests:
+          - not_null
+      - name: qtd_corridas_sem_baseline
+        description: >
+          Corridas nas linhas descartadas. 5 linhas descartadas é pouco; 5 linhas com 4.000 corridas é
+          muito, e só esta coluna distingue os dois casos. Com `coalesce` para devolver 0, e não nulo,
+          quando não há descarte — `count_if` sobre conjunto vazio dá 0, mas `sum` dá nulo.
+        data_tests:
+          - not_null
+      - name: wape_pct
+        description: >
+          O WAPE em percentual, 2 casas. Medido em dev: 14,37 (mar/2026), 13,18 (abr) e 13,08 (mai).
+          **É um baseline forte** — errar 13% prevendo demanda por hora e por zona um mês à frente, com
+          a média de quatro números. A barra para o LightGBM é esta.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: vies_pct
+        description: >
+          Erro COM sinal, em percentual: (Σ previsto − Σ real) ÷ Σ real. Coluna acrescentada pelo Ronald,
+          fora do contrato, e ela muda a leitura da fase. O WAPE é absoluto, então não distingue "errar
+          sempre 13% para cima" (viés sistemático, fácil de corrigir) de "errar 13% para lá e para cá"
+          (dispersão, difícil). Medido: −1,42%, +2,20% e −0,66% — viés pequeno e **alternando de sinal**,
+          ou seja, o baseline é praticamente não enviesado e aqueles 13% são ruído intrínseco do grão
+          hora × zona. Se o viés fosse +10% constante, o modelo ganharia só aprendendo a subtrair.
