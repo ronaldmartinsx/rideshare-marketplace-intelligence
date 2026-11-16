@@ -636,3 +636,54 @@ muda o trade-off em vez de eliminá-lo.
 Reprodutibilidade garantida por três peças: semente fixa e `deterministic=True` no LightGBM, ordem das linhas
 fixada em `(mes_corte, zona_id, hora_alvo)` na leitura (seção 7), e a regra das rodadas em módulo puro com teste
 de unidade (`janelas.py`, 13 testes).
+
+---
+
+## 9. As tabelas `ml_*` na Gold e a previsão de outubro (passo 6, fim)
+
+**Data:** 16/11/2026 · **Execução:** `20261116T233529Z` · **Tempo:** ~8 min (7 rodadas)
+
+| Tabela | Grão (spec 6.4) | Linhas |
+|---|---|---|
+| `ml_forecast_demanda` | hora-alvo × zona × execução | **1.345.632** |
+| `ml_backtest_metricas` | execução × janela | **7** |
+
+Gravadas pelo Python via `awswrangler.athena.to_iceberg`, como a spec 9.1 determina. **Não são models dbt**, e a
+consequência honesta disso é que não aparecem no `dbt docs` nem ganham testes do dbt — é o preço de o produtor ser
+o Python. Modo `append`, não `overwrite`: o grão inclui **execução**, então execuções se acumulam e dá para
+comparar o resultado de hoje com o de um mês atrás, igual ao manifesto da Fase 2 e ao registro do ADR 0016.
+
+### 9.1 REPRODUTIBILIDADE COMPROVADA
+
+Esta execução repetiu, **dígito por dígito**, o WAPE das seis rodadas da seção 8: 12,35 / 12,12 / 13,20 / 13,68 /
+12,28 / 13,87. Duas execuções independentes, mesmo resultado.
+
+O "pronto quando" da fase (spec, Seção 12) exige que o backtest rode de forma reprodutível. Isso agora é
+**medido**, não afirmado. As três peças que sustentam: semente fixa e `deterministic=True` no LightGBM, ordem das
+linhas fixada em `(mes_corte, zona_id, hora_alvo)` na leitura (seção 7), e a regra das rodadas em módulo puro com
+13 testes de unidade.
+
+### 9.2 O entregável: a previsão de outubro de 2026
+
+| Mês | Tipo | Previsto | Real |
+|---|---|---|---|
+| 2026-04 | backtest | 20.836.676 | 20.993.068 |
+| 2026-05 | backtest | 21.674.283 | 22.122.268 |
+| 2026-06 | backtest | 20.440.573 | 20.769.776 |
+| 2026-07 | backtest | 20.288.411 | 20.918.008 |
+| 2026-08 | backtest | 19.883.832 | 20.490.080 |
+| 2026-09 | backtest | 20.142.179 | 20.983.828 |
+| **2026-10** | **produção** | **22.156.449** | — (não aconteceu) |
+
+**A previsão é 22.156.449 corridas para outubro de 2026**, em 194.928 linhas de hora × zona, nas 262 zonas.
+
+**Ressalva que a própria tabela torna visível:** em **todos** os seis meses do backtest o previsto ficou abaixo do
+real. É o viés do L1 explicado na seção 8.2. Corrigindo por ele (−1 a −4%), o valor provável para outubro fica
+entre **22,6 e 22,8 milhões**. O número cru de 22,16 M é o que o modelo produz; a faixa corrigida é a leitura
+honesta dele.
+
+### 9.3 Decisão D4 cumprida como combinado
+
+As colunas `intervalo_inferior` e `intervalo_superior` existem no schema e ficam **nulas**, com a limitação
+documentada — em vez de inventar número. Gerar intervalo exigiria regressão quantílica, que ficou fora do escopo
+desta versão (decisão D4 do plano).

@@ -18,7 +18,7 @@ import boto3
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "airflow"))
 
-from include.ml import backtest, config, dados  # noqa: E402
+from include.ml import backtest, config, dados, persistencia  # noqa: E402
 
 
 def main() -> None:
@@ -28,6 +28,8 @@ def main() -> None:
     p.add_argument("--arvores", type=int, default=config.N_ARVORES)
     p.add_argument("--producao", action="store_true", help="inclui a rodada do 'dia de valer'")
     p.add_argument("--sem-salvar", action="store_true", help="não grava o modelo no S3")
+    p.add_argument("--gravar", action="store_true",
+                   help="grava ml_forecast_demanda e ml_backtest_metricas na Gold")
     args = p.parse_args()
 
     sessao = boto3.Session(profile_name="rideshare-admin", region_name="us-east-1")
@@ -39,7 +41,7 @@ def main() -> None:
           f"{features.memory_usage(deep=True).sum() / 1024**2:.0f} MB\n")
 
     print(f"rodando {args.rodadas} rodada(s) com {args.arvores} árvores...", flush=True)
-    tabela, _ = backtest.rodar(
+    tabela, resultados = backtest.rodar(
         args.ambiente,
         sessao,
         rodadas=args.rodadas,
@@ -53,6 +55,13 @@ def main() -> None:
                "wape_modelo", "wape_baseline", "ganho_pp", "vies_modelo", "vies_baseline"]
     print()
     print(tabela[mostrar].to_string(index=False, float_format=lambda v: f"{v:.2f}"))
+
+    if args.gravar:
+        print("\ngravando as tabelas ml_* na Gold...", flush=True)
+        escrito = persistencia.gravar(resultados, tabela, args.ambiente, sessao)
+        print(f"  execucao {escrito['execucao']}")
+        for nome in (persistencia.TABELA_FORECAST, persistencia.TABELA_METRICAS):
+            print(f"  {nome:24} {escrito[nome]:,} linhas")
 
     avaliaveis = tabela.dropna(subset=["wape_modelo"])
     if not avaliaveis.empty:
