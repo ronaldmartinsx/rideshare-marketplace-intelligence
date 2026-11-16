@@ -131,15 +131,29 @@ def ler_features(
     return ordenar(aplicar_tipos(df))
 
 
-def ler_baseline(ambiente: str, sessao, modo: str = PADRAO) -> pd.DataFrame:
+def ler_baseline(
+    ambiente: str,
+    sessao,
+    cortes: Sequence[str] | None = None,
+    modo: str = PADRAO,
+) -> pd.DataFrame:
     """O palpite do baseline por linha, para a comparação do backtest.
 
-    Vem da ml_baseline_demanda, construída em SQL pelo Ronald (passo 3): o Python não recalcula o
-    baseline, ele apenas lê o que o SQL já decidiu. Uma definição, um lugar.
+    Vem da ml_baseline_demanda, construída em SQL pelo Ronald (passo 3): o Python NÃO recalcula o
+    baseline, ele apenas lê o que o SQL já decidiu. Uma definição, um lugar — se o Python
+    recalculasse, haveria duas definições de baseline e um dia elas divergiriam em silêncio.
+
+    cortes: se dado, filtra na origem. O backtest só precisa do baseline dos cortes AVALIADOS
+    (~190 mil linhas por corte), não dos 6,3 milhões — então filtrar aqui evita carregar 33 vezes
+    mais dado do que se usa.
     """
     colunas = ["hora_alvo", "zona_id", "mes_corte", "mes_alvo", "tem_alvo",
                "qtd_corridas", "previsao_baseline"]
-    sql = f"select {selecionar(colunas)} from {config.TABELA_BASELINE}"
+    onde = ""
+    if cortes:
+        lista = ", ".join(f"'{c}'" for c in cortes)
+        onde = f" where mes_corte in ({lista})"
+    sql = f"select {selecionar(colunas)} from {config.TABELA_BASELINE}{onde}"
 
     categorias = [c for c in config.COLUNAS_CATEGORIA if c in colunas]
     df = _ler(sql, ambiente, sessao, modo=modo, categorias=categorias)
