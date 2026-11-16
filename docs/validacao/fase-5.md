@@ -570,3 +570,69 @@ para desenvolvimento.
 
 **Lição:** "a wheel existe para esta versão de Python" e "a biblioteca carrega nesta máquina" são duas perguntas
 diferentes. A primeira se responde no PyPI; a segunda só com um `import`.
+
+---
+
+## 8. O VEREDITO: o modelo contra o baseline (passo 6)
+
+**Data:** 16/11/2026
+**Comando:** `airflow/.venv/bin/python scripts/fase-5/rodar_backtest.py prod --rodadas 6 --arvores 500`
+**Tempo:** 7 min 01 s no total (30,6 s de leitura + 6 treinos de 43 a 62 s)
+**Ambiente:** produção, 6.312.366 linhas de features
+
+### 8.1 O resultado
+
+| Mês previsto | Linhas de treino | Modelo | Baseline | Ganho (pp) | Viés modelo | Viés baseline |
+|---|---|---|---|---|---|---|
+| 2026-04 | 4.966.734 | **12,35%** | 13,18% | +0,83 | −0,74 | +2,20 |
+| 2026-05 | 5.155.374 | **12,12%** | 13,08% | +0,96 | −2,03 | −0,66 |
+| 2026-06 | 5.350.302 | **13,20%** | 14,16% | +0,96 | −1,59 | +1,55 |
+| 2026-07 | 5.538.942 | **13,68%** | 14,90% | +1,22 | −3,01 | +3,63 |
+| 2026-08 | 5.733.870 | **12,28%** | 13,13% | +0,85 | −2,96 | +1,73 |
+| 2026-09 | 5.928.798 | **13,87%** | 16,09% | **+2,22** | −4,01 | −6,46 |
+
+**Média: modelo 12,92% × baseline 14,09%. Ganho de 1,18 ponto percentual. Venceu em 6 de 6 rodadas.**
+
+O "pronto quando" da fase (spec, Seção 12) pedia um modelo que vencesse o baseline **ou** um relatório honesto de
+que não venceu. Venceu.
+
+### 8.2 Três leituras do resultado
+
+**1. Seis de seis vale mais que o tamanho do ganho.** O critério estabelecido na Aula 3: vencer 6 de 6 dá
+confiança, vencer 3 de 6 é empate com cara de vitória. O ganho ficou entre 0,83 e 2,22 pp, sempre positivo.
+
+**2. O maior ganho está onde a seção 6 previu.** +2,22 pp em setembro de 2026, exatamente a rodada em que o
+baseline era pior (16,09%). Confirma a tese: **o modelo ganha onde o baseline falha**, porque o baseline só reage
+e o modelo tem o calendário como feature. Reforça também que dezembro e janeiro — fora da janela oficial, com
+baseline em 20 a 23% — devem ser onde a vantagem é maior.
+
+**3. O modelo subestima sistematicamente, e a causa é uma escolha nossa.**
+
+O viés do modelo é **negativo nas seis rodadas** (−0,74 a −4,01 pp), enquanto o do baseline alterna de sinal.
+
+A causa é a `objective = regression_l1` do `config.py`: **L1 otimiza a mediana, não a média.** A distribuição de
+demanda é assimétrica à direita (muitas horas de pouco movimento, poucas de muito), e nessa forma a mediana fica
+abaixo da média. Então minimizar o erro absoluto — que é o certo para o WAPE, porque o denominador é fixo — traz
+de brinde um total previsto sistematicamente baixo.
+
+**É uma tensão real, não um defeito:** o WAPE melhorou **e** o volume total piorou. Qual importa depende do uso:
+para dimensionar motoristas por hora e zona, o WAPE é a métrica certa; para prever o volume agregado do mês, um
+viés de −3% é relevante.
+
+Melhorias candidatas, registradas e **não** implementadas nesta versão: correção de viés após a previsão, testar
+`objective = regression` (L2) e comparar as duas métricas, ou treinar um modelo de quantil. Qualquer uma delas
+muda o trade-off em vez de eliminá-lo.
+
+### 8.3 Custo e reprodutibilidade
+
+| Item | Medida |
+|---|---|
+| Leitura das features (modo `unload`) | 30,6 s, 415 MB em memória |
+| Treino por rodada | 43,6 s a 62,4 s, crescendo com a janela (4,97 M → 5,93 M linhas) |
+| Total | 7 min 01 s |
+| Custo no Athena | 7 leituras (1 de features + 6 do baseline filtrado), centavos |
+| Modelos salvos no S3 | 6, em `s3://rmartins-rideshare-lake/ml/modelos/` |
+
+Reprodutibilidade garantida por três peças: semente fixa e `deterministic=True` no LightGBM, ordem das linhas
+fixada em `(mes_corte, zona_id, hora_alvo)` na leitura (seção 7), e a regra das rodadas em módulo puro com teste
+de unidade (`janelas.py`, 13 testes).
