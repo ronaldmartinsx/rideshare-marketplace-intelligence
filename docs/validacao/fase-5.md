@@ -764,3 +764,77 @@ modelo varia de **+0,09 a +5,22 pp** conforme o mês, e concentra-se onde o cale
 O viés do modelo é negativo em **24 das 31** rodadas, confirmando em escala o que a seção 8.2 explicou: a
 `objective = regression_l1` mira a mediana, e a demanda é assimétrica à direita. A exceção mais visível é
 2024-09 (−10,75), na faixa de pouco histórico, onde o modelo ainda errava muito em qualquer direção.
+
+---
+
+## 11. O contêiner: OpenMP, memória e a DAG (passo 7)
+
+**Data:** 18–19/11/2026 · **Imagem:** Astro Runtime 3.3-9, Python **3.14.8**
+
+### 11.1 O "não verificado" do passo 0, resolvido
+
+`lightgbm 4.7.0` **carrega** dentro do contêiner. O OpenMP está na imagem base — o problema era exclusivo do
+macOS, onde exige `brew install libomp`. A pendência marcada desde 14/11 está fechada.
+
+| Pacote | Contêiner | Mac (`airflow/.venv`) |
+|---|---|---|
+| Python | **3.14.8** | 3.13.7 |
+| lightgbm | 4.7.0 | 4.7.0 |
+| awswrangler | 3.18.0 | 3.18.0 |
+| **pandas** | **2.3.3** | **3.1.1** |
+| numpy | 2.4.6 | 2.5.5 |
+
+### 11.2 O problema de memória que SÓ existia no contêiner
+
+O pandas do contêiner é de uma versão maior diferente, e isso muda o custo do texto:
+
+| | pandas 2.3.3 (contêiner) | pandas 3.1.1 (Mac) |
+|---|---|---|
+| Armazenamento do tipo `string` | **Python** | **Arrow** |
+| Custo por linha | **56 bytes** | 14 bytes |
+
+Medido em um corte (188.640 linhas) e extrapolado para as 6.312.366:
+
+| Versão do código | Pico antes de converter | Tamanho final |
+|---|---|---|
+| `dtype_backend` padrão (`numpy_nullable`) | **~2,2 GB** | 415 MB |
+| **`dtype_backend="pyarrow"`** | **~1,01 GB** | **~390 MB** |
+
+**O pico era 5x o tamanho final, e não aparecia em desenvolvimento** — no Mac o pandas 3 já entregava texto em
+Arrow. Se a DAG tivesse sido disparada sem medir, o pico de 2,2 GB aconteceria às escuras.
+
+**Conserto:** `dtype_backend="pyarrow"` na leitura. E a conferência pegou o que faltava: `tem_alvo`, `hora_alvo`,
+`is_fim_de_semana` e `is_feriado_observado` voltavam com tipo Arrow. As duas últimas são **features que vão ao
+LightGBM**, que lida mal com tipo de extensão do pandas. Todas entraram no mapa de tipos, e a conferência final
+confirma: **nenhum dtype de extensão sobrevive** ao `aplicar_tipos`.
+
+### 11.3 Os 13 testes pelo caminho oficial
+
+`astro dev pytest tests/test_ml_janelas.py` → **13 passed**, Python 3.14.8, pytest 9.1.1. Até aqui eles rodavam
+por um executor próprio no scratchpad, porque o módulo só usa biblioteca padrão.
+
+### 11.4 A DAG falhou, e o conserto anterior estava incompleto
+
+A primeira execução (`dags test`, 1 rodada + produção) **falhou na primeira task**, `planejar`:
+
+```
+AccessDenied: not authorized to perform: s3:DeleteObject on
+"rmartins-rideshare-athena-results/resultados/<id>.csv"
+```
+
+Nada foi treinado, nada foi gravado.
+
+**A causa foi um conserto incompleto meu.** Em 18/11 eu havia mudado `keep_files` para `True` em `dados.py`, para
+respeitar a decisão da Fase 0 de não dar `s3:DeleteObject`. Mas **a DAG tinha duas chamadas próprias** ao
+awswrangler, nas tasks `planejar` e `conferir`, com `keep_files=False` escrito à mão nas duas. A mudança não as
+alcançou.
+
+**Conserto:** em vez de repetir `keep_files=True` em três lugares, a opção passou a morar em **um só**. Nasceu
+`dados.consultar()` para consulta pequena e avulsa, e a DAG não importa mais o awswrangler — zero chamadas
+diretas. Opção de leitura espalhada em três lugares é bug esperando a vez, e esta já esperou uma.
+
+**Verificado depois do conserto:** a task `planejar` termina com `state=success` e produz o plano correto —
+32 cortes avaliáveis, corte de produção 2026-09, rodada de backtest com 31 cortes de treino e a de produção com
+32. Zero `AccessDenied`.
+
+**PENDENTE:** a execução completa da DAG (as tasks `executar` e `conferir`) ainda **não** rodou no contêiner.

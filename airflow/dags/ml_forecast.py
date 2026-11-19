@@ -63,23 +63,16 @@ def ml_forecast():
         XCom antes de a execução gastar oito minutos. Se a regra das rodadas estiver errada, isso
         fica visível aqui — e a regra em si é testada em tests/test_ml_janelas.py, sem nuvem.
         """
-        import awswrangler as wr
-
         from include.ml import config, dados, janelas
 
         p = contexto["params"]
         sessao = dados.sessao_airflow()
 
-        cortes = wr.athena.read_sql_query(
-            sql=(
-                f"select mes_corte, max(tem_alvo) as tem_alvo "
-                f"from {config.TABELA_FEATURES} group by mes_corte order by mes_corte"
-            ),
-            database=config.BANCO[p["ambiente"]],
-            workgroup=config.WORKGROUP,
-            boto3_session=sessao,
-            ctas_approach=False,
-            keep_files=False,
+        cortes = dados.consultar(
+            f"select mes_corte, max(tem_alvo) as tem_alvo "
+            f"from {config.TABELA_FEATURES} group by mes_corte order by mes_corte",
+            p["ambiente"],
+            sessao,
         )
 
         avaliaveis = cortes.loc[cortes["tem_alvo"], "mes_corte"].tolist()
@@ -166,27 +159,20 @@ def ml_forecast():
         fase (spec, Seção 12: "um modelo que vença o baseline, OU um relatório honesto de que não
         venceu"). Reprovar por isso empurraria para esconder resultado ruim.
         """
-        import awswrangler as wr
-
-        from include.ml import config, dados, persistencia
+        from include.ml import dados, persistencia
 
         if not resumo["execucao"]:
             log.info("execução sem gravação (gravar=False): nada a conferir")
             return resumo
 
         p = contexto["params"]
-        gravado = wr.athena.read_sql_query(
-            sql=(
-                f"select count(*) as linhas, "
-                f"sum(case when venceu_baseline then 1 else 0 end) as venceu, "
-                f"avg(wape_modelo) as wape_modelo, avg(wape_baseline) as wape_baseline "
-                f"from {persistencia.TABELA_METRICAS} where execucao = '{resumo['execucao']}'"
-            ),
-            database=config.BANCO[p["ambiente"]],
-            workgroup=config.WORKGROUP,
-            boto3_session=dados.sessao_airflow(),
-            ctas_approach=False,
-            keep_files=False,
+        gravado = dados.consultar(
+            f"select count(*) as linhas, "
+            f"sum(case when venceu_baseline then 1 else 0 end) as venceu, "
+            f"avg(wape_modelo) as wape_modelo, avg(wape_baseline) as wape_baseline "
+            f"from {persistencia.TABELA_METRICAS} where execucao = '{resumo['execucao']}'",
+            p["ambiente"],
+            dados.sessao_airflow(),
         ).iloc[0]
 
         if int(gravado["venceu"]) != resumo["venceu"]:

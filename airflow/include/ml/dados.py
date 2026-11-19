@@ -106,6 +106,14 @@ def _ler(
         categories=list(categorias) if categorias else None,
         ctas_approach=(modo == CTAS),
         unload_approach=(modo == UNLOAD),
+        # Texto com armazenamento ARROW em vez de Python. O padrão da biblioteca é
+        # "numpy_nullable", e aí o tipo `string` do pandas 2.x guarda objetos Python: 56 bytes por
+        # linha. Medido em 19/11/2026 dentro do contêiner (pandas 2.3.3): as 4 colunas de texto
+        # faziam o PICO de memória chegar a ~2,2 GB antes da conversão para categoria, cinco vezes
+        # o tamanho final de 415 MB. No pandas 3.x do Mac o padrão já era Arrow, então o problema
+        # não aparecia em desenvolvimento — só no ambiente que importa.
+        # Todo tipo Arrow é convertido para nativo em aplicar_tipos, logo em seguida.
+        dtype_backend="pyarrow",
         # Mantido TRUE (o padrão) por uma razão de PERMISSÃO, não de preferência: apagar exigiria
         # s3:DeleteObject no bucket de resultados, e a política do Airflow não tem essa ação DE
         # PROPÓSITO desde a Fase 0 — "sem DeleteObject: quem limpa é a regra de ciclo de vida"
@@ -113,6 +121,20 @@ def _ler(
         # decisão que já existia. Custo: ~0,4 GB parado por até 7 dias, cerca de US$ 0,002.
         keep_files=True,
     )
+
+
+def consultar(sql: str, ambiente: str, sessao) -> pd.DataFrame:
+    """Consulta pequena e avulsa (contagens, listas de meses, conferências).
+
+    Existe para que NENHUMA opção de leitura more fora deste módulo. Em 19/11/2026 a DAG tinha duas
+    chamadas próprias ao awswrangler, com keep_files=False escrito à mão nas duas, e elas não foram
+    alcançadas quando o keep_files mudou aqui — a task `planejar` morreu com AccessDenied em
+    s3:DeleteObject. Opção de leitura espalhada em três lugares é bug esperando a vez.
+
+    Usa o modo CSV de propósito: para resultado de poucas linhas, o UNLOAD não compensa o custo de
+    criar e limpar um prefixo próprio no S3.
+    """
+    return _ler(sql, ambiente, sessao, modo=CSV)
 
 
 def ler_features(

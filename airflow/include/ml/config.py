@@ -138,6 +138,16 @@ DTYPES = {
     # no _gold.yml — então vira int32 simples: 6 MB menos e nenhum tipo anulável chegando ao
     # LightGBM, que lida mal com os dtypes de extensão do pandas.
     "zona_id": "int32",
+    # Com dtype_backend="pyarrow" na leitura (ver dados.py), TODAS as colunas voltam com tipo Arrow.
+    # Estas duas precisam virar tipo nativo porque são USADAS em operação, não só lidas:
+    # tem_alvo entra em máscara booleana (dados.recortar) e hora_alvo entra na junção com o
+    # baseline. Tipo de extensão nessas duas é pedir surpresa.
+    "tem_alvo": "bool",
+    "hora_alvo": "datetime64[ns]",
+    # E estas duas são FEATURES booleanas: vão direto para o LightGBM, que lida mal com tipo de
+    # extensão do pandas. Faltaram na primeira versão e a conferência as pegou (19/11/2026).
+    "is_fim_de_semana": "bool",
+    "is_feriado_observado": "bool",
 }
 
 # ---------------------------------------------------------------------------
