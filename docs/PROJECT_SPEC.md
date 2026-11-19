@@ -428,9 +428,16 @@ flowchart TD
 | `dim_periodo_espera` | mês × hora do dia × tipo de dia | `periodo_id`. Dimensão encolhida da `dim_tempo_hora` no grão do histograma; liga o histograma ao tempo (ADR 0017) |
 | `dim_faixa_espera` | faixa de espera | limites em minutos e rótulo das 18 faixas (ADR 0017) |
 | `fct_od_mensal` | mês × zona de origem × zona de destino × operadora | soma da `fct_od_diario`, conferida por teste de reconciliação; é a origem-destino do Power BI (3,7 milhões de linhas; ADR 0017) |
+| `ml_demanda_hora_zona` | hora × zona | **Fase 5.** A série limpa que o ML prevê: operadoras somadas e grade completa, para hora sem corrida ser zero EXPLÍCITO e não linha ausente. ~6,3 M linhas |
+| `ml_features_demanda` | **corte × hora-alvo × zona** | **Fase 5.** Features do modelo: 4 lags medidos do corte (ADR 0021), `horizonte_horas`, calendário com `data_observada` e clima `clima_obs_*`. 33 cortes, ~6,3 M linhas |
+| `ml_baseline_demanda` | corte × hora-alvo × zona | **Fase 5, ✍️ Ronald.** O palpite do baseline sazonal ingênuo: média dos lags existentes. É a régua da fase |
+| `ml_wape_baseline` | mês previsto | **Fase 5, ✍️ Ronald.** WAPE e viés do baseline por rodada, com as colunas intermediárias para auditoria. 32 rodadas |
 | `ml_forecast_demanda` | hora-alvo × zona × execução | previsão, intervalo, versão do modelo |
 | `ml_backtest_metricas` | execução × janela | WAPE do modelo e do baseline |
 
+- **Quem produz as `ml_*`:** as quatro primeiras são **models dbt** (etiqueta `ml`, testadas como as outras).
+  As duas últimas são gravadas pelo **Python** via `awswrangler.athena.to_iceberg` (spec 9.1), e por isso **não**
+  aparecem no `dbt docs` nem ganham testes do dbt — é o preço de o produtor ser o Python e não o SQL.
 - **Testes de integridade:** toda `fct_*` tem testes de relacionamento com as `dim_*` e de não-nulos nas chaves.
 - **Definições das métricas:** ficam no YAML (`meta`) dos modelos. São a fonte para as medidas DAX e para o contexto do agente.
 
@@ -478,11 +485,15 @@ As DAGs são encadeadas por **dependência de dados** (Datasets/Assets), e não 
 ### 9.1 Previsão de demanda (ML)
 
 - **Alvo:** corridas por zona e hora (todas as operadoras), para o mês seguinte ao último disponível.
-- **Escopo inicial:** as top N zonas por volume (ex.: 50). ⚠️ Definir N com os dados.
+- **Escopo:** **todas as zonas conhecidas e dentro de NYC** (262), pelo filtro `is_zona_conhecida and not is_fora_de_nyc`
+  da `dim_zona`. ✅ **Medido na Fase 5** (validação, seção 1): o pressuposto de concentração não se sustenta — as top 50
+  zonas cobrem só **44,6%** da demanda e a líder (LaGuardia) é 1,95%. HVFHV é deslocamento de bairro, não táxi de
+  Manhattan. O critério semântico cobre **99,99%** e, diferente de "top N por volume", não pode vazar (ADR 0020).
 - **Baseline obrigatório:** sazonal ingênuo, a média da mesma hora e dia da semana nas últimas 4 semanas.
 - **Modelo candidato:** gradient boosting (ex.: LightGBM), global para todas as zonas.
 - **Features:**
-  - defasagens (lags) de 1 a 4 semanas;
+  - defasagens (lags) de 1 a 4 semanas, **medidas a partir do CORTE da previsão e não da hora-alvo** (ADR 0021),
+    mais o `horizonte_horas` (1 a 744) como feature;
   - hora, dia da semana, feriado;
   - clima.
 - **Avaliação:**
@@ -568,7 +579,7 @@ rideshare-marketplace-intelligence/
 ├── infra/terraform/           # S3, Glue, workgroups do Athena, IAM, budget
 ├── airflow/                   # projeto Astro (dags/, include/, requirements.txt)
 ├── dbt/                       # models/staging, intermediate, marts; seeds; tests; macros
-├── ml/                        # treino, backtest, previsão
+├── airflow/include/ml/        # treino, backtest, previsão (ADR 0022: não na raiz, para a DAG importar)
 ├── llm/                       # agente NL2SQL, resumo mensal, perguntas-ouro
 ├── powerbi/                   # .pbix, TopoJSON das zonas, prints
 └── .github/workflows/         # CI

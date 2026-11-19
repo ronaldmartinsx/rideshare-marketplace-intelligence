@@ -12,3 +12,12 @@ pyarrow==26.0.0
 # Roda o projeto dbt como tasks do Airflow, um model por task (Fase 3, decisão F5).
 # Testado com o Airflow 3.3 (spec, risco R8). O dbt em si NÃO entra aqui: ele tem ambiente próprio (Dockerfile).
 astronomer-cosmos==1.15.1
+
+# Fase 5: lê a Gold para pandas (AWS SDK for pandas). Traz pandas, numpy e usa o pyarrow acima.
+# Conferido em 15/11/2026: aceita pyarrow<27, e o projeto fixa 26.0.0 — sem conflito.
+awswrangler==3.18.0
+
+# Fase 5: o modelo de previsão de demanda. Wheel py3-none-* (tag universal: o motor C++ vem como
+# biblioteca à parte, não é extensão do CPython), com manylinux2014_aarch64 para esta imagem ARM.
+# ATENÇÃO: depende de OpenMP em tempo de execução. No macOS exige `brew install libomp`.
+lightgbm==4.7.0
