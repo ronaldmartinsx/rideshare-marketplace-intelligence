@@ -687,3 +687,80 @@ honesta dele.
 As colunas `intervalo_inferior` e `intervalo_superior` existem no schema e ficam **nulas**, com a limitação
 documentada — em vez de inventar número. Gerar intervalo exigiria regressão quantílica, que ficou fora do escopo
 desta versão (decisão D4 do plano).
+
+---
+
+## 10. As 32 rodadas: onde o modelo ganha, e o que ele precisa para ganhar
+
+**Data:** 18/11/2026 · **Comando:** `rodar_backtest.py prod --rodadas 32 --arvores 500 --sem-salvar` · **Tempo:** ~40 min
+**Decisão de 15/11 (seção 6.3):** as 6 rodadas da spec seguem como resultado **oficial**; estas 31 são a análise
+complementar. Não foram persistidas nas tabelas `ml_*` — são leitura, não entregável.
+
+31 rodadas e não 32: a do corte mais antigo é descartada por não ter nenhum corte anterior para treinar
+(cenário 4 de `janelas.py`).
+
+### 10.1 O resultado geral, e por que ele é mais fraco
+
+| Medida | Valor |
+|---|---|
+| WAPE médio do modelo | **14,26%** |
+| WAPE médio do baseline | **15,14%** |
+| Ganho médio | **+0,89 pp** |
+| Vitórias | **22 de 31** |
+
+Contra 6 de 6 na janela oficial. A diferença **não** é ruído: tem causa identificável.
+
+### 10.2 ACHADO: o modelo precisa de ~12 meses de história para vencer
+
+| Rodadas | Cortes de treino | Resultado |
+|---|---|---|
+| 2024-03 a 2024-10 | 1 a 8 | **perde em 8 de 8** (−0,22 a −1,84 pp) |
+| 2024-11 e 2024-12 | 9 e 10 | ganha pouco: +0,23 e +1,23 |
+| 2025-01 | 11 | **perde** (−1,21) |
+| **2025-02 a 2026-09** | **12 a 31** | **ganha em 20 de 20**, ganho médio **+1,70 pp** |
+
+Com menos de um ano de história, a média de quatro semanas é melhor que o LightGBM. A partir de 12 cortes
+(~2,3 milhões de linhas), o modelo nunca mais perdeu.
+
+**Consequência prática:** o valor deste modelo depende do histórico disponível. Num projeto novo, com seis meses
+de dado, o baseline seria a entrega correta — e isso é informação de engenharia, não de ciência de dados.
+
+### 10.3 A PROVA da tese: o modelo só antecipa o que já viu
+
+A seção 6.2 mostrou que o erro do baseline é sazonal e que dezembro e janeiro são seus piores meses (20 a 23%),
+porque as quatro semanas antes do Natal não contêm nenhum Natal. A previsão era que o modelo ganharia mais ali,
+por ter o calendário como feature. As quatro rodadas de dezembro e janeiro provam isso — e refinam a tese:
+
+| Mês previsto | Já havia visto esse mês do ano? | Modelo | Baseline | Ganho |
+|---|---|---|---|---|
+| 2024-12 | ❌ nenhum dezembro na história | 19,36% | 20,60% | +1,23 |
+| 2025-01 | ❌ nenhum janeiro na história | 20,58% | 19,37% | **−1,21** |
+| **2025-12** | ✅ viu dez/2024 | 15,64% | 20,86% | **+5,22** |
+| **2026-01** | ✅ viu jan/2025 | 18,08% | 23,15% | **+5,06** |
+
+Na **primeira** vez que encontra dezembro, o modelo quase não ganha. Na primeira vez que encontra janeiro, ele
+**perde**. Na **segunda** vez de cada um, produz os **dois maiores ganhos das 31 rodadas**.
+
+**O calendário como feature não é mágica: o modelo só antecipa o que já viu acontecer.** Ele não "sabe" que Natal
+é diferente — aprende isso olhando o Natal anterior. Sem nenhum Natal na história, a coluna
+`is_feriado_observado` não carrega informação alguma.
+
+É a frase da Aula 1 completada. O baseline **nunca** antecipa. O modelo antecipa **o que tem precedente**.
+
+### 10.4 E a janela oficial subestima o modelo
+
+| Janela | Ganho médio |
+|---|---|
+| As 6 rodadas oficiais (abr a set/2026) | +1,18 pp |
+| As 20 rodadas com ≥12 meses de história | +1,70 pp |
+| **Só dezembro e janeiro com precedente** | **+5,14 pp** |
+
+A janela que a spec 9.1 define cai, por acidente de onde os dados terminam, nos meses em que o baseline está no
+seu melhor. O resultado oficial de +1,18 pp é honesto e é o que vale; mas a leitura completa é que o ganho do
+modelo varia de **+0,09 a +5,22 pp** conforme o mês, e concentra-se onde o calendário importa.
+
+### 10.5 O viés do L1 aparece nas 31 rodadas
+
+O viés do modelo é negativo em **24 das 31** rodadas, confirmando em escala o que a seção 8.2 explicou: a
+`objective = regression_l1` mira a mediana, e a demanda é assimétrica à direita. A exceção mais visível é
+2024-09 (−10,75), na faixa de pouco histórico, onde o modelo ainda errava muito em qualquer direção.
