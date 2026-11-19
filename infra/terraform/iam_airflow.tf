@@ -55,6 +55,16 @@ resource "aws_iam_policy" "airflow" {
         Resource = [for prefixo in local.prefixos_controle_e_teste : "${aws_s3_bucket.datalake.arn}/${prefixo}/*"]
       },
 
+      {
+        # Fase 5: os binários dos modelos treinados (ml/modelos/<versao>.txt).
+        # SEM DeleteObject, igual à Bronze: modelo treinado é REGISTRO, não rascunho. As versões se
+        # acumulam, nenhuma se apaga — é o que torna possível responder "por que o modelo piorou?".
+        Sid      = "ModelosLerEGravarSemApagar"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:AbortMultipartUpload"]
+        Resource = ["${aws_s3_bucket.datalake.arn}/ml/*"]
+      },
+
       # ---------- Bucket de resultados do Athena ----------
       {
         Sid      = "ResultadosAthenaListarBucket"

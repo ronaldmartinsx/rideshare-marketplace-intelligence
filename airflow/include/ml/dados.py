@@ -106,9 +106,12 @@ def _ler(
         categories=list(categorias) if categorias else None,
         ctas_approach=(modo == CTAS),
         unload_approach=(modo == UNLOAD),
-        # O padrão da biblioteca é TRUE: os arquivos de rascunho ficariam no S3. O bucket de
-        # resultados expira em 7 dias, mas sujeira que se limpa sozinha ainda é sujeira.
-        keep_files=False,
+        # Mantido TRUE (o padrão) por uma razão de PERMISSÃO, não de preferência: apagar exigiria
+        # s3:DeleteObject no bucket de resultados, e a política do Airflow não tem essa ação DE
+        # PROPÓSITO desde a Fase 0 — "sem DeleteObject: quem limpa é a regra de ciclo de vida"
+        # (iam_airflow.tf). Em vez de alargar a política para o código caber, o código se adapta à
+        # decisão que já existia. Custo: ~0,4 GB parado por até 7 dias, cerca de US$ 0,002.
+        keep_files=True,
     )
 
 
