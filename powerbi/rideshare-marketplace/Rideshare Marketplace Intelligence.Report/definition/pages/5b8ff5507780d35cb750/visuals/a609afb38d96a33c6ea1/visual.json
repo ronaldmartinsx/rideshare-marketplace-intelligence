@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 4976,
-    "width": 320,
-    "height": 56,
     "z": 43000,
+    "height": 56,
+    "width": 320,
     "tabOrder": 43000
   },
   "visual": {
@@ -28,6 +28,7 @@
               },
               "queryRef": "dim_execucao.execucao",
               "nativeQueryRef": "execucao",
+              "active": true,
               "displayName": "Execução do modelo"
             }
           ]

@@ -4,9 +4,9 @@
   "position": {
     "x": 1072,
     "y": 784,
-    "width": 320,
-    "height": 840,
     "z": 30000,
+    "height": 840,
+    "width": 320,
     "tabOrder": 30000
   },
   "visual": {
@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "dim_zona.zona",
-              "nativeQueryRef": "zona"
+              "nativeQueryRef": "zona",
+              "active": true
             }
           ]
         },
@@ -65,8 +66,7 @@
             },
             "direction": "Descending"
           }
-        ],
-        "isDefaultSort": false
+        ]
       }
     },
     "objects": {
@@ -330,7 +330,6 @@
           }
         },
         "type": "Advanced",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -364,7 +363,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       },
       {
         "name": "Filter2890d9c92170e42876166ad7",
@@ -379,7 +379,6 @@
           }
         },
         "type": "Advanced",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -413,7 +412,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       },
       {
         "name": "Filterfae1d2292a4abab4b9d3ff2d",
@@ -428,7 +428,6 @@
           }
         },
         "type": "Advanced",
-        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -462,7 +461,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }
