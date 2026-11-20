@@ -1,0 +1,104 @@
+table ml_forecast_demanda
+	lineageTag: 9f4d9fb0-4966-4261-84eb-d565f140cf55
+
+	column hora_alvo
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 1817e00d-01fe-45af-a18d-e4cf930c0c66
+		summarizeBy: none
+		sourceColumn: hora_alvo
+
+		annotation SummarizationSetBy = Automatic
+
+	column zona_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 8e0244b7-b511-4605-b9ab-3e3d71127892
+		summarizeBy: sum
+		sourceColumn: zona_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column previsao
+		dataType: double
+		lineageTag: c666bdca-7c19-4b09-ad4c-5c7c38efd0cc
+		summarizeBy: sum
+		sourceColumn: previsao
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column intervalo_inferior
+		dataType: double
+		lineageTag: e3957337-45bc-4c3a-8728-2aea265626a7
+		summarizeBy: sum
+		sourceColumn: intervalo_inferior
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column intervalo_superior
+		dataType: double
+		lineageTag: e011358e-d4a1-4bc9-9393-b0f32f406bd7
+		summarizeBy: sum
+		sourceColumn: intervalo_superior
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column qtd_corridas_real
+		dataType: double
+		lineageTag: fe401039-a0ee-4238-8b22-7c757aa5346b
+		summarizeBy: sum
+		sourceColumn: qtd_corridas_real
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column versao_modelo
+		dataType: string
+		lineageTag: 9d7b5961-9bc9-4679-87b0-c573d4de3302
+		summarizeBy: none
+		sourceColumn: versao_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_rodada
+		dataType: string
+		lineageTag: a4e3aa5a-e344-424e-967d-ef7643e804c0
+		summarizeBy: none
+		sourceColumn: tipo_rodada
+
+		annotation SummarizationSetBy = Automatic
+
+	column execucao
+		dataType: string
+		lineageTag: fdb82171-6088-478f-84cc-4e8e33c8ed09
+		summarizeBy: none
+		sourceColumn: execucao
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes_alvo
+		dataType: string
+		lineageTag: fea59203-f688-4a3d-9451-54135ed4df4c
+		summarizeBy: none
+		sourceColumn: mes_alvo
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ml_forecast_demanda = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    ml_forecast_demanda_Table = gold_Schema{[Name="ml_forecast_demanda",Kind="Table"]}[Data]
+				in
+				    ml_forecast_demanda_Table
+

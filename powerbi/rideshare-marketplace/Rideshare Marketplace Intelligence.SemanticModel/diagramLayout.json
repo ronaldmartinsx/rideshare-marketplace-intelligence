@@ -137,6 +137,32 @@
             "width": 234
           },
           "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 1332.2709045578667,
+            "y": 257.23924494152897
+          },
+          "nodeIndex": "ml_backtest_metricas",
+          "nodeLineageTag": "9aefd5d4-c2f5-4c99-ae4a-4393195cde2f",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1616.2709045578667,
+            "y": 257.23924494152897
+          },
+          "nodeIndex": "ml_forecast_demanda",
+          "nodeLineageTag": "9f4d9fb0-4966-4261-84eb-d565f140cf55",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
         }
       ],
       "name": "All tables",

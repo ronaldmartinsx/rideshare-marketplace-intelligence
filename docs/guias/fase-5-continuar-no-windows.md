@@ -4,6 +4,32 @@
 
 ---
 
+## Progresso no Windows (sessão de 19/11/2026, à noite)
+
+| Bloco | Estado |
+|---|---|
+| A. Importar as 2 tabelas | ✅ feito pelo Ronald |
+| B. Auditoria | ✅ contagens e somas batem (ver nota abaixo) |
+| C. 3 relacionamentos (seção 5) | ✅ criados pelo Claude via MCP; 0 chaves órfãs; filtro de mês chega nas duas tabelas |
+| D. Medidas ✍️ | ⏳ **retomar aqui**: o Ronald responde a tabela de 6 cenários (seção 6 + cenários 5 e 6 abaixo) |
+| E. Acabamento / F. Visuais / G. Fechar | pendentes |
+
+**Nota da auditoria:** o Power BI soma `qtd_corridas_real` do backtest oficial em **126.277.028**, não 126.277.020.
+Nenhuma linha tem fração, então a soma em Double é exata. Hipótese (não verificada): no Athena a coluna é `REAL`
+(32 bits), a soma sai `REAL` e é exibida como `1.2627702E8`, com 8 dígitos significativos. Para confirmar no Mac:
+`sum(cast(qtd_corridas_real as double))`. Não muda decisão; corrigir o número aqui e na validação.
+
+**O 12,92% é a média dos 6 WAPEs mensais.** O WAPE agrupado (Σ erro ÷ Σ real) dá **12,91%**. O viés de −2,38% é
+agrupado (a média mensal dá −2,39%). O baseline (14,09%) só existe como média mensal.
+
+**Cenários extras para o bloco D:**
+- 5: na `ml_backtest_metricas` a coluna é `tipo` (não `tipo_rodada`), e a linha de outubro tem
+  `venceu_baseline = FALSE` e WAPE nulo — "venceu X de Y" sem filtro dá "6 de 7".
+- 6: o cartão do modelo mostra 12,91% (agrupado) ou 12,92% (média mensal)? A comparação com o baseline tem de
+  usar a mesma régua.
+
+---
+
 ## 0. Comece por aqui (estado em 20/11/2026)
 
 A Fase 5 tem **8 dos 10 passos fechados**. Falta este (passo 8) e o gate (passo 9).
