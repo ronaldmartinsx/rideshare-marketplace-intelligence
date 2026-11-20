@@ -1,8 +1,110 @@
+/// Previsão de demanda do LightGBM: hora-alvo × zona × execução. Traz o realizado na mesma linha (vazio na produção). tipo_rodada separa backtest (tem gabarito) de producao (não tem). Filtre sempre UMA execução pela dim_execucao. Fonte: gold.ml_forecast_demanda (Fase 5).
 table ml_forecast_demanda
 	lineageTag: 9f4d9fb0-4966-4261-84eb-d565f140cf55
 
+	/// Soma da previsão do modelo (previsao) em todas as linhas do contexto: backtest e produção. Vazio se não houver exatamente uma execução selecionada (dim_execucao), porque somar execuções duplica o resultado. Para comparar com o realizado, use [Previsão Backtest].
+	measure 'Previsão Total' = IF( HASONEVALUE(dim_execucao[execucao]), SUM(ml_forecast_demanda[previsao]) )
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 069c75fd-f5f7-469d-ab45-ac99d730f461
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Previsão do mês de produção (tipo_rodada = producao), que ainda não tem realizado publicado pela TLC (~2 meses de atraso). Ex.: 22.156.449 corridas para out/2026 na execução oficial.
+	measure 'Previsão Produção' = CALCULATE( [Previsão Total], ml_forecast_demanda[tipo_rodada] = "producao" )
+		formatString: #,##0
+		displayFolder: Previsão
+		lineageTag: b365a4a0-bc72-458b-809c-944ea4174f5d
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Corridas que de fato aconteceram (qtd_corridas_real), na mesma linha da previsão. Vazio na produção: BLANK quer dizer desconhecido, não zero. Vazio se não houver exatamente uma execução selecionada.
+	measure Realizado =
+			
+			IF( HASONEVALUE(dim_execucao[execucao]), SUM(ml_forecast_demanda[qtd_corridas_real]) )
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 354aaf43-fbf7-4f35-b8b8-5be1bed63916
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Soma, linha a linha (zona × hora), de |previsão − realizado|, só nas linhas com realizado. Não é a diferença das somas (isso seria o viés). Sem o filtro de realizado, o BLANK viraria 0 e a produção somaria a previsão inteira como erro.
+	measure 'Erro Absoluto' =
+			
+			IF(
+			    HASONEVALUE(dim_execucao[execucao]),
+			    SUMX(
+			        FILTER(ml_forecast_demanda, NOT ISBLANK(ml_forecast_demanda[qtd_corridas_real]) ),
+			        ABS(ml_forecast_demanda[previsao] - ml_forecast_demanda[qtd_corridas_real])
+			    )
+			)
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: c370d0dc-cfbe-411e-acd2-37c0c057c34c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Erro percentual ponderado: [Erro Absoluto] / [Realizado], razão das somas. É o WAPE agrupado do recorte (12,91% nas 6 rodadas oficiais); num mês só, bate com wape_modelo da ml_backtest_metricas (reconciliado DAX × Python nos 6 meses).
+	measure WAPE = DIVIDE([Erro Absoluto], [Realizado])
+		formatString: 0.00%
+		displayFolder: Previsão
+		lineageTag: e484c40b-a7ac-4496-93f0-f75e7b585c5a
+
+	/// ([Previsão Backtest] − [Realizado]) / [Realizado]. Negativo = o modelo subestima. Nas 6 rodadas oficiais, −2,38%: consequência da perda L1, que mira a mediana.
+	measure 'Viés %' = DIVIDE([Previsão Backtest] - [Realizado], [Realizado])
+		formatString: 0.00%
+		displayFolder: Previsão
+		lineageTag: 57bea2d9-5c34-4db8-8b2b-d69e8c3c0862
+
+	/// Previsão só das rodadas de backtest (tipo_rodada = backtest), as que têm realizado para comparar. Base do [Viés %]: sem esse filtro, a previsão de produção (sem gabarito) inflaria o numerador.
+	measure 'Previsão Backtest' = CALCULATE( [Previsão Total], ml_forecast_demanda[tipo_rodada] = "backtest" )
+		formatString: #,##0
+		displayFolder: Base
+		lineageTag: 56983863-b117-48ae-8f49-579ec6129710
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Qual execução do modelo está no ar (data e hora UTC), com as rodadas de backtest e o total de execuções disponíveis. Com zero ou mais de uma selecionada, mostra um aviso (somar execuções duplica a previsão). Medida de apresentação (Claude).
+	measure 'HTML Execucao no Ar' =
+			VAR n = COUNTROWS ( VALUES ( dim_execucao[execucao] ) )
+			VAR total = COUNTROWS ( ALL ( dim_execucao ) )
+			VAR e = SELECTEDVALUE ( dim_execucao[execucao] )
+			VAR quando =
+			    MID ( e, 7, 2 ) & "/" & MID ( e, 5, 2 ) & "/" & LEFT ( e, 4 )
+			        & " " & MID ( e, 10, 2 ) & ":" & MID ( e, 12, 2 ) & " UTC"
+			VAR rod = [Rodadas Testadas]
+			VAR estilo = "font-family:Segoe UI,sans-serif;font-size:11px;line-height:1.5;"
+			RETURN
+			    IF (
+			        n = 1,
+			        "<div style='" & estilo & "color:#44546A'>Execução do modelo no ar: <b style='color:#1F2A37'>" & quando & "</b> · "
+			            & rod & IF ( rod = 1, " rodada", " rodadas" ) & " de backtest · "
+			            & total & " execuções disponíveis. Troque na segmentação para comparar versões.</div>",
+			        "<div style='" & estilo & "color:#9A3412;font-weight:600'>⚠ Selecione exatamente uma execução do modelo: somar execuções duplica a previsão.</div>"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 8ea8c195-c338-41c5-b7f0-b5f13e9c86c9
+
+	/// As 3 limitações da previsão (viés, clima observado, atraso da TLC), em linguagem de negócio. O viés vem de [Viés %] nas rodadas da execução selecionada, ignorando os demais filtros. Medida de apresentação (Claude).
+	measure 'HTML Limitacoes' =
+			VAR v =
+			    CALCULATE ( [Viés %], REMOVEFILTERS (), VALUES ( dim_execucao[execucao] ) )
+			VAR vies =
+			    IF ( ISBLANK ( v ), "cerca de 2,4%", FORMAT ( ABS ( v ), "0.0%", "pt-BR" ) )
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif;font-size:11px;line-height:1.55;color:#44546A'>"
+			    & "<b style='color:#1F2A37'>O que este resultado não diz</b><br>"
+			    & "<b>1. O modelo erra para baixo</b> em " & vies & " no total: ele foi treinado para acertar o valor típico (a mediana), não a média.<br>"
+			    & "<b>2. O teste é otimista no clima:</b> usa o tempo que de fato fez. No uso real só haveria a previsão do tempo, com erro próprio.<br>"
+			    & "<b>3. A previsão ainda não é operacional:</b> a TLC publica os dados com cerca de 2 meses de atraso, então o mês previsto já passou quando a previsão fica pronta. Está validada em backtest; em produção seria alimentada por dados em tempo real."
+			    & "</div>"
+		displayFolder: Apresentacao
+		lineageTag: 1c14f4c1-f0be-462a-a303-0365fc69677d
+
+	/// Hora prevista (hora local de Nova York). Chave para a dim_tempo_hora[hora]; use a dimensão nos visuais.
 	column hora_alvo
 		dataType: dateTime
+		isHidden
 		formatString: General Date
 		lineageTag: 1817e00d-01fe-45af-a18d-e4cf930c0c66
 		summarizeBy: none
@@ -10,8 +112,10 @@ table ml_forecast_demanda
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Zona prevista. Chave para a dim_zona[zona_id]; use a dimensão nos visuais.
 	column zona_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 8e0244b7-b511-4605-b9ab-3e3d71127892
 		summarizeBy: sum
@@ -75,16 +179,20 @@ table ml_forecast_demanda
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Chave para a dim_execucao. Escondida: a segmentação usa dim_execucao[execucao], que filtra as duas tabelas de ML.
 	column execucao
 		dataType: string
+		isHidden
 		lineageTag: fdb82171-6088-478f-84cc-4e8e33c8ed09
 		summarizeBy: none
 		sourceColumn: execucao
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Mês previsto (partição no Athena). Sem relacionamento de propósito (decisão 3.2): o filtro de mês chega pela cadeia dim_mes → dim_periodo_espera → dim_tempo_hora. Use a dim_mes.
 	column mes_alvo
 		dataType: string
+		isHidden
 		lineageTag: fea59203-f688-4a3d-9451-54135ed4df4c
 		summarizeBy: none
 		sourceColumn: mes_alvo

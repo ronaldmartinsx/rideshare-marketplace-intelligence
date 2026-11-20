@@ -62,3 +62,11 @@ relationship ml_backtest_metricas_mes_alvo_dim_mes_ano_mes
 	fromColumn: ml_backtest_metricas.mes_alvo
 	toColumn: dim_mes.ano_mes
 
+relationship ml_forecast_demanda_execucao_dim_execucao_execucao
+	fromColumn: ml_forecast_demanda.execucao
+	toColumn: dim_execucao.execucao
+
+relationship ml_backtest_metricas_execucao_dim_execucao_execucao
+	fromColumn: ml_backtest_metricas.execucao
+	toColumn: dim_execucao.execucao
+

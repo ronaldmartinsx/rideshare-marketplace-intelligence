@@ -1,16 +1,84 @@
+/// Uma linha por execução × mês previsto, com o WAPE e o viés do modelo e do baseline sazonal lado a lado. WAPE gravado em pontos (12,35 = 12,35%). A linha tipo = producao não tem métricas. Fonte: gold.ml_backtest_metricas (Fase 5).
 table ml_backtest_metricas
 	lineageTag: 9aefd5d4-c2f5-4c99-ae4a-4393195cde2f
 
+	/// Média do WAPE do modelo nas rodadas de backtest (tipo = backtest), ÷ 100 para ficar na escala do [WAPE]. É a média dos meses (12,92%), a mesma régua do [WAPE Baseline]. Vazio sem exatamente uma execução.
+	measure 'WAPE Modelo' =
+			
+			IF(
+			    HASONEVALUE(dim_execucao[execucao]),
+			    CALCULATE(
+			        DIVIDE(AVERAGE(ml_backtest_metricas[wape_modelo]), 100),
+			        ml_backtest_metricas[tipo] = "backtest"
+			    )
+			)
+		formatString: 0.00%
+		displayFolder: Backtest
+		lineageTag: 6ba78d2c-a0a7-4324-b19c-b2b647a7af3a
+
+	/// Média do WAPE do baseline sazonal nas rodadas de backtest, ÷ 100. É a régua do modelo: métrica sem baseline ao lado é número solto.
+	measure 'WAPE Baseline' = ```
+			
+			IF(
+			    HASONEVALUE(dim_execucao[execucao]), 
+			    CALCULATE(
+			        DIVIDE(AVERAGE(ml_backtest_metricas[wape_baseline]), 100),
+			        ml_backtest_metricas[tipo] = "backtest"
+			    )
+			)
+			```
+		formatString: 0.00%
+		displayFolder: Backtest
+		lineageTag: e999092b-4251-477c-9693-1d347df0a774
+
+	/// Média de ganho_pp: quantos pontos percentuais o WAPE do modelo fica abaixo do baseline. Em pontos, não em %: 1,18 pp não é "1,18% melhor" (a melhora relativa seria 1,18 / 14,09 = 8,3%).
+	measure 'Ganho (pp)' =
+			
+			IF(
+			    HASONEVALUE(dim_execucao[execucao]),
+			    CALCULATE(
+			        AVERAGE(ml_backtest_metricas[ganho_pp]),
+			        ml_backtest_metricas[tipo] = "backtest"
+			    )
+			)
+		formatString: 0.00 "pp"
+		displayFolder: Backtest
+		lineageTag: a183a961-f3e9-4727-9383-9197856677a1
+
+	/// Rodadas de backtest em que o modelo errou menos que o baseline. Herda o filtro de backtest e a proteção de execução de [Rodadas Testadas].
+	measure 'Rodadas Vencidas' = CALCULATE( [Rodadas Testadas], ml_backtest_metricas[venceu_baseline] )
+		formatString: #,##0
+		displayFolder: Backtest
+		lineageTag: 515a4220-2b40-4754-b388-104e5288b0a8
+
+	/// Quantidade de rodadas de backtest da execução. A linha de produção fica fora (sem gabarito, venceu_baseline = FALSE).
+	measure 'Rodadas Testadas' =
+			
+			IF(
+			    HASONEVALUE(dim_execucao[execucao]),
+			    CALCULATE(
+			        COUNTROWS(ml_backtest_metricas),
+			        ml_backtest_metricas[tipo] = "backtest"
+			    )
+			)
+		formatString: #,##0
+		displayFolder: Backtest
+		lineageTag: 2859de22-32a4-4b70-b0db-99a581bbaabd
+
+	/// Chave para a dim_execucao. Escondida: a segmentação usa dim_execucao[execucao].
 	column execucao
 		dataType: string
+		isHidden
 		lineageTag: 23b045f0-dbd5-4fb0-9423-5f827076b1d7
 		summarizeBy: none
 		sourceColumn: execucao
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Mês previsto pela rodada. Chave para a dim_mes[ano_mes]; use a dimensão nos visuais.
 	column mes_alvo
 		dataType: string
+		isHidden
 		lineageTag: 82dfab6d-dabd-4e05-9d77-b37d6767ccd5
 		summarizeBy: none
 		sourceColumn: mes_alvo

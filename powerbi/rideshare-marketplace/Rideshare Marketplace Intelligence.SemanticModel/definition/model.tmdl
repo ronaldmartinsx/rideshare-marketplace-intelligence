@@ -25,6 +25,7 @@ ref table fct_od_mensal
 ref table dim_zona_destino
 ref table ml_backtest_metricas
 ref table ml_forecast_demanda
+ref table dim_execucao
 
 ref cultureInfo en-US
 ref cultureInfo pt-BR

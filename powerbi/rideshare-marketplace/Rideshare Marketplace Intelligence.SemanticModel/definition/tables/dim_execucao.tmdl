@@ -1,0 +1,21 @@
+/// Uma linha por execução do pipeline de ML (versionamento do modelo). Referência da ml_backtest_metricas no Power Query, só a coluna execucao, sem duplicadas. Existe porque as duas tabelas de ML têm a coluna execucao mas não se ligam entre si: a segmentação de execução mora aqui para filtrar as duas (refinamento da decisão 3.1 da Fase 5). Medida aditiva sobre mais de uma execução duplica o resultado.
+table dim_execucao
+	lineageTag: 5c3a4f48-5fb4-4088-9b08-c7d3c4e50807
+
+	/// Identificador da execução: data e hora UTC em que o backtest rodou (AAAAMMDDTHHMMSSZ).
+	column execucao
+		dataType: string
+		lineageTag: e5561d64-8f8c-48da-a2b3-335d08bf06bf
+		summarizeBy: none
+		sourceColumn: execucao
+
+	partition dim_execucao = m
+		mode: import
+		source =
+				let
+				    Source = ml_backtest_metricas,
+				    SoExecucao = Table.SelectColumns(Source, {"execucao"}),
+				    Distintas = Table.Distinct(SoExecucao)
+				in
+				    Distintas
+
