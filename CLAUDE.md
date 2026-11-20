@@ -4,9 +4,10 @@
 Projeto de portfólio de engenharia de dados (AWS S3 + Glue + Athena/Iceberg, dbt, Airflow, Power BI, IA).
 Especificação completa: docs/PROJECT_SPEC.md. Antes de cada fase, leia a Seção 1 e a fase atual na Seção 12.
 Fase atual: 5  ← atualizar ao avançar
-Fase 4 fechada em 08/11/2026, sem pendências: as do Mac e a do Windows foram fechadas em 09/11/2026
-(docs/aprendizados/fase-4.md, seção 6). O Power BI lê a Gold pelo papel RideshareLeituraGold.
-No Windows, ler antes docs/guias/fase-4-continuar-no-windows.md (a memória do Claude Code fica no Mac).
+Fase 4 fechada em 08/11/2026, sem pendências. O Power BI lê a Gold pelo papel RideshareLeituraGold.
+Fase 5: 8 dos 10 passos fechados (modelo venceu o baseline em 6 de 6; DAG ml_forecast roda no contêiner).
+Falta a raia 5 do relatório (Windows) e o gate. Branch fase-5-ml no GitHub.
+No Windows, ler antes docs/guias/fase-5-continuar-no-windows.md (a memória do Claude Code fica no Mac).
 
 ## Objetivo duplo (inegociável)
 1. Construir o sistema com qualidade de mercado.
