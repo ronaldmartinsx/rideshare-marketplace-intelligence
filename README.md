@@ -6,7 +6,9 @@ Projeto de portfólio de engenharia de dados sobre as corridas de aplicativo (Ub
 
 ## O relatório
 
-Uma página única no Power BI que responde, com 672 milhões de viagens, onde falta oferta, como evolui a economia de cada corrida, qual foi o efeito da taxa de congestionamento de Manhattan e onde a Lyft perde terreno para a Uber. Detalhes, prints e decisões de desenho em [`powerbi/README.md`](powerbi/README.md).
+Uma página única no Power BI que responde, com 672 milhões de viagens, onde falta oferta, como evolui a economia de cada corrida, qual foi o efeito da taxa de congestionamento de Manhattan, onde a Lyft perde terreno para a Uber e se dá para prever a demanda (com o modelo de ML da Fase 5). Os textos das respostas são gerados pelos dados e se atualizam sozinhos. Detalhes, prints e decisões de desenho em [`powerbi/README.md`](powerbi/README.md).
+
+**[▶ Abrir o relatório interativo no Power BI](https://app.powerbi.com/view?r=eyJrIjoiMmMwODgyYjUtNjYxOS00MjlkLTg3ZTctNGNlZTQ0MDU1ZjE1IiwidCI6IjJhNWJlYTI4LWFkNmItNDYxNi05ZjBkLWFmN2U5M2U5MDQyZCJ9)** (público, sem login)
 
 https://github.com/user-attachments/assets/57491ecf-722b-4c4d-a495-e67a7a7986be
 
