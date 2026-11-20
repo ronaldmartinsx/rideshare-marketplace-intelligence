@@ -4,9 +4,9 @@
   "position": {
     "x": 736,
     "y": 1888,
-    "z": 33000,
-    "height": 376,
     "width": 664,
+    "height": 376,
+    "z": 33000,
     "tabOrder": 33000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },
@@ -245,8 +244,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Alta de ~9% em dois anos'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Receita Milha"
                 }
               }
             },

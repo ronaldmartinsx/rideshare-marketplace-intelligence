@@ -331,8 +331,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'O resto de Manhattan é a maior origem; Brooklyn e Queens vêm logo atrás'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_od_mensal"
+                    }
+                  },
+                  "Property": "Subtitulo Origem CBD Mapa"
                 }
               }
             },

@@ -119,6 +119,256 @@ table fct_espera_histograma
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Subtítulo dinâmico do ranking de zonas da raia 1: a zona com o maior P90 entre as que têm 1.000 ou mais corridas (as mesmas regras do filtro do visual), no período escolhido. Medida de apresentação (Claude), prova de conceito do ADR 0023.
+	measure 'Subtitulo Ranking P90' =
+			VAR zonas =
+			    FILTER (
+			        ADDCOLUMNS (
+			            FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			            "@n", [Corridas com espera valida],
+			            "@p", [Espera P90 (min)]
+			        ),
+			        [@n] >= 1000
+			    )
+			VAR lider = TOPN ( 1, zonas, [@p], DESC )
+			VAR zona_lider = MAXX ( lider, dim_zona[zona_id] )
+			VAR p90_lider = MAXX ( lider, [@p] )
+			VAR nome = LOOKUPVALUE ( dim_zona[zona], dim_zona[zona_id], zona_lider )
+			-- nome curto: a TLC junta zonas com barra (Breezy Point/Fort Tilden/Riis Beach); fica a primeira parte
+			VAR barra = SEARCH ( "/", nome, 1, 0 )
+			VAR curto = IF ( barra > 0, LEFT ( nome, barra - 1 ), nome )
+			RETURN
+			    IF ( NOT ISBLANK ( zona_lider ), curto & " lidera, com P90 de " & FORMAT ( p90_lider, "0", "pt-BR" ) & " min" )
+		displayFolder: Apresentacao
+		lineageTag: e43a5ac6-95e6-4251-a0fc-1c0e5e5ca45a
+
+	/// P90 da espera nos últimos 12 meses com dados ([Mes Fim Dados] e os 11 anteriores), trocando o filtro de mês pela janela. Os demais filtros (zona, operadora, hora) continuam valendo. Escrita pelo Claude (ADR 0023).
+	measure 'Espera P90 (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Espera P90 (min)], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: #,##0.0
+		displayFolder: Janelas
+		lineageTag: 3535a0c2-d9ac-4884-920d-e65117503d3a
+
+	/// P90 da espera nos 12 meses anteriores à janela atual (ex.: out/2024–set/2025). Par do [Espera P90 (12m)]. Escrita pelo Claude (ADR 0023).
+	measure 'Espera P90 (12m ant.)' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    CALCULATE ( [Espera P90 (min)], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: #,##0.0
+		displayFolder: Janelas
+		lineageTag: e3e33b70-dca0-4840-bc39-7443970ae596
+
+	/// Trecho da raia 1: quem puxou a variação do P90 (a operadora que mais variou no sentido da cidade) e o que aconteceu com as demais; variação menor que 0,3 min = estável. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R1 Operadoras' =
+			VAR fmt = "pt-BR"
+			VAR lim = 0.3
+			VAR a = CALCULATE ( [Espera P90 (12m)], REMOVEFILTERS () )
+			VAR b = CALCULATE ( [Espera P90 (12m ant.)], REMOVEFILTERS () )
+			VAR sinal = SWITCH ( TRUE (), a - b > lim, 1, b - a > lim, -1, 0 )
+			VAR ops =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                VALUES ( dim_operadora[operadora_id] ),
+			                "@nome", CALCULATE ( MAX ( dim_operadora[operadora] ) ),
+			                "@a", [Espera P90 (12m)],
+			                "@b", [Espera P90 (12m ant.)]
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        NOT ISBLANK ( [@a] ) && NOT ISBLANK ( [@b] )
+			    )
+			VAR lider = TOPN ( 1, FILTER ( ops, ( [@a] - [@b] ) * sinal > lim ), ( [@a] - [@b] ) * sinal, DESC )
+			VAR id_lider = MAXX ( lider, dim_operadora[operadora_id] )
+			VAR frase_lider =
+			    IF ( NOT ISEMPTY ( lider ),
+			        ", puxado pela " & MAXX ( lider, [@nome] ) & " (" & FORMAT ( MAXX ( lider, [@b] ), "0.0", fmt ) & " → " & FORMAT ( MAXX ( lider, [@a] ), "0.0", fmt ) & " min)" )
+			VAR outras =
+			    CONCATENATEX (
+			        FILTER ( ops, dim_operadora[operadora_id] <> id_lider ),
+			        "a " & [@nome]
+			            & IF ( ABS ( [@a] - [@b] ) <= lim,
+			                " ficou estável em ~" & FORMAT ( [@a], "0.0", fmt ),
+			                IF ( [@a] > [@b], " subiu", " caiu" ) & " de " & FORMAT ( [@b], "0.0", fmt ) & " para " & FORMAT ( [@a], "0.0", fmt ) & " min" ),
+			        "; ",
+			        [@nome], ASC
+			    )
+			RETURN
+			    frase_lider & IF ( outras <> "", "; " & outras )
+		displayFolder: Apresentacao
+		lineageTag: a297c672-d4c3-4675-b7ad-4ce16507ecd1
+
+	/// Trecho da raia 1: as 3 zonas de maior P90 nos últimos 12 meses (1.000+ corridas), com a faixa de espera; "fora de Manhattan" só se nenhuma for de Manhattan. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R1 Zonas' =
+			VAR zonas =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			                "@n", [Corridas com espera valida (12m)],
+			                "@p", [Espera P90 (12m)],
+			                "@borough", CALCULATE ( MAX ( dim_zona[borough] ) ),
+			                "@nome", CALCULATE ( MAX ( dim_zona[zona] ) )
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        [@n] >= 1000
+			    )
+			VAR top3 = TOPN ( 3, zonas, [@p], DESC )
+			VAR t =
+			    ADDCOLUMNS (
+			        top3,
+			        "@r", RANKX ( top3, [@p], , DESC ),
+			        "@curto", VAR barra = SEARCH ( "/", [@nome], 1, 0 ) RETURN IF ( barra > 0, LEFT ( [@nome], barra - 1 ), [@nome] )
+			    )
+			VAR n1 = MAXX ( FILTER ( t, [@r] = 1 ), [@curto] )
+			VAR n2 = MAXX ( FILTER ( t, [@r] = 2 ), [@curto] )
+			VAR n3 = MAXX ( FILTER ( t, [@r] = 3 ), [@curto] )
+			VAR nomes = n1 & IF ( NOT ISBLANK ( n3 ), ", " & n2 & " e " & n3, IF ( NOT ISBLANK ( n2 ), " e " & n2 ) )
+			VAR lo = FORMAT ( ROUND ( MINX ( t, [@p] ), 0 ), "0" )
+			VAR hi = FORMAT ( ROUND ( MAXX ( t, [@p] ), 0 ), "0" )
+			VAR faixa = IF ( lo = hi, "~" & hi & " min", lo & " a " & hi & " min" )
+			VAR fora = IF ( ISEMPTY ( FILTER ( t, [@borough] = "Manhattan" ) ), "fora de Manhattan ", "nas zonas " )
+			RETURN
+			    IF ( NOT ISEMPTY ( t ), fora & "(" & nomes & ": " & faixa & ")" )
+		displayFolder: Apresentacao
+		lineageTag: c6d58cfa-8d81-4eaf-bf78-c4c13a231faf
+
+	/// Trecho da raia 1: o período do dia e os tipos de dia com as piores esperas nos últimos 12 meses (a pior célula hora × tipo de dia e os tipos a até 1 min dela, na mesma hora). Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R1 Horario' =
+			VAR celulas =
+			    CALCULATETABLE (
+			        ADDCOLUMNS (
+			            SUMMARIZE ( dim_periodo_espera, dim_periodo_espera[tipo_dia], dim_periodo_espera[hora_do_dia] ),
+			            "@p", [Espera P90 (12m)]
+			        ),
+			        REMOVEFILTERS ()
+			    )
+			VAR pior = TOPN ( 1, celulas, [@p], DESC )
+			VAR h = MAXX ( pior, dim_periodo_espera[hora_do_dia] )
+			VAR p_max = MAXX ( pior, [@p] )
+			VAR mesma_hora = FILTER ( celulas, dim_periodo_espera[hora_do_dia] = h && [@p] >= p_max - 1 )
+			VAR tipos =
+			    CONCATENATEX (
+			        mesma_hora,
+			        SUBSTITUTE ( SUBSTITUTE ( dim_periodo_espera[tipo_dia], "fim_de_semana", "fim de semana" ), "dia_util", "dia útil" ),
+			        " e ",
+			        [@p], DESC
+			    )
+			VAR periodo = SWITCH ( TRUE (), h < 6, "madrugadas", h < 12, "manhãs", h < 18, "tardes", "noites" )
+			VAR lo = FORMAT ( ROUND ( MINX ( mesma_hora, [@p] ), 0 ), "0" )
+			VAR hi = FORMAT ( ROUND ( p_max, 0 ), "0" )
+			VAR faixa = IF ( lo = hi, "~" & hi & " min", lo & " a " & hi & " min" )
+			RETURN
+			    IF ( NOT ISBLANK ( h ), "nas " & periodo & " de " & tipos & " (" & h & "h: " & faixa & ")" )
+		displayFolder: Apresentacao
+		lineageTag: b69b6a77-624f-4a71-8e6b-092a968fa3d2
+
+	/// Corridas com espera válida nos últimos 12 meses com dados. É a amostra mínima das zonas nas respostas (1.000+). Escrita pelo Claude (ADR 0023).
+	measure 'Corridas com espera valida (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Corridas com espera valida], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: #,##0
+		displayFolder: Janelas
+		lineageTag: 83e353c3-68e3-4ba8-84f2-1f1de7d0fe46
+
+	/// Abertura da raia 1 gerada pelos dados: tendência do P90 (12 meses × 12 anteriores, ±0,3 min = estável), operadora que puxou, zonas e horários de maior espera. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Abertura 1' =
+			VAR fmt = "pt-BR"
+			VAR a = CALCULATE ( [Espera P90 (12m)], REMOVEFILTERS () )
+			VAR b = CALCULATE ( [Espera P90 (12m ant.)], REMOVEFILTERS () )
+			VAR d = a - b
+			VAR verbo = SWITCH ( TRUE (), d > 0.3, "piorou", d < -0.3, "melhorou", "ficou estável" )
+			VAR tendencia =
+			    IF (
+			        ABS ( d ) <= 0.3,
+			        "o P90 da cidade ficou em ~" & FORMAT ( a, "0.0", fmt ) & " min nos últimos 12 meses (" & [Texto Janela Atual] & ")",
+			        "o P90 da cidade " & IF ( d > 0, "subiu", "caiu" ) & " de " & FORMAT ( b, "0.0", fmt ) & " min (" & [Texto Janela Anterior] & ") para "
+			            & FORMAT ( a, "0.0", fmt ) & " min (" & [Texto Janela Atual] & ")"
+			    )
+			VAR texto =
+			    "A espera " & verbo & ": " & tendencia & [Texto R1 Operadoras] & ". Falta oferta " & [Texto R1 Zonas] & " e " & [Texto R1 Horario] & "."
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:20px;font-weight:700;color:#B04A00'>RAIA 1 DE 5 · ONDE E QUANDO FALTA OFERTA?</div>"
+			    & "<div style='font-size:14px;line-height:1.45;color:#1F1F1F;margin-top:4px'>" & texto & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: f85901d2-4129-4f4f-ac3e-ae47bfb5977d
+
+	/// Cartão de resposta 1 do cabeçalho (curto), das mesmas regras da [HTML Abertura 1], com o selo da janela. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Resposta 1' =
+			VAR fmt = "pt-BR"
+			VAR a = CALCULATE ( [Espera P90 (12m)], REMOVEFILTERS () )
+			VAR b = CALCULATE ( [Espera P90 (12m ant.)], REMOVEFILTERS () )
+			VAR d = a - b
+			VAR ops = [Texto R1 Operadoras]
+			VAR puxado = IF ( LEFT ( ops, 8 ) = ", puxado", LEFT ( ops, SEARCH ( " (", ops, 1, LEN ( ops ) + 1 ) - 1 ) )
+			VAR z = [Texto R1 Zonas]
+			VAR onde = IF ( LEFT ( z, 4 ) = "fora", "fora de Manhattan", "nas zonas de maior espera" )
+			VAR h = [Texto R1 Horario]
+			VAR quando = LEFT ( h, SEARCH ( " de ", h, 1, LEN ( h ) + 1 ) - 1 )
+			VAR tendencia =
+			    IF (
+			        ABS ( d ) <= 0.3,
+			        "A espera ficou estável: P90 de ~" & FORMAT ( a, "0.0", fmt ) & " min",
+			        "A espera " & IF ( d > 0, "piorou", "melhorou" ) & ": P90 de " & FORMAT ( b, "0.0", fmt ) & " para " & FORMAT ( a, "0.0", fmt ) & " min" & puxado
+			    )
+			VAR texto = tendencia & "; falta oferta " & onde & " e " & quando & "."
+			VAR selo = "Últimos 12 meses (" & [Texto Janela Atual] & ") × 12 anteriores"
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:12px;font-weight:700;color:#B04A00'>1 · OFERTA</div>"
+			    & "<div style='font-size:13px;line-height:1.35;color:#1F1F1F;margin:3px 0'>" & texto & "</div>"
+			    & "<div style='font-size:10px;color:#605E5C'>" & selo & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: b923b73a-7fb0-400a-8e44-b36ccb7095d1
+
+	/// Subtítulo do mapa do P90: o distrito de NY com maior e o com menor P90 no período escolhido (só zonas conhecidas, dentro de NY). Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Mapa P90' =
+			VAR fmt = "pt-BR"
+			VAR b =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS ( VALUES ( dim_zona[borough] ), "@p", [Espera P90 (min)] ),
+			            dim_zona[is_fora_de_nyc] = FALSE (),
+			            dim_zona[is_zona_conhecida] = TRUE ()
+			        ),
+			        NOT ISBLANK ( [@p] )
+			    )
+			VAR alto = TOPN ( 1, b, [@p], DESC )
+			VAR baixo = TOPN ( 1, b, [@p], ASC )
+			RETURN
+			    IF (
+			        COUNTROWS ( b ) > 1,
+			        MAXX ( alto, dim_zona[borough] ) & " espera mais (" & FORMAT ( MAXX ( alto, [@p] ), "0.0", fmt ) & " min); "
+			            & MAXX ( baixo, dim_zona[borough] ) & ", menos (" & FORMAT ( MAXX ( baixo, [@p] ), "0.0", fmt ) & " min)"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 4bf638e1-e4e7-461e-9162-88b55d19b160
+
+	/// Subtítulo da matriz hora × tipo de dia: a pior combinação no período escolhido. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Heatmap P90' =
+			VAR celulas =
+			    FILTER (
+			        ADDCOLUMNS (
+			            SUMMARIZE ( dim_periodo_espera, dim_periodo_espera[tipo_dia], dim_periodo_espera[hora_do_dia] ),
+			            "@p", [Espera P90 (min)]
+			        ),
+			        NOT ISBLANK ( [@p] )
+			    )
+			VAR pior = TOPN ( 1, celulas, [@p], DESC )
+			VAR tipo = SUBSTITUTE ( SUBSTITUTE ( MAXX ( pior, dim_periodo_espera[tipo_dia] ), "fim_de_semana", "fim de semana" ), "dia_util", "dia útil" )
+			RETURN
+			    IF (
+			        NOT ISEMPTY ( pior ),
+			        "Pior combinação: " & tipo & " às " & MAXX ( pior, dim_periodo_espera[hora_do_dia] ) & "h (" & FORMAT ( MAXX ( pior, [@p] ), "0.0", "pt-BR" ) & " min)"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 7b2d1f50-96c6-4768-b281-582e47cb4573
+
 	column hora_do_dia
 		dataType: int64
 		isHidden

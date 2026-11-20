@@ -20,6 +20,97 @@ table fct_od_mensal
 		displayFolder: CBD
 		lineageTag: 584d4392-b17c-4324-a579-f6ec6388fc8c
 
+	/// Trecho da raia 3: de qual distrito de origem veio a variação das corridas que entram no CBD (maior variação absoluta por dia, 12 meses antes × depois da taxa) e quais ficaram estáveis (±2%), entre os distritos com 2%+ do volume. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R3 Origens' =
+			VAR fmt = "pt-BR"
+			VAR d = [Data Taxa CBD]
+			VAR m0 = DATE ( YEAR ( d ), MONTH ( d ), 1 )
+			VAR antes = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= EDATE ( m0, -12 ) && dim_mes[mes_inicio] < m0 )
+			VAR depois = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= m0 && dim_mes[mes_inicio] < EDATE ( m0, 12 ) )
+			VAR dias_a = SUMX ( antes, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR dias_d = SUMX ( depois, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR total_a = CALCULATE ( [Corridas entrando no CBD], REMOVEFILTERS (), antes )
+			VAR total_d = CALCULATE ( [Corridas entrando no CBD], REMOVEFILTERS (), depois )
+			VAR sinal = IF ( total_d / dias_d < total_a / dias_a, -1, 1 )
+			VAR b =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                VALUES ( dim_zona[borough] ),
+			                "@a", CALCULATE ( [Corridas entrando no CBD], antes ) / dias_a,
+			                "@d", CALCULATE ( [Corridas entrando no CBD], depois ) / dias_d
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        [@a] * dias_a >= 0.02 * total_a
+			    )
+			VAR t = ADDCOLUMNS ( b, "@v", DIVIDE ( [@d], [@a] ) - 1, "@delta", [@d] - [@a] )
+			VAR lider = TOPN ( 1, FILTER ( t, [@delta] * sinal > 0 ), [@delta] * sinal, DESC )
+			VAR nome_lider = MAXX ( lider, dim_zona[borough] )
+			VAR de_lider = SWITCH ( nome_lider, "Manhattan", "do resto de Manhattan", "Staten Island", "de Staten Island", "do " & nome_lider )
+			VAR estaveis = FILTER ( t, ABS ( [@v] ) <= 0.02 && dim_zona[borough] <> nome_lider )
+			VAR lista = CONCATENATEX ( estaveis, dim_zona[borough], ", ", [@a], DESC )
+			VAR n_est = COUNTROWS ( estaveis )
+			VAR lista_e = IF ( n_est > 1, SUBSTITUTE ( lista, ", ", " e ", n_est - 1 ), lista )
+			RETURN
+			    IF (
+			        NOT ISEMPTY ( lider ),
+			        "A " & IF ( sinal < 0, "queda", "alta" ) & " veio " & de_lider & " (" & FORMAT ( MAXX ( lider, [@v] ), "+0.0%;−0.0%", fmt ) & " nas corridas que entram no CBD)"
+			            & IF ( n_est > 0, "; " & lista_e & IF ( n_est > 1, " ficaram estáveis", " ficou estável" ) )
+			    )
+		displayFolder: Apresentacao
+		lineageTag: c1e55890-e72a-4b72-83e4-a7039ca9f2ab
+
+	/// Subtítulo do mapa de origem das corridas que entram no CBD: os 3 distritos que mais mandam corridas para o CBD no período escolhido, com a fatia de cada um. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Origem CBD Mapa' =
+			VAR fmt = "pt-BR"
+			VAR total = [Corridas entrando no CBD]
+			VAR b = FILTER ( ADDCOLUMNS ( VALUES ( dim_zona[borough] ), "@n", [Corridas entrando no CBD] ), [@n] > 0 )
+			VAR top3 = TOPN ( 3, b, [@n], DESC )
+			VAR t = ADDCOLUMNS ( top3, "@r", RANKX ( top3, [@n], , DESC ), "@s", DIVIDE ( [@n], total ) )
+			VAR nome1 = MAXX ( FILTER ( t, [@r] = 1 ), dim_zona[borough] )
+			VAR rot1 = IF ( nome1 = "Manhattan", "O resto de Manhattan", nome1 )
+			VAR s1 = MAXX ( FILTER ( t, [@r] = 1 ), [@s] )
+			VAR outros = CONCATENATEX ( FILTER ( t, [@r] > 1 ), dim_zona[borough] & " (" & FORMAT ( [@s], "0%", fmt ) & ")", " e ", [@n], DESC )
+			RETURN
+			    IF ( NOT ISBLANK ( nome1 ), rot1 & " é a maior origem (" & FORMAT ( s1, "0%", fmt ) & ")" & IF ( outros <> "", "; depois " & outros ) )
+		displayFolder: Apresentacao
+		lineageTag: 9878eb5a-9981-4be2-ac31-090346078d80
+
+	/// Subtítulo das corridas que entram no CBD por distrito de origem: quais distritos (com 2%+ do volume) reduziram mais de 2% por dia depois de [Data Taxa CBD], dentro do período escolhido. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Origem CBD Distritos' =
+			VAR fmt = "pt-BR"
+			VAR d = [Data Taxa CBD]
+			VAR m0 = DATE ( YEAR ( d ), MONTH ( d ), 1 )
+			VAR meses = FILTER ( VALUES ( dim_mes[mes_inicio] ), [Corridas OD] > 0 )
+			VAR antes = FILTER ( meses, dim_mes[mes_inicio] < m0 )
+			VAR depois = FILTER ( meses, dim_mes[mes_inicio] >= m0 )
+			VAR dias_a = SUMX ( antes, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR dias_d = SUMX ( depois, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR total = [Corridas entrando no CBD]
+			VAR b =
+			    FILTER (
+			        ADDCOLUMNS (
+			            VALUES ( dim_zona[borough] ),
+			            "@n", [Corridas entrando no CBD],
+			            "@v", DIVIDE ( CALCULATE ( [Corridas entrando no CBD], depois ) / dias_d, CALCULATE ( [Corridas entrando no CBD], antes ) / dias_a ) - 1
+			        ),
+			        [@n] >= 0.02 * total
+			    )
+			VAR cairam = FILTER ( b, [@v] < -0.02 )
+			VAR n = COUNTROWS ( cairam )
+			VAR lista = CONCATENATEX ( cairam, dim_zona[borough] & " (" & FORMAT ( [@v], "+0.0%;−0.0%", fmt ) & ")", ", ", [@v], ASC )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISEMPTY ( antes ) || ISEMPTY ( depois ), "A taxa começou em " & FORMAT ( d, "dd/mm/yyyy" ) & "; escolha um período que inclua antes e depois",
+			        n = 0, "Nenhum distrito reduziu mais de 2% por dia após a taxa",
+			        n = 1, "Só " & MAXX ( cairam, dim_zona[borough] ) & " reduziu: " & FORMAT ( MAXX ( cairam, [@v] ), "+0.0%;−0.0%", fmt ) & " por dia após a taxa",
+			        "Reduziram por dia após a taxa: " & lista
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 28abfb74-a879-49b0-8df5-d0c32a95732b
+
 	column zona_origem_id
 		dataType: int64
 		isHidden

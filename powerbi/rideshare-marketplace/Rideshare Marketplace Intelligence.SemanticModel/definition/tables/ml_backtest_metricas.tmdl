@@ -4,43 +4,39 @@ table ml_backtest_metricas
 
 	/// Média do WAPE do modelo nas rodadas de backtest (tipo = backtest), ÷ 100 para ficar na escala do [WAPE]. É a média dos meses (12,92%), a mesma régua do [WAPE Baseline]. Vazio sem exatamente uma execução.
 	measure 'WAPE Modelo' =
-			
-			IF(
-			    HASONEVALUE(dim_execucao[execucao]),
-			    CALCULATE(
-			        DIVIDE(AVERAGE(ml_backtest_metricas[wape_modelo]), 100),
-			        ml_backtest_metricas[tipo] = "backtest"
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        DIVIDE ( AVERAGE ( ml_backtest_metricas[wape_modelo] ), 100 ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
 			    )
-			)
 		formatString: 0.00%
 		displayFolder: Backtest
 		lineageTag: 6ba78d2c-a0a7-4324-b19c-b2b647a7af3a
 
 	/// Média do WAPE do baseline sazonal nas rodadas de backtest, ÷ 100. É a régua do modelo: métrica sem baseline ao lado é número solto.
-	measure 'WAPE Baseline' = ```
-			
-			IF(
-			    HASONEVALUE(dim_execucao[execucao]), 
-			    CALCULATE(
-			        DIVIDE(AVERAGE(ml_backtest_metricas[wape_baseline]), 100),
-			        ml_backtest_metricas[tipo] = "backtest"
+	measure 'WAPE Baseline' =
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        DIVIDE ( AVERAGE ( ml_backtest_metricas[wape_baseline] ), 100 ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
 			    )
-			)
-			```
 		formatString: 0.00%
 		displayFolder: Backtest
 		lineageTag: e999092b-4251-477c-9693-1d347df0a774
 
 	/// Média de ganho_pp: quantos pontos percentuais o WAPE do modelo fica abaixo do baseline. Em pontos, não em %: 1,18 pp não é "1,18% melhor" (a melhora relativa seria 1,18 / 14,09 = 8,3%).
 	measure 'Ganho (pp)' =
-			
-			IF(
-			    HASONEVALUE(dim_execucao[execucao]),
-			    CALCULATE(
-			        AVERAGE(ml_backtest_metricas[ganho_pp]),
-			        ml_backtest_metricas[tipo] = "backtest"
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        AVERAGE ( ml_backtest_metricas[ganho_pp] ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
 			    )
-			)
 		formatString: 0.00 "pp"
 		displayFolder: Backtest
 		lineageTag: a183a961-f3e9-4727-9383-9197856677a1
@@ -53,14 +49,13 @@ table ml_backtest_metricas
 
 	/// Quantidade de rodadas de backtest da execução. A linha de produção fica fora (sem gabarito, venceu_baseline = FALSE).
 	measure 'Rodadas Testadas' =
-			
-			IF(
-			    HASONEVALUE(dim_execucao[execucao]),
-			    CALCULATE(
-			        COUNTROWS(ml_backtest_metricas),
-			        ml_backtest_metricas[tipo] = "backtest"
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        COUNTROWS ( ml_backtest_metricas ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
 			    )
-			)
 		formatString: #,##0
 		displayFolder: Backtest
 		lineageTag: 2859de22-32a4-4b70-b0db-99a581bbaabd
@@ -73,6 +68,43 @@ table ml_backtest_metricas
 			    IF ( NOT ISBLANK ( t ), FORMAT ( COALESCE ( v, 0 ), "0" ) & " de " & FORMAT ( t, "0" ) )
 		displayFolder: Apresentacao
 		lineageTag: 05b307cc-91a3-4fb3-ac32-1db13b67d46e
+
+	/// Subtítulo do gráfico de erro por janela: em quantos meses o modelo vence e o mês de maior vantagem (com o feriado, se houver). Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo WAPE Janelas' =
+			VAR alvo = [Execucao Alvo]
+			VAR v = COALESCE ( [Rodadas Vencidas], 0 )
+			VAR test = [Rodadas Testadas]
+			VAR meses =
+			    CALCULATETABLE (
+			        ADDCOLUMNS (
+			            VALUES ( ml_backtest_metricas[mes_alvo] ),
+			            "@g", CALCULATE ( AVERAGE ( ml_backtest_metricas[ganho_pp] ) ),
+			            "@fer", VAR m = ml_backtest_metricas[mes_alvo]
+			                RETURN CALCULATE ( MIN ( dim_tempo_hora[nome_feriado] ), REMOVEFILTERS ( dim_mes ), TREATAS ( { m }, dim_mes[ano_mes] ), dim_tempo_hora[is_feriado] = TRUE () ),
+			            "@nome", VAR m = ml_backtest_metricas[mes_alvo]
+			                RETURN LOWER ( FORMAT ( DATE ( VALUE ( LEFT ( m, 4 ) ), VALUE ( RIGHT ( m, 2 ) ), 1 ), "MMMM", "pt-BR" ) )
+			        ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+			VAR topo = TOPN ( 1, FILTER ( meses, [@g] > 0 ), [@g], DESC )
+			VAR parte1 =
+			    SWITCH (
+			        TRUE (),
+			        test = 1 && v = 1, "O modelo vence no único mês testado",
+			        v = 0, "O modelo não vence em nenhum mês",
+			        v = test, "O modelo vence nos " & test & " meses",
+			        "O modelo vence em " & v & " de " & test & " meses"
+			    )
+			VAR parte2 =
+			    IF (
+			        test > 1 && NOT ISEMPTY ( topo ),
+			        "; a maior vantagem é em " & CONCATENATEX ( topo, [@nome] & IF ( NOT ISBLANK ( [@fer] ), " (" & [@fer] & ")" ) )
+			    )
+			RETURN
+			    IF ( NOT ISBLANK ( test ), parte1 & parte2 )
+		displayFolder: Apresentacao
+		lineageTag: a79146ae-cc4b-45da-8cb9-a524f8e2b684
 
 	/// Chave para a dim_execucao. Escondida: a segmentação usa dim_execucao[execucao].
 	column execucao

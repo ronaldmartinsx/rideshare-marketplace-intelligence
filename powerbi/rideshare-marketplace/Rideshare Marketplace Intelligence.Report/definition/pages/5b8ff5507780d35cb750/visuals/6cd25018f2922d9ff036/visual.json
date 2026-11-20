@@ -10,38 +10,40 @@
     "tabOrder": 27000
   },
   "visual": {
-    "visualType": "textbox",
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ml_forecast_demanda"
+                    }
+                  },
+                  "Property": "HTML Abertura 5"
+                }
+              },
+              "queryRef": "ml_forecast_demanda.HTML Abertura 5",
+              "nativeQueryRef": "HTML Abertura 5"
+            }
+          ]
+        }
+      }
+    },
     "objects": {
-      "general": [
+      "compatibility": [
         {
           "properties": {
-            "paragraphs": [
-              {
-                "textRuns": [
-                  {
-                    "value": "RAIA 5 DE 5 · DÁ PARA PREVER A DEMANDA?",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "20px",
-                      "color": "#4B5D99",
-                      "fontWeight": "bold"
-                    }
-                  }
-                ]
-              },
-              {
-                "textRuns": [
-                  {
-                    "value": "Sim. O modelo errou 12,9% contra 14,1% do palpite sazonal (a média da mesma hora nas 4 semanas anteriores) e venceu nas 6 janelas de abril a setembro de 2026. A vantagem foi maior nos meses com feriado, como setembro (2,2 pp) e julho (1,2 pp), que a média das semanas anteriores não enxerga. Para outubro, o modelo prevê 22,2 milhões de corridas. Esta raia não segue o filtro de período.",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "14px",
-                      "color": "#1F1F1F"
-                    }
-                  }
-                ]
+            "legacyRendering": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
               }
-            ]
+            }
           }
         }
       ]
@@ -127,6 +129,32 @@
               "expr": {
                 "Literal": {
                   "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pergunta e resposta da raia 5, geradas pelos dados.'"
                 }
               }
             }

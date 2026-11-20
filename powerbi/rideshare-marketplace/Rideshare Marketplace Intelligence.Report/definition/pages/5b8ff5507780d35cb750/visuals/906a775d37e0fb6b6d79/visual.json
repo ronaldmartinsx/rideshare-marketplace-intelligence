@@ -10,38 +10,40 @@
     "tabOrder": 21000
   },
   "visual": {
-    "visualType": "textbox",
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "HTML Abertura 3"
+                }
+              },
+              "queryRef": "fct_demanda_zona_hora.HTML Abertura 3",
+              "nativeQueryRef": "HTML Abertura 3"
+            }
+          ]
+        }
+      }
+    },
     "objects": {
-      "general": [
+      "compatibility": [
         {
           "properties": {
-            "paragraphs": [
-              {
-                "textRuns": [
-                  {
-                    "value": "RAIA 3 DE 5 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "20px",
-                      "color": "#00785A",
-                      "fontWeight": "bold"
-                    }
-                  }
-                ]
-              },
-              {
-                "textRuns": [
-                  {
-                    "value": "Nos 12 meses depois de 05/01/2025, as corridas com destino no CBD caíram 5,1% (153 mil → 145 mil por dia) enquanto o total da cidade subiu 1,9%; a fatia do CBD foi de 23,4% para 21,8%. A queda veio do resto de Manhattan (−10% nas corridas que entram no CBD); Brooklyn e Queens ficaram estáveis.",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "14px",
-                      "color": "#1F1F1F"
-                    }
-                  }
-                ]
+            "legacyRendering": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
               }
-            ]
+            }
           }
         }
       ]
@@ -127,6 +129,32 @@
               "expr": {
                 "Literal": {
                   "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pergunta e resposta da raia 3, geradas pelos dados.'"
                 }
               }
             }

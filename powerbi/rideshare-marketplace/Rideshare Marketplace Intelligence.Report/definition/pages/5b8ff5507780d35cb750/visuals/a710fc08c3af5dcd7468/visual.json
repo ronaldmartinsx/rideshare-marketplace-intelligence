@@ -4,9 +4,9 @@
   "position": {
     "x": 220,
     "y": 160,
-    "z": 4000,
-    "height": 80,
     "width": 320,
+    "height": 80,
+    "z": 4000,
     "tabOrder": 4000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         }
@@ -259,7 +258,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter68fe813c130bdc8b82b4e344",
+        "name": "Filter775184629ec9aa561426f631",
         "field": {
           "Measure": {
             "Expression": {
@@ -271,6 +270,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -304,8 +304,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

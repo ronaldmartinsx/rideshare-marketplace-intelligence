@@ -4,9 +4,9 @@
   "position": {
     "x": 616,
     "y": 2784,
-    "z": 38000,
-    "height": 376,
     "width": 776,
+    "height": 376,
+    "z": 38000,
     "tabOrder": 38000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },
@@ -245,8 +244,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'A fatia cai de 23,4% para 21,8% após a taxa (05/01/2025)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Fatia CBD"
                 }
               }
             },

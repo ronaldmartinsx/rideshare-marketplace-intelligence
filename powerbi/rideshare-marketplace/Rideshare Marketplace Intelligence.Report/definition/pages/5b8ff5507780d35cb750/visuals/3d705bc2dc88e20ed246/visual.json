@@ -345,8 +345,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Mais forte no sudoeste do Brooklyn (Windsor Terrace 36%); mais fraca em Midtown (21%)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Mapa Share"
                 }
               }
             },
@@ -383,7 +388,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter57644da431ceb508666d0507",
+        "name": "Filter61e1f586afccd7ee0c5a4c40",
         "field": {
           "Column": {
             "Expression": {

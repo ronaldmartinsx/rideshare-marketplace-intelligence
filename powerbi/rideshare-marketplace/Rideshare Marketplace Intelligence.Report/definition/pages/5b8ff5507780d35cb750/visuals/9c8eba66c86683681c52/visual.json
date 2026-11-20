@@ -4,9 +4,9 @@
   "position": {
     "x": 736,
     "y": 4288,
-    "z": 42000,
-    "height": 480,
     "width": 664,
+    "height": 480,
+    "z": 42000,
     "tabOrder": 42000
   },
   "visual": {
@@ -93,7 +93,8 @@
             },
             "direction": "Descending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -416,8 +417,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Entre as maiores, Park Slope tem o maior share (34%)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Tabela Lyft"
                 }
               }
             },
@@ -454,7 +460,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterfe8addb0c94d22b306fb9f73",
+        "name": "Filter5931ef47538038e6ba3cd34c",
         "field": {
           "Column": {
             "Expression": {
@@ -466,6 +472,7 @@
           }
         },
         "type": "Categorical",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -504,11 +511,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filter7b5ecd3a7b3d6cbefa59898d",
+        "name": "Filterc6687e75bd431e60c279d6cf",
         "field": {
           "Column": {
             "Expression": {
@@ -520,11 +526,13 @@
           }
         },
         "type": "TopN",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
             {
               "Name": "subquery",
+              "Type": 2,
               "Expression": {
                 "Subquery": {
                   "Query": {
@@ -577,8 +585,7 @@
                     "Top": 20
                   }
                 }
-              },
-              "Type": 2
+              }
             },
             {
               "Name": "a",
@@ -611,8 +618,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

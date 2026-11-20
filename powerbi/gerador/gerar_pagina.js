@@ -1,4 +1,4 @@
-// Gerador da página única com raias (ADR 0019), revisão 5 (raia 5, "Previsto × realizado", Fase 5, 20/11/2026).
+// Gerador da página única com raias (ADR 0019), revisão 6 (textos por medida, ADR 0023; raia 5 na revisão 5).
 // Escreve os visuais, o page.json, o tema e os registros do report.json a partir do contrato em
 // _brief/report-spec.md. Não mexe no modelo semântico (medidas ficam no TMDL).
 //
@@ -29,7 +29,7 @@ const LINKS = { github: 'https://github.com/ronaldmartinsx', portfolio: 'https:/
 // ---------- grade: 12 colunas x 59 linhas; margem 48; gutter 24 ----------
 // revisão 5: a raia 5 começa na linha 49 e é posicionada em px (compacta, sem o vazio entre a abertura e os
 // cartões); o rodapé fica logo abaixo dela (página de 5000 para 5944 px)
-const N_LANES = 5, FOOTER_Y = 5784;
+const FOOTER_Y = 5784;
 const W = 1440, PAGE_H = FOOTER_Y + 160, COL = 114, ROW = 100, M = 48, G = 24;
 const snap = v => Math.round(v / 8) * 8;
 function box([c0, r0, c1, r1], slot, of) {
@@ -100,8 +100,10 @@ function cardVCO(title, subtitle, alt) {
     padding: [{ properties: { top: lit('12D'), bottom: lit('12D'), left: lit('16D'), right: lit('16D') } }],
     general: [{ properties: { altText: str(alt) } }],
     title: [{ properties: { show: lit('true'), text: str(title), fontFamily: str(FONT), fontSize: lit('13D'), bold: lit('true'), fontColor: fill(C.texto) } }],
+    // revisão 6 (ADR 0023): o subtítulo pode ser uma medida de texto (mea(...)), no formato que o Desktop grava
+    // quando o "fx" do subtítulo aponta para um campo; texto literal só para definição, nunca para resultado
     subTitle: subtitle
-      ? [{ properties: { show: lit('true'), text: str(subtitle), fontFamily: str(FONT), fontSize: lit('11D'), fontColor: fill(C.sub) } }]
+      ? [{ properties: { show: lit('true'), text: subtitle.Measure ? { expr: subtitle } : str(subtitle), fontFamily: str(FONT), fontSize: lit('11D'), fontColor: fill(C.sub) } }]
       : [{ properties: { show: lit('false') } }],
   };
   return v;
@@ -125,7 +127,9 @@ const textbox = (paragraphs, chrome) => ({ visualType: 'textbox', objects: { gen
 const shape = (color) => ({ visualType: 'shape',
   objects: { shape: [{ properties: { tileShape: str('rectangle') }, selector: { id: 'default' } }],
     fill: [{ properties: { show: lit('true'), fillColor: fill(color), transparency: lit('0D') }, selector: { id: 'default' } }],
-    outline: [{ properties: { show: lit('false') }, selector: { id: 'default' } }] },
+    // revisão 6: o contorno vai em DUAS entradas, como o Desktop grava; só a com seletor é ignorada e a borda
+    // aparece (na revisão 5, o Desktop acrescentou a entrada sem seletor ao salvar, e a regeneração a apagou)
+    outline: [{ properties: { show: lit('false') }, selector: { id: 'default' } }, { properties: { show: lit('false') } }] },
   visualContainerObjects: noChrome() });
 
 const R = {
@@ -166,7 +170,6 @@ const F5 = {
   previsao: mea(P, 'Previsão Total'), realizado: mea(P, 'Realizado'),
   wapeModelo: mea(B, 'WAPE Modelo'), wapeBase: mea(B, 'WAPE Baseline'),
 };
-const EXECUCAO_OFICIAL = '20261116T233529Z'; // a do veredito da Fase 5 (6 rodadas); pré-selecionada na segmentação
 const ativas = () => fIn(F.opId, ['HV0003', 'HV0005']);
 const soLyft = () => fIn(F.opId, ['HV0005']);
 const opColors = () => ['Lyft', 'Uber'].map(o => ({ properties: { fill: fill(o === 'Lyft' ? C.lyft : C.uber) },
@@ -239,45 +242,33 @@ add('kpi_html', 0, { x: 48, y: 272, width: 1344, height: 150 }, { visualType: HT
   objects: { compatibility: [{ properties: { legacyRendering: lit('true') } }] },
   visualContainerObjects: Object.assign(noChrome(), { visualTooltip: [{ properties: { show: lit('false') } }],
     general: [{ properties: { altText: str('Seis indicadores do período: corridas, espera P90, take rate, receita por milha, % destino no CBD e share da Lyft. Passe o mouse para ver a definição.') } }] }) });
-const answers = [
-  ['1 · OFERTA', 'A espera piorou: P90 de 8,1 para 10,1 min, puxado pela Uber; falta oferta na periferia e nas madrugadas de fim de semana.', 1],
-  ['2 · ECONOMIA', 'Cada corrida rende mais: receita por milha +9% e repasse por hora +7%, com take rate estável em ~23%.', 2],
-  ['3 · TAXA DO CBD', 'Corridas para o centro −5,1% enquanto a cidade cresceu 1,9%; a queda veio do resto de Manhattan.', 3],
-  ['4 · UBER × LYFT', 'Share da Lyft de 25,2% para 27,7%, puxado pelo Bronx; perde terreno só em 10 zonas de Manhattan.', 4],
-  ['5 · PREVISÃO', 'Sim: erro de 12,9% contra 14,1% do palpite sazonal, vencendo nas 6 janelas testadas.', 5],
-];
-// revisão 5: cinco cartões (~250 px cada); fonte 14 e altura 160 para os textos caberem sem cortar
-answers.forEach(([t, txt, n], i) => add(`answer_${n}`, 0, { ...box(R.answers, i + 1, answers.length), height: 160 }, textbox([ // 3c: sem vazio embaixo
-  { textRuns: [run(t, 12, LANE[n], true)] }, { textRuns: [run(txt, 14, C.texto)] },
-  { textRuns: [run('Leitura com dados até set/2026', 10, C.sub)] }], { // revisão 4: o texto é fixo; o período fica explícito
+// revisão 6 (ADR 0023): as respostas e as aberturas das raias saem de medidas (HTML Resposta n / HTML Abertura n),
+// com períodos por regra; o gerador não escreve mais nenhum número nem mês. Aqui fica só onde mora cada medida.
+const TABELA_RAIA = { 1: H, 2: D, 3: D, 4: D, 5: P };
+const lanes = Object.keys(TABELA_RAIA).map(Number);
+const cartaoResposta = Object.assign(noChrome(), {
   background: [{ properties: { show: lit('true'), color: fill('#FFFFFF'), transparency: lit('0D') } }],
   border: [{ properties: { show: lit('true'), color: fill(C.borda), radius: lit('8D') } }],
-  padding: [{ properties: { top: lit('16D'), bottom: lit('16D'), left: lit('16D'), right: lit('16D') } }],
-  title: [{ properties: { show: lit('false') } }], visualHeader: [{ properties: { show: lit('false') } }] })));
+  padding: [{ properties: { top: lit('12D'), bottom: lit('12D'), left: lit('14D'), right: lit('14D') } }] });
+// revisão 6: cinco cartões (~250 px cada) com a altura toda da faixa (176 px) e respiro de 12 px; o texto das
+// medidas vai em 13 px (os textos gerados são mais longos que os fixos da revisão 5 e cortavam em 160 px)
+lanes.forEach((n, i) => add(`answer_${n}`, 0, box(R.answers, i + 1, lanes.length),
+  htmlVis(`HTML Resposta ${n}`, `Resposta ${n}, gerada pelos dados: o resumo da raia ${n} e o período comparado.`, cartaoResposta, TABELA_RAIA[n])));
 
-// ===== raias: fundo tingido + faixa de abertura na cor da raia =====
-const lanes = {
-  1: ['ONDE E QUANDO FALTA OFERTA?', 'A espera piorou: o P90 da cidade subiu de 8,1 min (2024) para 10,1 min (jan–set/2026), puxado pela Uber (7,8 → 10,7 min); a Lyft ficou estável em ~8,8. Falta oferta na periferia (Breezy Point, City Island, Flushing Meadows: 18 a 21 min) e nas madrugadas de fim de semana e feriado (4h: ~13 min).'],
-  2: ['COMO EVOLUI A ECONOMIA UNITÁRIA?', 'Cada corrida rende mais: receita por milha +9% (US$ 5,16 → 5,65) e repasse por hora de corrida +7% (US$ 60 → 64) de 2024 a 2026, com take rate estável em ~23%. A exceção é a Lyft: take rate de 20,9% em 2025, no mesmo ano em que ganhou share (hipótese, não causalidade provada), e 23,9% em 2026.'],
-  3: ['QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?', 'Nos 12 meses depois de 05/01/2025, as corridas com destino no CBD caíram 5,1% (153 mil → 145 mil por dia) enquanto o total da cidade subiu 1,9%; a fatia do CBD foi de 23,4% para 21,8%. A queda veio do resto de Manhattan (−10% nas corridas que entram no CBD); Brooklyn e Queens ficaram estáveis.'],
-  4: ['ONDE A LYFT PERDE TERRENO PARA A UBER?', 'A Lyft subiu de 25,2% (2024) para 27,7% de share (últimos 12 meses), puxada pelo Bronx (+7 p.p. em Bedford Park, Belmont e Norwood). Perde terreno em só 10 das 179 maiores zonas, todas em Manhattan (Yorkville, Manhattan Valley, Lower East Side), em até −1,7 p.p.'],
-  // revisão 5: baseline conferido no ml_baseline_demanda.sql (média da mesma hora da semana nas 4 semanas antes do corte)
-  5: ['DÁ PARA PREVER A DEMANDA?', 'Sim. O modelo errou 12,9% contra 14,1% do palpite sazonal (a média da mesma hora nas 4 semanas anteriores) e venceu nas 6 janelas de abril a setembro de 2026. A vantagem foi maior nos meses com feriado, como setembro (2,2 pp) e julho (1,2 pp), que a média das semanas anteriores não enxerga. Para outubro, o modelo prevê 22,2 milhões de corridas. Esta raia não segue o filtro de período.'],
-};
-for (const n of Object.keys(lanes).map(Number)) {
+// ===== raias: linha fina na cor da raia + número + abertura (pergunta e resposta) =====
+for (const n of lanes) {
   const [r0, r1] = LANE_ROWS[n];
   // revisão 4: sem preenchimento ("carnaval de cores"); linha fina na cor da raia + número e pergunta no tom escuro
   const top = snap(M + (r0 - 1) * ROW - G / 2);
   add(`l${n}_line`, 'deco', { x: 0, y: top, width: W, height: 4 }, shape(LANE[n]));
   add(`l${n}_num`, n, { x: M, y: top + 20, width: 104, height: 96 }, textbox([{ textRuns: [run(`0${n}`, 56, LANE[n], true)] }]));
-  add(`l${n}_head`, n, { x: M + 128, y: top + 24, width: W - 2 * M - 128, height: 96 }, textbox([
-    { textRuns: [run(`RAIA ${n} DE ${N_LANES} · ${lanes[n][0]}`, 20, LANE[n], true)] },
-    { textRuns: [run(lanes[n][1], 14, C.texto)] }]));
+  add(`l${n}_head`, n, { x: M + 128, y: top + 24, width: W - 2 * M - 128, height: 96 },
+    htmlVis(`HTML Abertura ${n}`, `Pergunta e resposta da raia ${n}, geradas pelos dados.`, {}, TABELA_RAIA[n]));
 }
 
 // ===== raia 1: oferta =====
 add('l1_map_p90', 1, alto(R.l1_map), { ...shapeMap(F.p90, C.p90t, C.p90, '6D', '15D'),
-  visualContainerObjects: cardVCO('Espera P90 por zona de embarque (min)', 'Periferia e aeroportos esperam mais; Manhattan, menos', 'Mapa das zonas de NY coloridas pelo P90 da espera; mais escuro = espera maior. Zonas com menos de 100 corridas ficam sem cor.') },
+  visualContainerObjects: cardVCO('Espera P90 por zona de embarque (min)', mea(H, 'Subtitulo Mapa P90'), 'Mapa das zonas de NY coloridas pelo P90 da espera; mais escuro = espera maior. Zonas com menos de 100 corridas ficam sem cor.') },
   [fCmp(F.nesp, 2, '100L')]);
 add('l1_heatmap_hora', 1, alto(R.l1_heatmap), { visualType: 'pivotTable',
   query: { queryState: { Rows: { projections: [proj(F.hora, 'Hora do dia')] }, Columns: { projections: [proj(F.tipo, 'Tipo de dia')] }, Values: { projections: [proj(F.p90, 'P90 (min)')] } } },
@@ -287,27 +278,27 @@ add('l1_heatmap_hora', 1, alto(R.l1_heatmap), { visualType: 'pivotTable',
       FillRule: { linearGradient2: { min: { color: { Literal: { Value: "'#FFFFFF'" } } }, max: { color: { Literal: { Value: `'${C.p90}'` } } },
         nullColoringStrategy: { strategy: { Literal: { Value: "'noColor'" } } } } } } } } } } },
       selector: { data: [{ dataViewWildcard: { matchingOption: 1 } }], metadata: qref(F.p90) } }] },
-  visualContainerObjects: cardVCO('P90 por hora do dia e tipo de dia (min)', 'Madrugadas de feriado e fim de semana são as piores horas', 'Matriz de calor: P90 da espera por hora do dia (linhas) e tipo de dia (colunas); célula mais escura = espera maior.') });
+  visualContainerObjects: cardVCO('P90 por hora do dia e tipo de dia (min)', mea(H, 'Subtitulo Heatmap P90'), 'Matriz de calor: P90 da espera por hora do dia (linhas) e tipo de dia (colunas); célula mais escura = espera maior.') });
 add('l1_ranking_zonas', 1, alto(R.l1_ranking), { visualType: 'clusteredBarChart',
   query: { queryState: { Category: { projections: [proj(F.zona)] }, Y: { projections: [proj(F.p90)] } },
     sortDefinition: { sort: [{ field: F.p90, direction: 'Descending' }], isDefaultSort: false } },
   objects: { dataPoint: [{ properties: { defaultColor: fill(C.p90) } }], labels: [{ properties: { show: lit('true') } }] },
-  visualContainerObjects: cardVCO('Zonas com P90 de 12 min ou mais', 'Breezy Point lidera, com P90 de 19 min', 'Barras: zonas com 1.000 ou mais corridas e P90 de 12 minutos ou mais, da maior para a menor espera.') },
+  visualContainerObjects: cardVCO('Zonas com P90 de 12 min ou mais', mea(H, 'Subtitulo Ranking P90'), 'Barras: zonas com 1.000 ou mais corridas e P90 de 12 minutos ou mais, da maior para a menor espera.') },
   [fCmp(F.nesp, 2, '1000L'), fCmp(F.p90, 2, '12D'), fCmp(F.zonaId, 4, '263L')]);
 add('l1_note', 1, R.l1_note, textbox([{ textRuns: [run('Como ler: P90 é o tempo até o qual 9 em cada 10 corridas esperaram, do pedido ao embarque. Acima de 15 min, o valor é estimado, com margem de até 1 minuto. Zonas com menos de 100 corridas no período escolhido ficam sem cor.', 11, C.sub)] }]));
 
 // ===== raia 2: economia =====
 add('l2_take_trend', 2, R.l2_take, { ...line(F.mes, F.take, F.op),
-  visualContainerObjects: cardVCO('Take rate por operadora (mês)', 'O take rate da Lyft oscila bem mais que o da Uber', 'Linhas: take rate mensal da Uber (cinza) e da Lyft (rosa-púrpura).') }, [ativas()]);
+  visualContainerObjects: cardVCO('Take rate por operadora (mês)', mea(D, 'Subtitulo Take Rate Operadoras'), 'Linhas: take rate mensal da Uber (cinza) e da Lyft (rosa-púrpura).') }, [ativas()]);
 add('l2_receita_trend', 2, R.l2_receita, { ...line(F.mes, F.rmilha, null, C.eco),
-  visualContainerObjects: cardVCO('Receita por milha (US$, mês)', 'Alta de ~9% em dois anos', 'Linha: receita por milha mensal, em dólares.') });
+  visualContainerObjects: cardVCO('Receita por milha (US$, mês)', mea(D, 'Subtitulo Receita Milha'), 'Linha: receita por milha mensal, em dólares.') });
 add('l2_repasse_trend', 2, R.l2_repasse, { ...line(F.mes, F.repasse, null, C.repasse),
-  visualContainerObjects: cardVCO('Repasse por hora de corrida (US$, mês)', 'Acompanha a receita: +7%', 'Linha: repasse ao motorista por hora de corrida, mensal. Não é o ganho por hora do motorista (sem tempo ocioso no dado).') });
+  visualContainerObjects: cardVCO('Repasse por hora de corrida (US$, mês)', mea(D, 'Subtitulo Repasse Hora'), 'Linha: repasse ao motorista por hora de corrida, mensal. Não é o ganho por hora do motorista (sem tempo ocioso no dado).') });
 add('l2_receita_min_ano', 2, R.l2_receita_min, { visualType: 'clusteredColumnChart',
   query: { queryState: { Category: { projections: [proj(F.ano)] }, Y: { projections: [proj(F.rmin)] } },
     sortDefinition: { sort: [{ field: F.ano, direction: 'Ascending' }], isDefaultSort: false } },
   objects: { dataPoint: [{ properties: { defaultColor: fill(C.eco) } }], labels: [{ properties: { show: lit('true') } }] },
-  visualContainerObjects: cardVCO('Receita por minuto (US$, ano)', 'US$ 1,30 → 1,40 de 2024 a 2026', 'Colunas: receita por minuto de corrida em 2024, 2025 e 2026 (jan–set).') });
+  visualContainerObjects: cardVCO('Receita por minuto (US$, ano)', mea(D, 'Subtitulo Receita Minuto'), 'Colunas: receita por minuto de corrida em cada ano do período escolhido.') });
 add('l2_qualidade_card', 2, R.l2_qualidade, { visualType: 'cardVisual',
   query: { queryState: { Data: { projections: [proj(F.invalida, '% tarifa ≤ 0')] } } },
   objects: { accentBar: [{ properties: { show: lit('true'), color: fill(C.uber) }, selector: { id: 'default' } }] },
@@ -315,18 +306,18 @@ add('l2_qualidade_card', 2, R.l2_qualidade, { visualType: 'cardVisual',
 
 // ===== raia 3: CBD =====
 add('l3_map_origem', 3, R.l3_map, { ...shapeMap(F.entrando, C.cbdt, C.cbd),
-  visualContainerObjects: cardVCO('Origem das corridas que entram no CBD', 'O resto de Manhattan é a maior origem; Brooklyn e Queens vêm logo atrás', 'Mapa: zonas de embarque coloridas pelo número de corridas que terminam no CBD vindas de fora dele.') });
+  visualContainerObjects: cardVCO('Origem das corridas que entram no CBD', mea(O, 'Subtitulo Origem CBD Mapa'), 'Mapa: zonas de embarque coloridas pelo número de corridas que terminam no CBD vindas de fora dele.') });
 add('l3_pct_trend', 3, R.l3_trend, { ...line(F.mes, F.pctcbd, null, C.cbd),
-  visualContainerObjects: cardVCO('% das corridas com destino no CBD (mês)', 'A fatia cai de 23,4% para 21,8% após a taxa (05/01/2025)', 'Linha: porcentagem mensal das corridas com destino no CBD; a taxa de congestionamento começou em 05/01/2025.') });
+  visualContainerObjects: cardVCO('% das corridas com destino no CBD (mês)', mea(D, 'Subtitulo Fatia CBD'), 'Linha: porcentagem mensal das corridas com destino no CBD; a taxa de congestionamento começou em 05/01/2025.') });
 add('l3_origem_trend', 3, R.l3_origem, { ...line(F.mes, F.entrando, F.borough, null),
-  visualContainerObjects: cardVCO('Corridas que entram no CBD, por distrito de origem (mês)', 'Só Manhattan reduziu: −10%', 'Linhas: corridas mensais que entram no CBD vindas de Manhattan, Brooklyn, Queens e Bronx.') },
+  visualContainerObjects: cardVCO('Corridas que entram no CBD, por distrito de origem (mês)', mea(O, 'Subtitulo Origem CBD Distritos'), 'Linhas: corridas mensais que entram no CBD vindas de Manhattan, Brooklyn, Queens e Bronx.') },
   [fIn(F.borough, ['Manhattan', 'Brooklyn', 'Queens', 'Bronx'])]);
 
 // ===== raia 4: Uber x Lyft =====
 add('l4_map_share', 4, R.l4_map, { ...shapeMap(F.share, C.lyftt, C.lyft, '0.15D', '0.4D'),
-  visualContainerObjects: cardVCO('Share da Lyft por zona de embarque', 'Mais forte no sudoeste do Brooklyn (Windsor Terrace 36%); mais fraca em Midtown (21%)', 'Mapa: share da Lyft em cada zona; mais escuro = share maior.') }, [soLyft()]);
+  visualContainerObjects: cardVCO('Share da Lyft por zona de embarque', mea(D, 'Subtitulo Mapa Share'), 'Mapa: share da Lyft em cada zona; mais escuro = share maior.') }, [soLyft()]);
 add('l4_share_trend', 4, R.l4_trend, { ...line(F.mes, F.share, F.op),
-  visualContainerObjects: cardVCO('Share por operadora (mês)', 'Lyft estável perto de 27% desde 2025', 'Linhas: share mensal da Uber (cinza) e da Lyft (rosa-púrpura).') }, [ativas()]);
+  visualContainerObjects: cardVCO('Share por operadora (mês)', mea(D, 'Subtitulo Share Tendencia'), 'Linhas: share mensal da Uber (cinza) e da Lyft (rosa-púrpura).') }, [ativas()]);
 add('l4_table_zonas', 4, R.l4_table, { visualType: 'tableEx',
   query: { queryState: { Values: { projections: [proj(F.zona, 'Zona'), proj(F.borough, 'Distrito'), proj(F.corridas, 'Corridas da Lyft'), proj(F.share, 'Share da Lyft')] } },
     sortDefinition: { sort: [{ field: F.corridas, direction: 'Descending' }], isDefaultSort: false } },
@@ -342,12 +333,13 @@ add('l4_table_zonas', 4, R.l4_table, { visualType: 'tableEx',
         nullColoringStrategy: { strategy: { Literal: { Value: "'noColor'" } } } } } } } } } } },
       selector: { data: [{ dataViewWildcard: { matchingOption: 1 } }], metadata: qref(F.share) } }],
   },
-  visualContainerObjects: cardVCO('20 zonas com mais corridas da Lyft', 'Entre as maiores, Park Slope tem o maior share (34%)', 'Tabela: as 20 zonas com mais corridas da Lyft, com distrito, corridas e share da Lyft.') },
+  visualContainerObjects: cardVCO('20 zonas com mais corridas da Lyft', mea(D, 'Subtitulo Tabela Lyft'), 'Tabela: as 20 zonas com mais corridas da Lyft, com distrito, corridas e share da Lyft.') },
   [soLyft(), fTopN(F.zona, 20, D, 'qtd_corridas')]);
 
 // ===== raia 5: previsto × realizado (Fase 5) =====
-// segmentação de execução: seleção única, com a execução oficial pré-selecionada (as medidas também se protegem
-// com HASONEVALUE: duas camadas). Lista suspensa para caber numa linha da grade.
+// segmentação de execução: seleção única, SEM pré-seleção (revisão 6, ADR 0023). Sem seleção, as medidas usam a
+// execução padrão por regra ([Execucao Alvo] e dim_execucao[is_padrao]); nunca somam execuções. Lista suspensa
+// para caber numa linha da grade.
 add('l5_exec_slicer', 5, R5.exec, {
   visualType: 'slicer', query: { queryState: { Values: { projections: [proj(F5.execucao, 'Execução do modelo')] } } },
   objects: {
@@ -355,8 +347,6 @@ add('l5_exec_slicer', 5, R5.exec, {
     selection: [{ properties: { singleSelect: lit('true') } }],
     header: [{ properties: { show: lit('true'), text: str('Execução do modelo'), fontFamily: str(FONT), textSize: lit('10D'), bold: lit('true'), fontColor: fill(LANE[5]) } }],
     items: [{ properties: { fontFamily: str(FONT), textSize: lit('10D'), fontColor: fill(C.texto) } }],
-    general: [{ properties: { filter: { filter: { Version: 2, From: [{ Name: 'e', Entity: 'dim_execucao', Type: 0 }],
-      Where: [{ Condition: { In: { Expressions: [srcRef(F5.execucao, 'e')], Values: [[{ Literal: { Value: `'${EXECUCAO_OFICIAL}'` } }]] } } }] } } } }],
   },
   visualContainerObjects: { background: [{ properties: { show: lit('false') } }], border: [{ properties: { show: lit('false') } }],
     padding: [{ properties: { top: lit('0D'), bottom: lit('0D'), left: lit('0D'), right: lit('0D') } }],
@@ -375,15 +365,15 @@ add('l5_wape_mes', 5, R5.wape, { visualType: 'clusteredColumnChart',
   objects: { dataPoint: [{ properties: { fill: fill(LANE[5]) }, selector: { metadata: qref(F5.wapeModelo) } },
     { properties: { fill: fill(BASELINE) }, selector: { metadata: qref(F5.wapeBase) } }],
     labels: [{ properties: { show: lit('true') } }] },
-  visualContainerObjects: cardVCO('Erro por janela testada: modelo × palpite sazonal', 'O modelo vence nos 6 meses; a maior vantagem é em setembro (Labor Day)',
-    'Colunas: erro percentual (WAPE) do modelo (índigo) e do palpite sazonal (cinza) em cada mês de abril a setembro de 2026.') });
+  visualContainerObjects: cardVCO('Erro por janela testada: modelo × palpite sazonal', mea(B, 'Subtitulo WAPE Janelas'),
+    'Colunas: erro percentual (WAPE) do modelo (índigo) e do palpite sazonal (cinza) em cada mês testado da execução escolhida.') });
 add('l5_diario', 5, R5.diario, { visualType: 'lineChart',
   query: { queryState: { Category: { projections: [proj(F5.dia, 'Dia')] },
     Y: { projections: [proj(F5.previsao, 'Previsto'), proj(F5.realizado, 'Realizado')] } } },
   objects: { dataPoint: [{ properties: { fill: fill(LANE[5]) }, selector: { metadata: qref(F5.previsao) } },
     { properties: { fill: fill(C.uber) }, selector: { metadata: qref(F5.realizado) } }] },
-  visualContainerObjects: cardVCO('Corridas por dia: previsto × realizado', 'O previsto acompanha o realizado até setembro e segue sozinho em outubro',
-    'Linhas: corridas diárias previstas pelo modelo (índigo) e realizadas (cinza escuro), de abril a outubro de 2026; outubro só tem a previsão.') });
+  visualContainerObjects: cardVCO('Corridas por dia: previsto × realizado', mea(P, 'Subtitulo Previsto Realizado'),
+    'Linhas: corridas diárias previstas pelo modelo (índigo) e realizadas (cinza escuro) nos meses da execução escolhida; o último mês só tem a previsão.') });
 add('l5_limites', 5, R5.limites, htmlVis('HTML Limitacoes', 'As três limitações da previsão: viés para baixo, clima observado e atraso dos dados da TLC.', {}, P));
 
 // ===== rodapé (faixa azul-marinho) com fonte e links =====
@@ -401,13 +391,22 @@ links.forEach(([label, url], i) => add(`link_${label}`, 'deco', { x: W - M - (li
 
 // ---------- interações: clique só filtra a própria raia ----------
 const dataVisuals = visuals.filter(v => v.json.visual.query && v.lane !== 'slicer');
+const byId = id => visuals.find(v => v.id === id);
+const execucao = byId('l5_exec_slicer');
+// revisão 6: a escolha da execução também alimenta a resposta 5 do cabeçalho (é a mesma pergunta)
+const segue = (s, t) => s === execucao && t.id === 'answer_5';
+// revisão 6: respostas e aberturas são "a resposta" (ADR 0023, princípio 3): não seguem cliques; a abertura 5 segue
+// só a execução escolhida
+const ehResposta = v => /^answer_\d$/.test(v.id) || /^l\d_head$/.test(v.id);
 const interactions = [];
-for (const s of dataVisuals) for (const t of dataVisuals)
-  if (s !== t && s.lane !== t.lane) interactions.push({ source: s.name, target: t.name, type: 'NoFilter' });
-// revisão 5 (decisão 1): o filtro de período não alcança a raia 5. Ela mostra sempre as janelas testadas e o mês
-// previsto; com o período filtrado, o fim em set/2026 apagaria o cartão de outubro.
-const periodo = visuals.find(v => v.id === 'month_slicer');
-for (const t of dataVisuals) if (t.lane === 5) interactions.push({ source: periodo.name, target: t.name, type: 'NoFilter' });
+for (const s of dataVisuals) for (const t of dataVisuals) {
+  if (s === t || segue(s, t)) continue;
+  if (s.lane !== t.lane || (ehResposta(t) && s !== execucao)) interactions.push({ source: s.name, target: t.name, type: 'NoFilter' });
+}
+// revisão 5 (decisão 1): o filtro de período não alcança a raia 5 (ela mostra sempre as janelas testadas e o mês
+// previsto); revisão 6: nem as respostas e aberturas, que usam os períodos por regra
+const periodo = byId('month_slicer');
+for (const t of dataVisuals) if (t.lane === 5 || ehResposta(t)) interactions.push({ source: periodo.name, target: t.name, type: 'NoFilter' });
 
 // ---------- escrita: visuais e página ----------
 fs.rmSync(visualsDir, { recursive: true, force: true });

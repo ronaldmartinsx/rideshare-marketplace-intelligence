@@ -4,9 +4,9 @@
   "position": {
     "x": 1072,
     "y": 784,
-    "z": 30000,
-    "height": 840,
     "width": 320,
+    "height": 840,
+    "z": 30000,
     "tabOrder": 30000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_zona.zona",
-              "nativeQueryRef": "zona",
-              "active": true
+              "nativeQueryRef": "zona"
             }
           ]
         },
@@ -66,7 +65,8 @@
             },
             "direction": "Descending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -275,8 +275,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Breezy Point lidera, com P90 de 19 min'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_espera_histograma"
+                    }
+                  },
+                  "Property": "Subtitulo Ranking P90"
                 }
               }
             },
@@ -313,7 +318,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filteredf261ff59f2ad8a5d1af2a3",
+        "name": "Filter4d45a491841f56ece2bdc763",
         "field": {
           "Measure": {
             "Expression": {
@@ -325,6 +330,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -358,11 +364,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filter8a833de731896570a97f104d",
+        "name": "Filter2890d9c92170e42876166ad7",
         "field": {
           "Measure": {
             "Expression": {
@@ -374,6 +379,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -407,11 +413,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filter4661401e9527b488d61360ea",
+        "name": "Filterfae1d2292a4abab4b9d3ff2d",
         "field": {
           "Column": {
             "Expression": {
@@ -423,6 +428,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -456,8 +462,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

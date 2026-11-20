@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 2288,
-    "z": 34000,
-    "height": 280,
     "width": 664,
+    "height": 280,
+    "z": 34000,
     "tabOrder": 34000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },
@@ -245,8 +244,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Acompanha a receita: +7%'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Repasse Hora"
                 }
               }
             },

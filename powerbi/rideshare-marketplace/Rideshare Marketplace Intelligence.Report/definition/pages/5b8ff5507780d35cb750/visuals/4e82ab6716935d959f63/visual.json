@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 5222,
-    "z": 46000,
-    "height": 376,
     "width": 544,
+    "height": 376,
+    "z": 46000,
     "tabOrder": 46000
   },
   "visual": {
@@ -28,7 +28,6 @@
               },
               "queryRef": "dim_mes.ano_mes",
               "nativeQueryRef": "ano_mes",
-              "active": true,
               "displayName": "Mês"
             }
           ]
@@ -83,7 +82,8 @@
             },
             "direction": "Ascending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -242,7 +242,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Colunas: erro percentual (WAPE) do modelo (índigo) e do palpite sazonal (cinza) em cada mês de abril a setembro de 2026.'"
+                  "Value": "'Colunas: erro percentual (WAPE) do modelo (índigo) e do palpite sazonal (cinza) em cada mês testado da execução escolhida.'"
                 }
               }
             }
@@ -313,8 +313,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'O modelo vence nos 6 meses; a maior vantagem é em setembro (Labor Day)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ml_backtest_metricas"
+                    }
+                  },
+                  "Property": "Subtitulo WAPE Janelas"
                 }
               }
             },

@@ -9,6 +9,22 @@ table dim_execucao
 		summarizeBy: none
 		sourceColumn: execucao
 
+	/// TRUE na execução padrão da raia 5, por regra (ADR 0023): a de mais janelas de backtest; no empate, a mais recente. É a usada quando nenhuma execução está selecionada. Coluna calculada (Claude).
+	column is_padrao =
+			VAR rodadas = CALCULATE ( COUNTROWS ( ml_backtest_metricas ), ml_backtest_metricas[tipo] = "backtest" )
+			VAR por_execucao =
+			    ADDCOLUMNS (
+			        ALL ( dim_execucao[execucao] ),
+			        "@r", CALCULATE ( COUNTROWS ( ml_backtest_metricas ), ml_backtest_metricas[tipo] = "backtest" )
+			    )
+			VAR max_rodadas = MAXX ( por_execucao, [@r] )
+			VAR padrao = MAXX ( FILTER ( por_execucao, [@r] = max_rodadas ), dim_execucao[execucao] )
+			RETURN
+			    dim_execucao[execucao] = padrao
+		dataType: boolean
+		lineageTag: 52fd2591-0a7d-4033-a299-e6eaa05c622b
+		summarizeBy: none
+
 	partition dim_execucao = m
 		mode: import
 		source =

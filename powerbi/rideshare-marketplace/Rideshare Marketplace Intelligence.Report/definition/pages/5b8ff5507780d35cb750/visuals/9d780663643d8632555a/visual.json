@@ -10,38 +10,40 @@
     "tabOrder": 15000
   },
   "visual": {
-    "visualType": "textbox",
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_espera_histograma"
+                    }
+                  },
+                  "Property": "HTML Abertura 1"
+                }
+              },
+              "queryRef": "fct_espera_histograma.HTML Abertura 1",
+              "nativeQueryRef": "HTML Abertura 1"
+            }
+          ]
+        }
+      }
+    },
     "objects": {
-      "general": [
+      "compatibility": [
         {
           "properties": {
-            "paragraphs": [
-              {
-                "textRuns": [
-                  {
-                    "value": "RAIA 1 DE 5 · ONDE E QUANDO FALTA OFERTA?",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "20px",
-                      "color": "#B04A00",
-                      "fontWeight": "bold"
-                    }
-                  }
-                ]
-              },
-              {
-                "textRuns": [
-                  {
-                    "value": "A espera piorou: o P90 da cidade subiu de 8,1 min (2024) para 10,1 min (jan–set/2026), puxado pela Uber (7,8 → 10,7 min); a Lyft ficou estável em ~8,8. Falta oferta na periferia (Breezy Point, City Island, Flushing Meadows: 18 a 21 min) e nas madrugadas de fim de semana e feriado (4h: ~13 min).",
-                    "textStyle": {
-                      "fontFamily": "Segoe UI",
-                      "fontSize": "14px",
-                      "color": "#1F1F1F"
-                    }
-                  }
-                ]
+            "legacyRendering": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
               }
-            ]
+            }
           }
         }
       ]
@@ -127,6 +129,32 @@
               "expr": {
                 "Literal": {
                   "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pergunta e resposta da raia 1, geradas pelos dados.'"
                 }
               }
             }
