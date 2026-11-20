@@ -6,8 +6,8 @@
     "y": 2664,
     "width": 1216,
     "height": 96,
-    "z": 20000,
-    "tabOrder": 20000
+    "z": 21000,
+    "tabOrder": 21000
   },
   "visual": {
     "visualType": "textbox",
@@ -19,7 +19,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "RAIA 3 DE 4 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?",
+                    "value": "RAIA 3 DE 5 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "20px",

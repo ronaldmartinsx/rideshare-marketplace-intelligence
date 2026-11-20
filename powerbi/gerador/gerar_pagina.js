@@ -1,4 +1,4 @@
-// Gerador da página única com raias (ADR 0019), revisão 3 (refinamentos do Ronald em 05/11/2026).
+// Gerador da página única com raias (ADR 0019), revisão 5 (raia 5, "Previsto × realizado", Fase 5, 20/11/2026).
 // Escreve os visuais, o page.json, o tema e os registros do report.json a partir do contrato em
 // _brief/report-spec.md. Não mexe no modelo semântico (medidas ficam no TMDL).
 //
@@ -26,8 +26,11 @@ const TEMA = 'RideshareTema-3f9c2a71.json';
 const HTMLVIS = 'htmlContent443BE3AD55E043BF878BED274D3A6865'; // HTML Content (edição Secure), GUID gravado pelo Desktop
 const LINKS = { github: 'https://github.com/ronaldmartinsx', portfolio: 'https://www.rmartinsdev.com.br/', linkedin: process.env.LINKEDIN || null };
 
-// ---------- grade: 12 colunas x 49 linhas; margem 48; gutter 24 ----------
-const W = 1440, PAGE_H = 5000, COL = 114, ROW = 100, M = 48, G = 24;
+// ---------- grade: 12 colunas x 59 linhas; margem 48; gutter 24 ----------
+// revisão 5: a raia 5 começa na linha 49 e é posicionada em px (compacta, sem o vazio entre a abertura e os
+// cartões); o rodapé fica logo abaixo dela (página de 5000 para 5944 px)
+const N_LANES = 5, FOOTER_Y = 5784;
+const W = 1440, PAGE_H = FOOTER_Y + 160, COL = 114, ROW = 100, M = 48, G = 24;
 const snap = v => Math.round(v / 8) * 8;
 function box([c0, r0, c1, r1], slot, of) {
   let x = M + (c0 - 1) * COL, y = M + (r0 - 1) * ROW;
@@ -80,8 +83,10 @@ function fTopN(f, n, aggTable, aggCol) {
 const FONT = 'Segoe UI';
 const C = { texto: '#1F1F1F', sub: '#605E5C', borda: '#E1DFDD', fundo: '#F7F7F5', navy: '#1B2A41', navyTxt: '#C9D6E8',
   p90: '#D55E00', p90t: '#FBE3D3', eco: '#0072B2', repasse: '#56B4E9', cbd: '#009E73', cbdt: '#D6F0E8', lyft: '#CC79A7', lyftt: '#F3E1EC', uber: '#4D4D4D' };
-const LANE = { 1: '#B04A00', 2: '#005A8C', 3: '#00785A', 4: '#9E4F80' };   // faixas (texto branco com contraste AA)
-const TINT = { 1: '#FBF1EA', 2: '#EAF2F8', 3: '#E8F4EF', 4: '#F6ECF2' };   // fundo levemente tingido da raia
+// revisão 5: índigo na raia 5 (as cores livres da paleta ficavam perto das raias 1 e 2, ou sem contraste)
+const LANE = { 1: '#B04A00', 2: '#005A8C', 3: '#00785A', 4: '#9E4F80', 5: '#4B5D99' };   // faixas (texto branco com contraste AA)
+const TINT = { 1: '#FBF1EA', 2: '#EAF2F8', 3: '#E8F4EF', 4: '#F6ECF2', 5: '#ECEEF6' };   // fundo levemente tingido da raia
+const BASELINE = '#9AA5B1'; // revisão 5: o palpite sazonal sempre em cinza (é a régua, não o protagonista)
 const run = (value, size, color, bold = false) => ({ value, textStyle: Object.assign({ fontFamily: FONT, fontSize: `${size}px`, color }, bold ? { fontWeight: 'bold' } : {}) });
 const noChrome = () => ({
   background: [{ properties: { show: lit('false') } }], border: [{ properties: { show: lit('false') } }],
@@ -130,9 +135,17 @@ const R = {
   l2_band: [1, 18, 13, 20], l2_take: [1, 20, 7, 24], l2_receita: [7, 20, 13, 24], l2_repasse: [1, 24, 7, 27], l2_receita_min: [7, 24, 10, 27], l2_qualidade: [10, 24, 13, 27],
   l3_band: [1, 27, 13, 29], l3_map: [1, 29, 6, 38], l3_trend: [6, 29, 13, 33], l3_origem: [6, 33, 13, 38],
   l4_band: [1, 38, 13, 40], l4_map: [1, 40, 7, 49], l4_trend: [7, 40, 13, 44], l4_table: [7, 44, 13, 49],
-  footer: [1, 49, 13, 50],
+  l5_band: [1, 49, 13, 51],
 };
-const LANE_ROWS = { 1: [7, 18], 2: [18, 27], 3: [27, 38], 4: [38, 49] }; // [faixa início, raia fim) em linhas
+// revisão 5: raia 5 em px finais (a abertura termina em y = 4960); o add() sobe LANE_SHIFT, então ele é somado aqui
+const at5 = (x, y, width, height) => ({ x, y: y + LANE_SHIFT, width, height });
+const R5 = {
+  exec: at5(48, 4976, 320, 56), exec_txt: at5(392, 4976, 1000, 56),
+  cards: at5(48, 5048, 1344, 150),
+  wape: at5(48, 5222, 544, 376), diario: at5(616, 5222, 776, 376),
+  limites: at5(48, 5622, 1344, 120), // termina em 5742; rodapé em 5784
+};
+const LANE_ROWS = { 1: [7, 18], 2: [18, 27], 3: [27, 38], 4: [38, 49], 5: [49, 59] }; // [faixa início, raia fim) em linhas
 
 // campos
 const D = 'fct_demanda_zona_hora', H = 'fct_espera_histograma', O = 'fct_od_mensal';
@@ -146,6 +159,14 @@ const F = {
   mes: col('dim_mes', 'mes_inicio'), ano: col('dim_mes', 'ano'),
   hora: col('dim_periodo_espera', 'hora_do_dia'), tipo: col('dim_periodo_espera', 'tipo_dia'),
 };
+// revisão 5: campos da raia 5 (medidas ✍️ do Ronald; as de texto e HTML são de apresentação)
+const P = 'ml_forecast_demanda', B = 'ml_backtest_metricas';
+const F5 = {
+  execucao: col('dim_execucao', 'execucao'), anoMes: col('dim_mes', 'ano_mes'), dia: col('dim_tempo_hora', 'data'),
+  previsao: mea(P, 'Previsão Total'), realizado: mea(P, 'Realizado'),
+  wapeModelo: mea(B, 'WAPE Modelo'), wapeBase: mea(B, 'WAPE Baseline'),
+};
+const EXECUCAO_OFICIAL = '20261116T233529Z'; // a do veredito da Fase 5 (6 rodadas); pré-selecionada na segmentação
 const ativas = () => fIn(F.opId, ['HV0003', 'HV0005']);
 const soLyft = () => fIn(F.opId, ['HV0005']);
 const opColors = () => ['Lyft', 'Uber'].map(o => ({ properties: { fill: fill(o === 'Lyft' ? C.lyft : C.uber) },
@@ -182,12 +203,12 @@ function shapeMap(value, loColor, hiColor, lo = null, hi = null) {
 // ===== cabeçalho (faixa azul-marinho de borda a borda) =====
 add('hero_band', 'deco', { x: 0, y: 0, width: W, height: snap(M + 2 * ROW - G / 2) }, shape(C.navy));
 // revisão 4: título e ficha em HTML com período e volume dinâmicos (medidas de apresentação)
-const htmlVis = (measure, alt, extraVCO = {}) => ({ visualType: HTMLVIS,
-  query: { queryState: { content: { projections: [proj(mea(D, measure))] } } },
+const htmlVis = (measure, alt, extraVCO = {}, table = D) => ({ visualType: HTMLVIS,
+  query: { queryState: { content: { projections: [proj(mea(table, measure))] } } },
   objects: { compatibility: [{ properties: { legacyRendering: lit('true') } }] },
   visualContainerObjects: Object.assign(noChrome(), { visualTooltip: [{ properties: { show: lit('false') } }],
     general: [{ properties: { altText: str(alt) } }] }, extraVCO) });
-add('page_title', 0, { x: 48, y: 48, width: 776, height: 104 }, htmlVis('HTML Titulo', 'Título: quatro respostas para o time de Marketplace da Lyft, com o período dos dados.'));
+add('page_title', 0, { x: 48, y: 48, width: 776, height: 104 }, htmlVis('HTML Titulo', 'Título: cinco respostas para o time de Marketplace da Lyft, com o período dos dados.'));
 add('header_ficha', 0, { x: 1104, y: 48, width: 288, height: 176 }, htmlVis('HTML Ficha Dados', 'Ficha dos dados: meses, zonas, viagens e último mês disponível.'));
 // posições do cabeçalho ajustadas pelo Ronald no Desktop (commit 96ff690); legenda com 160 px para não sobrepor o filtro
 add('month_slicer', 'slicer', { x: 220, y: 160, width: 320, height: 80 }, {
@@ -223,9 +244,11 @@ const answers = [
   ['2 · ECONOMIA', 'Cada corrida rende mais: receita por milha +9% e repasse por hora +7%, com take rate estável em ~23%.', 2],
   ['3 · TAXA DO CBD', 'Corridas para o centro −5,1% enquanto a cidade cresceu 1,9%; a queda veio do resto de Manhattan.', 3],
   ['4 · UBER × LYFT', 'Share da Lyft de 25,2% para 27,7%, puxado pelo Bronx; perde terreno só em 10 zonas de Manhattan.', 4],
+  ['5 · PREVISÃO', 'Sim: erro de 12,9% contra 14,1% do palpite sazonal, vencendo nas 6 janelas testadas.', 5],
 ];
-answers.forEach(([t, txt, n], i) => add(`answer_${n}`, 0, { ...box(R.answers, i + 1, 4), height: 136 }, textbox([ // 3c: sem vazio embaixo
-  { textRuns: [run(t, 12, LANE[n], true)] }, { textRuns: [run(txt, 15, C.texto)] },
+// revisão 5: cinco cartões (~250 px cada); fonte 14 e altura 160 para os textos caberem sem cortar
+answers.forEach(([t, txt, n], i) => add(`answer_${n}`, 0, { ...box(R.answers, i + 1, answers.length), height: 160 }, textbox([ // 3c: sem vazio embaixo
+  { textRuns: [run(t, 12, LANE[n], true)] }, { textRuns: [run(txt, 14, C.texto)] },
   { textRuns: [run('Leitura com dados até set/2026', 10, C.sub)] }], { // revisão 4: o texto é fixo; o período fica explícito
   background: [{ properties: { show: lit('true'), color: fill('#FFFFFF'), transparency: lit('0D') } }],
   border: [{ properties: { show: lit('true'), color: fill(C.borda), radius: lit('8D') } }],
@@ -238,15 +261,17 @@ const lanes = {
   2: ['COMO EVOLUI A ECONOMIA UNITÁRIA?', 'Cada corrida rende mais: receita por milha +9% (US$ 5,16 → 5,65) e repasse por hora de corrida +7% (US$ 60 → 64) de 2024 a 2026, com take rate estável em ~23%. A exceção é a Lyft: take rate de 20,9% em 2025, no mesmo ano em que ganhou share (hipótese, não causalidade provada), e 23,9% em 2026.'],
   3: ['QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?', 'Nos 12 meses depois de 05/01/2025, as corridas com destino no CBD caíram 5,1% (153 mil → 145 mil por dia) enquanto o total da cidade subiu 1,9%; a fatia do CBD foi de 23,4% para 21,8%. A queda veio do resto de Manhattan (−10% nas corridas que entram no CBD); Brooklyn e Queens ficaram estáveis.'],
   4: ['ONDE A LYFT PERDE TERRENO PARA A UBER?', 'A Lyft subiu de 25,2% (2024) para 27,7% de share (últimos 12 meses), puxada pelo Bronx (+7 p.p. em Bedford Park, Belmont e Norwood). Perde terreno em só 10 das 179 maiores zonas, todas em Manhattan (Yorkville, Manhattan Valley, Lower East Side), em até −1,7 p.p.'],
+  // revisão 5: baseline conferido no ml_baseline_demanda.sql (média da mesma hora da semana nas 4 semanas antes do corte)
+  5: ['DÁ PARA PREVER A DEMANDA?', 'Sim. O modelo errou 12,9% contra 14,1% do palpite sazonal (a média da mesma hora nas 4 semanas anteriores) e venceu nas 6 janelas de abril a setembro de 2026. A vantagem foi maior nos meses com feriado, como setembro (2,2 pp) e julho (1,2 pp), que a média das semanas anteriores não enxerga. Para outubro, o modelo prevê 22,2 milhões de corridas. Esta raia não segue o filtro de período.'],
 };
-for (const n of [1, 2, 3, 4]) {
+for (const n of Object.keys(lanes).map(Number)) {
   const [r0, r1] = LANE_ROWS[n];
   // revisão 4: sem preenchimento ("carnaval de cores"); linha fina na cor da raia + número e pergunta no tom escuro
   const top = snap(M + (r0 - 1) * ROW - G / 2);
   add(`l${n}_line`, 'deco', { x: 0, y: top, width: W, height: 4 }, shape(LANE[n]));
   add(`l${n}_num`, n, { x: M, y: top + 20, width: 104, height: 96 }, textbox([{ textRuns: [run(`0${n}`, 56, LANE[n], true)] }]));
   add(`l${n}_head`, n, { x: M + 128, y: top + 24, width: W - 2 * M - 128, height: 96 }, textbox([
-    { textRuns: [run(`RAIA ${n} DE 4 · ${lanes[n][0]}`, 20, LANE[n], true)] },
+    { textRuns: [run(`RAIA ${n} DE ${N_LANES} · ${lanes[n][0]}`, 20, LANE[n], true)] },
     { textRuns: [run(lanes[n][1], 14, C.texto)] }]));
 }
 
@@ -320,8 +345,49 @@ add('l4_table_zonas', 4, R.l4_table, { visualType: 'tableEx',
   visualContainerObjects: cardVCO('20 zonas com mais corridas da Lyft', 'Entre as maiores, Park Slope tem o maior share (34%)', 'Tabela: as 20 zonas com mais corridas da Lyft, com distrito, corridas e share da Lyft.') },
   [soLyft(), fTopN(F.zona, 20, D, 'qtd_corridas')]);
 
+// ===== raia 5: previsto × realizado (Fase 5) =====
+// segmentação de execução: seleção única, com a execução oficial pré-selecionada (as medidas também se protegem
+// com HASONEVALUE: duas camadas). Lista suspensa para caber numa linha da grade.
+add('l5_exec_slicer', 5, R5.exec, {
+  visualType: 'slicer', query: { queryState: { Values: { projections: [proj(F5.execucao, 'Execução do modelo')] } } },
+  objects: {
+    data: [{ properties: { mode: str('Dropdown') } }],
+    selection: [{ properties: { singleSelect: lit('true') } }],
+    header: [{ properties: { show: lit('true'), text: str('Execução do modelo'), fontFamily: str(FONT), textSize: lit('10D'), bold: lit('true'), fontColor: fill(LANE[5]) } }],
+    items: [{ properties: { fontFamily: str(FONT), textSize: lit('10D'), fontColor: fill(C.texto) } }],
+    general: [{ properties: { filter: { filter: { Version: 2, From: [{ Name: 'e', Entity: 'dim_execucao', Type: 0 }],
+      Where: [{ Condition: { In: { Expressions: [srcRef(F5.execucao, 'e')], Values: [[{ Literal: { Value: `'${EXECUCAO_OFICIAL}'` } }]] } } }] } } } }],
+  },
+  visualContainerObjects: { background: [{ properties: { show: lit('false') } }], border: [{ properties: { show: lit('false') } }],
+    padding: [{ properties: { top: lit('0D'), bottom: lit('0D'), left: lit('0D'), right: lit('0D') } }],
+    visualHeader: [{ properties: { show: lit('false') } }],
+    general: [{ properties: { altText: str('Escolha da execução do modelo (uma por vez); filtra só a raia 5.') } }] } });
+add('l5_exec_txt', 5, R5.exec_txt, htmlVis('HTML Execucao no Ar', 'Qual execução do modelo está no ar, ou um aviso se nenhuma estiver selecionada.', {}, P));
+
+// revisão 5b (pedido do Ronald): cartões em HTML, no padrão da abertura; o valor cabe inteiro e a métrica é
+// explicada ao passar o mouse
+add('l5_cards_html', 5, R5.cards, htmlVis('HTML Cartoes Previsao', 'Cinco indicadores da previsão: erro do modelo, erro do palpite sazonal, vantagem, janelas vencidas e previsão do mês seguinte. Passe o mouse para ver a definição.', {}, P));
+
+add('l5_wape_mes', 5, R5.wape, { visualType: 'clusteredColumnChart',
+  query: { queryState: { Category: { projections: [proj(F5.anoMes, 'Mês')] },
+    Y: { projections: [proj(F5.wapeModelo, 'Modelo'), proj(F5.wapeBase, 'Palpite sazonal')] } },
+    sortDefinition: { sort: [{ field: F5.anoMes, direction: 'Ascending' }], isDefaultSort: false } },
+  objects: { dataPoint: [{ properties: { fill: fill(LANE[5]) }, selector: { metadata: qref(F5.wapeModelo) } },
+    { properties: { fill: fill(BASELINE) }, selector: { metadata: qref(F5.wapeBase) } }],
+    labels: [{ properties: { show: lit('true') } }] },
+  visualContainerObjects: cardVCO('Erro por janela testada: modelo × palpite sazonal', 'O modelo vence nos 6 meses; a maior vantagem é em setembro (Labor Day)',
+    'Colunas: erro percentual (WAPE) do modelo (índigo) e do palpite sazonal (cinza) em cada mês de abril a setembro de 2026.') });
+add('l5_diario', 5, R5.diario, { visualType: 'lineChart',
+  query: { queryState: { Category: { projections: [proj(F5.dia, 'Dia')] },
+    Y: { projections: [proj(F5.previsao, 'Previsto'), proj(F5.realizado, 'Realizado')] } } },
+  objects: { dataPoint: [{ properties: { fill: fill(LANE[5]) }, selector: { metadata: qref(F5.previsao) } },
+    { properties: { fill: fill(C.uber) }, selector: { metadata: qref(F5.realizado) } }] },
+  visualContainerObjects: cardVCO('Corridas por dia: previsto × realizado', 'O previsto acompanha o realizado até setembro e segue sozinho em outubro',
+    'Linhas: corridas diárias previstas pelo modelo (índigo) e realizadas (cinza escuro), de abril a outubro de 2026; outubro só tem a previsão.') });
+add('l5_limites', 5, R5.limites, htmlVis('HTML Limitacoes', 'As três limitações da previsão: viés para baixo, clima observado e atraso dos dados da TLC.', {}, P));
+
 // ===== rodapé (faixa azul-marinho) com fonte e links =====
-const fy = snap(M + (49 - 1) * ROW - G / 2);
+const fy = FOOTER_Y;
 add('footer_band', 'deco', { x: 0, y: fy, width: W, height: PAGE_H - fy }, shape(C.navy));
 add('footer_text', 0, { x: M, y: fy + 20, width: 900, height: 80 }, htmlVis('HTML Rodape', 'Fonte dos dados e nota sobre o projeto.')); // revisão 4: texto para o usuário final
 const links = [['Portfólio', LINKS.portfolio], ['GitHub', LINKS.github], ['LinkedIn', LINKS.linkedin]].filter(([, u]) => u);
@@ -338,6 +404,10 @@ const dataVisuals = visuals.filter(v => v.json.visual.query && v.lane !== 'slice
 const interactions = [];
 for (const s of dataVisuals) for (const t of dataVisuals)
   if (s !== t && s.lane !== t.lane) interactions.push({ source: s.name, target: t.name, type: 'NoFilter' });
+// revisão 5 (decisão 1): o filtro de período não alcança a raia 5. Ela mostra sempre as janelas testadas e o mês
+// previsto; com o período filtrado, o fim em set/2026 apagaria o cartão de outubro.
+const periodo = visuals.find(v => v.id === 'month_slicer');
+for (const t of dataVisuals) if (t.lane === 5) interactions.push({ source: periodo.name, target: t.name, type: 'NoFilter' });
 
 // ---------- escrita: visuais e página ----------
 fs.rmSync(visualsDir, { recursive: true, force: true });
@@ -348,7 +418,7 @@ for (const v of visuals) {
 }
 const pageFile = path.join(pageDir, 'page.json');
 const page = JSON.parse(fs.readFileSync(pageFile, 'utf8'));
-Object.assign(page, { displayName: 'Rideshare em NY — quatro respostas', displayOption: DISPLAY, width: W, height: PAGE_H,
+Object.assign(page, { displayName: 'Rideshare em NY — cinco respostas', displayOption: DISPLAY, width: W, height: PAGE_H,
   objects: { background: [{ properties: { color: fill(C.fundo), transparency: lit('0D') } }] }, visualInteractions: interactions });
 fs.writeFileSync(pageFile, JSON.stringify(page, null, 2) + '\n');
 

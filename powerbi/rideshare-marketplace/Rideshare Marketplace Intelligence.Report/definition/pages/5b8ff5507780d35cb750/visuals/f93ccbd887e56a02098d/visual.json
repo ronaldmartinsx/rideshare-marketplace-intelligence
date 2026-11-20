@@ -4,10 +4,10 @@
   "position": {
     "x": 1072,
     "y": 784,
-    "z": 26000,
+    "z": 30000,
     "height": 840,
     "width": 320,
-    "tabOrder": 26000
+    "tabOrder": 30000
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -313,7 +313,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterb82401e5854ae1d2b09b119b",
+        "name": "Filteredf261ff59f2ad8a5d1af2a3",
         "field": {
           "Measure": {
             "Expression": {
@@ -362,7 +362,7 @@
         "howCreated": "User"
       },
       {
-        "name": "Filter2c184a1cdc0ef33fe001d8b3",
+        "name": "Filter8a833de731896570a97f104d",
         "field": {
           "Measure": {
             "Expression": {
@@ -411,7 +411,7 @@
         "howCreated": "User"
       },
       {
-        "name": "Filter1968a96682e6a14cf68d076c",
+        "name": "Filter4661401e9527b488d61360ea",
         "field": {
           "Column": {
             "Expression": {

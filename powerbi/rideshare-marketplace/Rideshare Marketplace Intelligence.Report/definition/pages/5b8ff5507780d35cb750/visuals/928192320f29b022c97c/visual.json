@@ -4,10 +4,10 @@
   "position": {
     "x": 736,
     "y": 3888,
-    "z": 37000,
+    "z": 41000,
     "height": 376,
     "width": 664,
-    "tabOrder": 37000
+    "tabOrder": 41000
   },
   "visual": {
     "visualType": "lineChart",
@@ -368,7 +368,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter094e725509c162673124ef02",
+        "name": "Filter8af666ac67aba2f341962d13",
         "field": {
           "Column": {
             "Expression": {

@@ -214,6 +214,180 @@ cultureInfo pt-BR
 			          }
 			        }
 			      ]
+			    },
+			    "ml_forecast_demanda.previsão_produção": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_forecast_demanda",
+			          "ConceptualProperty": "Previsão Produção"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "ml_forecast_demanda.previsão_total": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_forecast_demanda",
+			          "ConceptualProperty": "Previsão Total"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Previsto": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "ml_forecast_demanda.realizado": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_forecast_demanda",
+			          "ConceptualProperty": "Realizado"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Realizado": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "ml_backtest_metricas.wape_modelo": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_backtest_metricas",
+			          "ConceptualProperty": "WAPE Modelo"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Modelo": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "ml_backtest_metricas.wape_baseline": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_backtest_metricas",
+			          "ConceptualProperty": "WAPE Baseline"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Palpite sazonal": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "ml_backtest_metricas.ganho_pp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_backtest_metricas",
+			          "ConceptualProperty": "Ganho (pp)"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "ml_backtest_metricas.texto_rodadas_vencidas": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_backtest_metricas",
+			          "ConceptualProperty": "Texto Rodadas Vencidas"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "dim_mes.ano_mes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_mes",
+			          "ConceptualProperty": "ano_mes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mês": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_tempo_hora.data": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_tempo_hora",
+			          "ConceptualProperty": "data"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Dia": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dim_execucao.execucao": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "dim_execucao",
+			          "ConceptualProperty": "execucao"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Execução do modelo": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
 			    }
 			  }
 			}

@@ -4,10 +4,10 @@
   "position": {
     "x": 736,
     "y": 4288,
-    "z": 38000,
+    "z": 42000,
     "height": 480,
     "width": 664,
-    "tabOrder": 38000
+    "tabOrder": 42000
   },
   "visual": {
     "visualType": "tableEx",
@@ -454,7 +454,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter1ad42be0d958d3ca937c52d5",
+        "name": "Filterfe8addb0c94d22b306fb9f73",
         "field": {
           "Column": {
             "Expression": {
@@ -508,7 +508,7 @@
         "howCreated": "User"
       },
       {
-        "name": "Filtere20ad64882b06caccd26ead6",
+        "name": "Filter7b5ecd3a7b3d6cbefa59898d",
         "field": {
           "Column": {
             "Expression": {

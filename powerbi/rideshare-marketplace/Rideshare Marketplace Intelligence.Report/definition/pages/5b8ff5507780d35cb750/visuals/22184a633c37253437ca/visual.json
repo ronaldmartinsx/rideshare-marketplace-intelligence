@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "22184a633c37253437ca",
   "position": {
-    "x": 392,
+    "x": 320,
     "y": 448,
-    "width": 320,
-    "height": 136,
+    "width": 248,
+    "height": 160,
     "z": 9000,
     "tabOrder": 9000
   },
@@ -35,7 +35,7 @@
                     "value": "Cada corrida rende mais: receita por milha +9% e repasse por hora +7%, com take rate estável em ~23%.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
-                      "fontSize": "15px",
+                      "fontSize": "14px",
                       "color": "#1F1F1F"
                     }
                   }

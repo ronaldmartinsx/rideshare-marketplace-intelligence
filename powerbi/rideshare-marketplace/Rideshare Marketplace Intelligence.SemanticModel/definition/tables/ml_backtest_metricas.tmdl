@@ -65,6 +65,15 @@ table ml_backtest_metricas
 		displayFolder: Backtest
 		lineageTag: 2859de22-32a4-4b70-b0db-99a581bbaabd
 
+	/// "X de Y" para o cartão da raia 5, a partir de [Rodadas Vencidas] e [Rodadas Testadas]. Vazio sem exatamente uma execução. Medida de apresentação (Claude).
+	measure 'Texto Rodadas Vencidas' =
+			VAR v = [Rodadas Vencidas]
+			VAR t = [Rodadas Testadas]
+			RETURN
+			    IF ( NOT ISBLANK ( t ), FORMAT ( COALESCE ( v, 0 ), "0" ) & " de " & FORMAT ( t, "0" ) )
+		displayFolder: Apresentacao
+		lineageTag: 05b307cc-91a3-4fb3-ac32-1db13b67d46e
+
 	/// Chave para a dim_execucao. Escondida: a segmentação usa dim_execucao[execucao].
 	column execucao
 		dataType: string

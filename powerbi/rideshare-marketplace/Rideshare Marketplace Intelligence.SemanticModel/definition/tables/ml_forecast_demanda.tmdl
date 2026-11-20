@@ -101,6 +101,60 @@ table ml_forecast_demanda
 		displayFolder: Apresentacao
 		lineageTag: 1c14f4c1-f0be-462a-a303-0365fc69677d
 
+	/// Faixa de 5 cartões da raia 5 em HTML, no padrão do HTML Cartoes KPI: erro do modelo, erro do palpite sazonal, vantagem, janelas vencidas e previsão do mês seguinte. Ao passar o mouse, a explicação da métrica em linguagem de negócio. Só formata medidas existentes; sem execução única, mostra —. Medida de apresentação (Claude).
+	measure 'HTML Cartoes Previsao' =
+			VAR fmt = "pt-BR"
+			VAR vazio = "—"
+			VAR wm = [WAPE Modelo]
+			VAR wb = [WAPE Baseline]
+			VAR g = [Ganho (pp)]
+			VAR rel = DIVIDE ( g / 100, wb )
+			VAR jan = [Texto Rodadas Vencidas]
+			VAR n = [Rodadas Testadas]
+			VAR prod = [Previsão Produção]
+			-- meses do backtest e da produção, para o texto (ex.: abr/2026 a set/2026)
+			VAR ini = CALCULATE ( MIN ( ml_backtest_metricas[mes_alvo] ), ml_backtest_metricas[tipo] = "backtest" )
+			VAR fim = CALCULATE ( MAX ( ml_backtest_metricas[mes_alvo] ), ml_backtest_metricas[tipo] = "backtest" )
+			VAR mp = CALCULATE ( MAX ( ml_backtest_metricas[mes_alvo] ), ml_backtest_metricas[tipo] = "producao" )
+			VAR t_ini = IF ( NOT ISBLANK ( ini ), LOWER ( FORMAT ( DATE ( VALUE ( LEFT ( ini, 4 ) ), VALUE ( RIGHT ( ini, 2 ) ), 1 ), "MMM/yyyy", fmt ) ) )
+			VAR t_fim = IF ( NOT ISBLANK ( fim ), LOWER ( FORMAT ( DATE ( VALUE ( LEFT ( fim, 4 ) ), VALUE ( RIGHT ( fim, 2 ) ), 1 ), "MMM/yyyy", fmt ) ) )
+			VAR t_mp = IF ( NOT ISBLANK ( mp ), LOWER ( FORMAT ( DATE ( VALUE ( LEFT ( mp, 4 ) ), VALUE ( RIGHT ( mp, 2 ) ), 1 ), "MMM/yyyy", fmt ) ), "o mês seguinte" )
+			-- valores já formatados
+			VAR v1 = IF ( ISBLANK ( wm ), vazio, FORMAT ( wm, "0.00%", fmt ) )
+			VAR v2 = IF ( ISBLANK ( wb ), vazio, FORMAT ( wb, "0.00%", fmt ) )
+			VAR v3 = IF ( ISBLANK ( g ), vazio, FORMAT ( g, "0.00", fmt ) & " pp" )
+			VAR v4 = IF ( ISBLANK ( jan ), vazio, jan )
+			VAR v5 = IF ( ISBLANK ( prod ), vazio, FORMAT ( prod / 1e6, "#,##0.0", fmt ) & " mi" )
+			VAR v_rel = IF ( ISBLANK ( rel ), vazio, FORMAT ( rel, "0.0%", fmt ) )
+			VAR periodo = IF ( ISBLANK ( ini ), "sem execução selecionada", IF ( ini = fim, t_ini, t_ini & " a " & t_fim ) )
+			-- ícones em SVG (traço na cor do cartão)
+			VAR ic_alvo = "<circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='5'/><circle cx='12' cy='12' r='1'/>"
+			VAR ic_regua = "<path d='M3 17L17 3l4 4L7 21z'/><path d='M7 13l2 2M10 10l2 2M13 7l2 2'/>"
+			VAR ic_queda = "<path d='M3 7l6 6 4-4 8 8'/><path d='M21 11v6h-6'/>"
+			VAR ic_check = "<circle cx='12' cy='12' r='9'/><path d='M8 12l3 3 5-6'/>"
+			VAR ic_cal = "<rect x='3' y='5' width='18' height='16' rx='2'/><path d='M3 10h18M8 3v4M16 3v4'/>"
+			VAR svg0 = "<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' stroke='"
+			VAR estilo = "<style>"
+			    & ".pk{display:flex;gap:12px;height:150px;font-family:'Segoe UI',sans-serif;box-sizing:border-box}"
+			    & ".k{flex:1;position:relative;background:#FFFFFF;border:2px solid #E1DFDD;border-radius:10px;padding:12px 14px;overflow:hidden;cursor:help;box-sizing:border-box}"
+			    & ".h{display:flex;justify-content:space-between;align-items:center}"
+			    & ".l{font-size:12px;color:#605E5C;text-transform:uppercase;letter-spacing:.04em}"
+			    & ".v{font-size:30px;font-weight:600;color:#1F1F1F;margin:6px 0 2px}"
+			    & ".c{font-size:12px;color:#605E5C}"
+			    & ".t{display:none;position:absolute;top:0;left:0;right:0;bottom:0;color:#FFFFFF;font-size:12px;line-height:1.45;padding:12px 14px}"
+			    & ".k:hover .t{display:block}"
+			    & "</style>"
+			-- cartão: cor da borda/ícone, tom escuro do hover, rótulo, ícone, valor, contexto, explicação
+			VAR c1 = "<div class='k' style='border-color:#4B5D99'><div class='h'><span class='l'>Erro do modelo</span>" & svg0 & "#4B5D99'>" & ic_alvo & "</svg></div><div class='v'>" & v1 & "</div><div class='c'>média de " & COALESCE ( n, 0 ) & " janelas testadas</div><div class='t' style='background:#36437A'><b>Erro percentual ponderado (WAPE):</b> a soma dos erros, hora a hora e zona a zona, dividida pelas corridas que de fato aconteceram. É a média das janelas de teste, cada uma com um mês que o modelo não viu no treino.</div></div>"
+			VAR c2 = "<div class='k' style='border-color:#9AA5B1'><div class='h'><span class='l'>Erro do palpite sazonal</span>" & svg0 & "#9AA5B1'>" & ic_regua & "</svg></div><div class='v'>" & v2 & "</div><div class='c'>mesma hora, 4 semanas antes</div><div class='t' style='background:#5F6B78'><b>A régua do modelo:</b> o palpite mais simples que faz sentido, a média da mesma hora e dia da semana nas 4 semanas anteriores, sem nenhum treino. Um modelo que não vença este número não serve.</div></div>"
+			VAR c3 = "<div class='k' style='border-color:#4B5D99'><div class='h'><span class='l'>Vantagem do modelo</span>" & svg0 & "#4B5D99'>" & ic_queda & "</svg></div><div class='v'>" & v3 & "</div><div class='c'>" & v_rel & " menos erro, relativo</div><div class='t' style='background:#36437A'><b>Quanto o modelo erra a menos</b> que o palpite sazonal, em pontos percentuais (" & v2 & " − " & v1 & "). Em termos relativos, são " & v_rel & " menos erro.</div></div>"
+			VAR c4 = "<div class='k' style='border-color:#4B5D99'><div class='h'><span class='l'>Janelas vencidas</span>" & svg0 & "#4B5D99'>" & ic_check & "</svg></div><div class='v'>" & v4 & "</div><div class='c'>" & periodo & "</div><div class='t' style='background:#36437A'><b>Teste no passado (backtest):</b> em cada janela, o modelo treina com os dados até um mês e prevê o mês seguinte. Ele errou menos que o palpite sazonal em " & v4 & " janelas.</div></div>"
+			VAR c5 = "<div class='k' style='border-color:#4B5D99'><div class='h'><span class='l'>Previsão " & t_mp & "</span>" & svg0 & "#4B5D99'>" & ic_cal & "</svg></div><div class='v'>" & v5 & "</div><div class='c'>corridas previstas no mês</div><div class='t' style='background:#36437A'><b>Previsão para o mês seguinte ao último dado:</b> " & IF ( ISBLANK ( prod ), vazio, FORMAT ( prod, "#,##0", fmt ) ) & " corridas. O realizado ainda não saiu (a TLC publica com cerca de 2 meses de atraso). Como o modelo erra para baixo no teste, o número real tende a ser um pouco maior.</div></div>"
+			RETURN
+			    estilo & "<div class='pk'>" & c1 & c2 & c3 & c4 & c5 & "</div>"
+		displayFolder: Apresentacao
+		lineageTag: 09fe8a2f-ebef-4f0d-ba88-123d5efcfc0a
+
 	/// Hora prevista (hora local de Nova York). Chave para a dim_tempo_hora[hora]; use a dimensão nos visuais.
 	column hora_alvo
 		dataType: dateTime

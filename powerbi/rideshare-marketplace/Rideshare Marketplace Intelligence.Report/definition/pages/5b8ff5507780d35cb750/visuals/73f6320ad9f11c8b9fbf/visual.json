@@ -6,8 +6,8 @@
     "y": 784,
     "width": 544,
     "height": 840,
-    "z": 24000,
-    "tabOrder": 24000
+    "z": 28000,
+    "tabOrder": 28000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -383,7 +383,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterb2fa19ed242a3e9ed4c41faf",
+        "name": "Filterbd628ece0cf693f1d4f1f20c",
         "field": {
           "Measure": {
             "Expression": {

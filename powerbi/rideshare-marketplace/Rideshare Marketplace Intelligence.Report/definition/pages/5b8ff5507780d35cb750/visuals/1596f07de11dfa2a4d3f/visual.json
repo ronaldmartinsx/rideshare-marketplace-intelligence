@@ -4,10 +4,10 @@
   "position": {
     "x": 616,
     "y": 2784,
-    "z": 34000,
+    "z": 38000,
     "height": 376,
     "width": 776,
-    "tabOrder": 34000
+    "tabOrder": 38000
   },
   "visual": {
     "visualType": "lineChart",

@@ -172,8 +172,8 @@ table fct_demanda_zona_hora
 			RETURN
 			    "<div style='font-family:Segoe UI,sans-serif;color:#FFFFFF'>"
 			    & "<div style='font-size:12px;font-weight:700;color:#C9D6E8;letter-spacing:.04em'>RIDESHARE EM NOVA YORK · " & periodo & "</div>"
-			    & "<div style='font-size:30px;font-weight:700;line-height:1.15;margin:6px 0'>Quatro respostas para o time de Marketplace da Lyft</div>"
-			    & "<div style='font-size:13px;line-height:1.45;color:#C9D6E8'>Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de "
+			    & "<div style='font-size:30px;font-weight:700;line-height:1.15;margin:6px 0'>Cinco respostas para o time de Marketplace da Lyft</div>"
+			    & "<div style='font-size:13px;line-height:1.45;color:#C9D6E8'>Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento, a disputa com a Uber e a previsão da demanda, a partir de "
 			    & FORMAT ( viagens / 1e6, "#,##0", "pt-BR" ) & " milhões de viagens registradas pela TLC.</div></div>"
 		displayFolder: Apresentacao
 		lineageTag: fb017612-fd1c-4802-b6ac-70aff5c83f84

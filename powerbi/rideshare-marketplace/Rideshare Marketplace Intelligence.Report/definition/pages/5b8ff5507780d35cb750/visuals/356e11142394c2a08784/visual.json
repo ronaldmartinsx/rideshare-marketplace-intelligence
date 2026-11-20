@@ -4,8 +4,8 @@
   "position": {
     "x": 48,
     "y": 448,
-    "width": 320,
-    "height": 136,
+    "width": 248,
+    "height": 160,
     "z": 8000,
     "tabOrder": 8000
   },
@@ -35,7 +35,7 @@
                     "value": "A espera piorou: P90 de 8,1 para 10,1 min, puxado pela Uber; falta oferta na periferia e nas madrugadas de fim de semana.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
-                      "fontSize": "15px",
+                      "fontSize": "14px",
                       "color": "#1F1F1F"
                     }
                   }

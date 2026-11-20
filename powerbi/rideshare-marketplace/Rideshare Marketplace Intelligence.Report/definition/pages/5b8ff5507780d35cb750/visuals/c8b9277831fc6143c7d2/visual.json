@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "c8b9277831fc6143c7d2",
   "position": {
-    "x": 736,
+    "x": 592,
     "y": 448,
-    "width": 320,
-    "height": 136,
+    "width": 248,
+    "height": 160,
     "z": 10000,
     "tabOrder": 10000
   },
@@ -35,7 +35,7 @@
                     "value": "Corridas para o centro −5,1% enquanto a cidade cresceu 1,9%; a queda veio do resto de Manhattan.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
-                      "fontSize": "15px",
+                      "fontSize": "14px",
                       "color": "#1F1F1F"
                     }
                   }
