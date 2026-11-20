@@ -13,6 +13,19 @@ from __future__ import annotations
 BANCO = {"dev": "dev_gold", "prod": "gold"}  # mesma convenção da macro generate_schema_name do dbt
 WORKGROUP = "rideshare"                      # limite de 3 GiB por consulta (spec 11.4)
 
+# Manter os arquivos de rascunho que o awswrangler cria no S3 (o parâmetro keep_files dele).
+#
+# TRUE por uma razão de PERMISSÃO, não de preferência: apagar exigiria s3:DeleteObject no bucket de
+# resultados, e a política do Airflow não tem essa ação DE PROPÓSITO desde a Fase 0 — "sem
+# DeleteObject: quem limpa é a regra de ciclo de vida" (iam_airflow.tf). Em vez de alargar a política
+# para o código caber, o código se adapta à decisão que já existia.
+#
+# ESTA CONSTANTE EXISTE PORQUE A DECISÃO ESTAVA ESPALHADA. O mesmo AccessDenied em s3:DeleteObject
+# derrubou a DAG DUAS VEZES, em lugares diferentes: primeiro na leitura da task `planejar` (18/11) e
+# depois na ESCRITA do to_iceberg (19/11), porque o conserto da primeira vez só cobriu os caminhos de
+# leitura e eu nunca auditei o de escrita. Toda chamada ao awswrangler, lendo ou gravando, usa isto.
+MANTER_ARQUIVOS_S3 = True
+
 TABELA_FEATURES = "ml_features_demanda"
 TABELA_BASELINE = "ml_baseline_demanda"
 

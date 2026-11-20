@@ -25,8 +25,19 @@ from include.ml import config
 TABELA_FORECAST = "ml_forecast_demanda"
 TABELA_METRICAS = "ml_backtest_metricas"
 
-# Rascunho da escrita em Iceberg. Vai no bucket de resultados, que expira em 7 dias.
-TEMP_PATH = "s3://rmartins-rideshare-athena-results/iceberg-temp/"
+# Rascunho da escrita em Iceberg, no bucket de resultados (expira em 7 dias).
+#
+# CADA GRAVAÇÃO GANHA UMA SUBPASTA ÚNICA, e isso não é zelo: é obrigatório. O to_iceberg grava o
+# DataFrame como Parquet aqui, cria uma tabela temporária SOBRE A PASTA e faz
+# "insert into destino select * from pasta". Com a pasta compartilhada e config.MANTER_ARQUIVOS_S3
+# ligado (nada é apagado, porque a política do Airflow não dá s3:DeleteObject), cada gravação
+# encontra os arquivos de todas as anteriores e insere tudo de novo.
+#
+# Aconteceu em 19/11/2026: a ml_backtest_metricas, que devia receber 2 linhas, recebeu 383.570 — as
+# 2 dela mais as 383.568 de previsão deixadas por gravações anteriores. E as linhas de previsão
+# ganharam 4, 3, 2 e 1 cópias, na ordem exata das quatro gravações. A mesma solução já existia em
+# dados.PREFIXO_UNLOAD, para a leitura, e eu não a apliquei na escrita.
+PREFIXO_TEMP = "s3://rmartins-rideshare-athena-results/iceberg-temp"
 
 
 def nova_execucao() -> str:
@@ -40,6 +51,8 @@ def _local(tabela: str) -> str:
 
 
 def _gravar(df: pd.DataFrame, tabela: str, ambiente: str, sessao, particoes: list[str]) -> int:
+    import uuid
+
     import awswrangler as wr
 
     wr.athena.to_iceberg(
@@ -47,11 +60,11 @@ def _gravar(df: pd.DataFrame, tabela: str, ambiente: str, sessao, particoes: lis
         database=config.BANCO[ambiente],
         table=tabela,
         table_location=_local(tabela),
-        temp_path=TEMP_PATH,
+        temp_path=f"{PREFIXO_TEMP}/{uuid.uuid4()}/",  # única por gravação; ver PREFIXO_TEMP
         partition_cols=particoes,
         workgroup=config.WORKGROUP,  # o padrão da biblioteca é "primary", que não existe aqui
         mode="append",
-        keep_files=False,
+        keep_files=config.MANTER_ARQUIVOS_S3,  # a MESMA decisão da leitura; ver config.py
         boto3_session=sessao,
     )
     return len(df)

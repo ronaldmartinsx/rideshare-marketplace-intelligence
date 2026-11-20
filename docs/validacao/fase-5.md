@@ -838,3 +838,77 @@ diretas. Opção de leitura espalhada em três lugares é bug esperando a vez, e
 32. Zero `AccessDenied`.
 
 **PENDENTE:** a execução completa da DAG (as tasks `executar` e `conferir`) ainda **não** rodou no contêiner.
+
+---
+
+## 12. A DAG `ml_forecast` ponta a ponta no contêiner (passo 7, fechado)
+
+**Data:** 19–20/11/2026 · **Execução válida:** `20261120T024657Z` · **Resultado:** `state=success`, zero erros
+
+### 12.1 O que a execução provou
+
+| Peça | Evidência |
+|---|---|
+| `planejar` | 2 rodadas: backtest corte 2026-08 (31 cortes de treino) e produção corte 2026-09 (32) |
+| `executar` | treino no contêiner: **2026-09 modelo 13,87% × baseline 16,09% (+2,22 pp)** |
+| Modelo salvo no prefixo `ml/` novo | 3,6 MB gravados pela role `rideshare-airflow`, **o IAM aplicado em 19/11 funciona** |
+| `persistencia` | `ml_forecast_demanda` 383.568 linhas, `ml_backtest_metricas` **2** |
+| `conferir` | releu a tabela e confirmou: "2 linhas gravadas, venceu em 1 de 1" |
+
+**REPRODUTIBILIDADE ENTRE AMBIENTES:** o WAPE de 13,87% é idêntico ao medido no Mac (seção 8), em **Python 3.14
+contra 3.13, pandas 2.3.3 contra 3.1.1 e numpy diferente**. É um teste mais forte que o da seção 9.1, que
+comparava duas execuções na mesma máquina. O que sustenta: semente fixa, `deterministic=True`, ordem das linhas
+fixada na leitura e a regra das rodadas em módulo puro.
+
+### 12.2 Dois tombos no caminho, e o segundo foi causado pelo conserto do primeiro
+
+**Tombo 1 (19/11) — `AccessDenied` em `s3:DeleteObject` na task `planejar`.** A DAG tinha duas chamadas próprias
+ao awswrangler com `keep_files=False` à mão, e o conserto do dia anterior só havia mudado `dados.py`.
+Conserto: nasceu `dados.consultar()` e a DAG deixou de importar o awswrangler.
+
+**Tombo 2 (19/11) — a tabela de métricas recebeu 383.570 linhas em vez de 2.** Causado pelo conserto do tombo 1.
+
+O `to_iceberg` grava o DataFrame como Parquet no `temp_path`, cria uma tabela temporária **sobre a pasta** e faz
+`insert into destino select * from pasta`. Com `temp_path` compartilhado e `MANTER_ARQUIVOS_S3` ligado (nada é
+apagado, porque a política não dá `DeleteObject`), **cada gravação encontra os arquivos de todas as anteriores**.
+
+A aritmética fechou exatamente. Ordem das gravações: 021655, 022514, 023333, 023830.
+
+| Execução | Cópias que as linhas dela ganharam | Medido |
+|---|---|---|
+| 021655 (1ª) | lida pelas 4 gravações | 4 × 383.568 |
+| 022514 (2ª) | lida pelas 3 seguintes | 3 × |
+| 023333 (3ª) | lida pelas 2 seguintes | 2 × |
+| 023830 (4ª) | só por ela mesma | 1 × |
+
+E `ml_backtest_metricas` ficou com 383.570 = os 4 arquivos de previsão + as suas 2 linhas reais.
+
+**Conserto:** `temp_path` único por gravação (`PREFIXO_TEMP/<uuid>/`). **A mesma solução já existia no projeto**,
+em `dados.PREFIXO_UNLOAD`, para a leitura — e não foi aplicada na escrita.
+
+**O padrão dos dois tombos é o mesmo:** eu auditei o código que estava olhando, não o problema. "Onde mais isso
+acontece?" ficou sem resposta duas vezes. E o tombo 2 é o pior dos dois: o primeiro **falhava alto**, com
+`AccessDenied`; o segundo **passava calado**, gravando 383 mil linhas numa tabela de 2.
+
+**Quem revelou o tombo 2 foi a task `conferir`**, que relê a tabela gravada e compara com o que a execução
+reportou. Sem ela, a tabela ficaria errada em silêncio.
+
+### 12.3 Limpeza da produção
+
+Com autorização explícita do Ronald, e com contagem antes e depois:
+
+```sql
+delete from gold.ml_backtest_metricas where execucao like '20261120%';
+delete from gold.ml_forecast_demanda  where execucao like '20261120%';
+```
+
+As quatro execuções contaminadas foram removidas e `s3://.../iceberg-temp/` foi esvaziado (5 arquivos, 14 MB). A
+execução de 16/11, que gerou o veredito oficial e a previsão de outubro, **não foi tocada** — 1.345.632 linhas de
+previsão e 7 de métrica, intactas.
+
+Estado final das tabelas:
+
+| Tabela | 16/11 (Mac) | 20/11 (contêiner) |
+|---|---|---|
+| `ml_forecast_demanda` | 1.345.632 | 383.568 |
+| `ml_backtest_metricas` | 7 | 2 |

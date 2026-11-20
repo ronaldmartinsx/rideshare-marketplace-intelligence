@@ -46,7 +46,8 @@ ORDEM = ["mes_corte", "zona_id", "hora_alvo"]
 # Destino do UNLOAD. Duas exigências descobertas na medição de 15/11/2026:
 #   1. a pasta tem de estar VAZIA, senão o Athena falha com HIVE_PATH_ALREADY_EXISTS. O local de
 #      resultados do workgroup não serve, porque ele já tem arquivos;
-#   2. por isso cada leitura ganha um prefixo único, apagado depois (keep_files=False).
+#   2. por isso cada leitura ganha um prefixo único. Os arquivos NÃO são apagados: ver
+#      config.MANTER_ARQUIVOS_S3. Quem limpa é a regra de ciclo de vida de 7 dias.
 PREFIXO_UNLOAD = "s3://rmartins-rideshare-athena-results/unload"
 
 
@@ -114,12 +115,8 @@ def _ler(
         # não aparecia em desenvolvimento — só no ambiente que importa.
         # Todo tipo Arrow é convertido para nativo em aplicar_tipos, logo em seguida.
         dtype_backend="pyarrow",
-        # Mantido TRUE (o padrão) por uma razão de PERMISSÃO, não de preferência: apagar exigiria
-        # s3:DeleteObject no bucket de resultados, e a política do Airflow não tem essa ação DE
-        # PROPÓSITO desde a Fase 0 — "sem DeleteObject: quem limpa é a regra de ciclo de vida"
-        # (iam_airflow.tf). Em vez de alargar a política para o código caber, o código se adapta à
-        # decisão que já existia. Custo: ~0,4 GB parado por até 7 dias, cerca de US$ 0,002.
-        keep_files=True,
+        # Uma decisão, um lugar: config.MANTER_ARQUIVOS_S3 (o motivo está lá).
+        keep_files=config.MANTER_ARQUIVOS_S3,
     )
 
 
