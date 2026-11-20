@@ -4,14 +4,37 @@
 
 ---
 
-## ⏭️ Retomar aqui (próxima sessão no Windows)
+## ⏭️ Retomar aqui
 
-1. **Prints** `01-cabecalho.png` (substitui), `07-raia5-previsao.png` e `08-hover-previsao.png` em
-   `docs/img/relatorio/`. O `powerbi/README.md` já os referencia e está **sem commit**, esperando as imagens.
-2. **Pendência nova: textos dinâmicos** (abaixo).
+1. **Textos dinâmicos: FEITO** em 20/11/2026 (ADR 0023, commit `92d255d`). Registro abaixo, em "Textos
+   dinâmicos: o que foi feito".
+2. **Prints** `01-cabecalho.png` (substitui), `07-raia5-previsao.png` e `08-hover-previsao.png` em
+   `docs/img/relatorio/`, pedidos ao Ronald depois da página final.
 3. Depois: Mac, passo 9 (`fase-5.md` e gate).
 
-### Pendência: textos dinâmicos (pedido do Ronald, 20/11/2026)
+### Textos dinâmicos: o que foi feito (para o `fase-5.md`)
+
+Decisão no ADR 0023; regras por raia no `_brief/report-spec.md`, "Revisão 6".
+
+| Peça | Quem desenhou | Quem escreveu |
+|---|---|---|
+| Os 4 princípios (período, afirmação, filtro, fato fixo) | Recomendações do Claude, aprovadas pelo Ronald | — |
+| Textos de cada raia | Regras e rascunhos do Claude, aprovados raia a raia pelo Ronald | Claude |
+| Medidas de janela e de métrica (~20) | Claude | **Claude, por autorização expressa do Ronald nesta frente** ("nessa você pode ficar responsável em escrever as DAX também"); exceção à regra ✍️ |
+| Medidas de texto (~25) | Claude | Claude (exceção de 07/11) |
+| `is_padrao` e `[Execucao Alvo]` (opção A) | Opção A escolhida pelo Ronald | Claude; alterou as 7 medidas de base do Ronald |
+| Prova de conceito do subtítulo dinâmico | Claude | **Ronald, no Desktop** (fx do subtítulo do ranking) |
+| Gerador, revisão 6 | Claude | Claude; ajustes pedidos pelo Ronald (cartões cortando, borda azul) |
+
+**Checagem de entendimento pendente** (o `CLAUDE.md` pede, já que o DAX desta frente foi do Claude): o padrão da
+janela de 12 meses (`REMOVEFILTERS(dim_mes)` + filtro por `EDATE` a partir de `[Mes Fim Dados]`) e por que uma
+medida não pode ir dentro do filtro do `CALCULATE`. Fazer no gate.
+
+**Achados que mudam leitura (bons para o gate):** a raia 4 contra o ano anterior mostra a Lyft recuando em
+Manhattan (48 zonas, 45 em Manhattan), que a comparação com 2024 escondia; a raia 2 corrigiu "oscila bem mais"
+para "oscila mais" ao medir; na raia 3, filtrar 2024–2025 dá "só Manhattan reduziu", e com 2026 o Bronx também cai.
+
+### Pendência: textos dinâmicos (pedido do Ronald, 20/11/2026) — resolvida
 
 > "Nenhum texto pode ser chumbado; todos os textos devem conter valores dinâmicos. À medida que mais dados
 > chegarem, não precisamos nos preocupar em fazer ajustes."

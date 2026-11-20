@@ -519,6 +519,33 @@ Medidas de apresentação novas (Claude, exceção de 07/11/2026): `HTML Execuca
 `HTML Cartoes Previsao`, `Texto Rodadas Vencidas`; `HTML Titulo` passa a "Cinco respostas". As medidas que
 calculam métrica (12) são do Ronald (✍️).
 
+## Revisão 6: textos gerados por medida (Fase 5, 20/11/2026)
+
+Pedido do Ronald: nenhum texto chumbado. Decisão e princípios no
+[ADR 0023](../docs/adr/0023-textos-do-relatorio-por-medida.md); reverte a revisão 4 ("o texto é fixo").
+
+| Peça | Antes | Agora |
+|---|---|---|
+| 5 cartões de resposta | Caixa de texto fixa + "Leitura com dados até set/2026" | `HTML Resposta 1..5`, com o selo da janela; 176 px, fonte 13 |
+| 5 aberturas de raia | Caixa de texto fixa | `HTML Abertura 1..5` |
+| 16 subtítulos | Texto fixo | 15 ligados a medida (`Subtitulo ...`); fica fixo só "Fica fora das métricas de economia" (definição) |
+| Pré-seleção da execução | `20261116T233529Z` no gerador | Nenhuma: `dim_execucao[is_padrao]` + `[Execucao Alvo]` |
+| Interações | Clique só filtra a própria raia | Mais: respostas e aberturas não seguem filtro nem clique; a execução alimenta a resposta 5 |
+| Contorno das formas | Uma entrada (com seletor) | Duas entradas, como o Desktop grava (a borda azul aparecia nas linhas das raias) |
+
+Regras por raia (limiares de estabilidade e de seleção):
+
+| Raia | Regras |
+|---|---|
+| 1 | P90 ±0,3 min = estável; "puxado pela" operadora que mais variou no sentido da cidade; 3 zonas de maior P90 (1.000+ corridas), "fora de Manhattan" só se nenhuma for de Manhattan; pior célula hora × tipo de dia e os tipos a até 1 min dela |
+| 2 | Receita por milha ±1% = mesmo patamar; take rate ±1 pp = estável; "a exceção é a X" só se o total ficou estável e uma única operadora mudou; oscilação = variação média mês a mês (≥1,5× "bem mais", ≥1,2× "mais"); tendências com 24+ meses no filtro = primeiros × últimos 12, senão a faixa |
+| 3 | Ancorada em `[Data Taxa CBD]`, por dia; ±1% = estável; "a queda veio de" = maior variação absoluta; distritos com 2%+ do volume, ±2% = estáveis |
+| 4 | Share ±0,5 pp = estável; "puxada pelo" distrito com 5%+ das corridas; maiores zonas = 250 mil+ corridas em 12 meses; "perde terreno" = queda > 0,5 pp |
+| 5 | Sim (vence todas) / Em parte (≥ metade) / Não; frase do feriado só se os meses com feriado ganharem mais; singular e "única janela" tratados |
+
+Prova de conceito antes de espalhar: o Ronald ligou o subtítulo do ranking da raia 1 pelo **fx** no Desktop, e o
+gerador passou a escrever o mesmo formato (`subTitle.text` → `expr.Measure`).
+
 ## Implementation notes
 
 - Model changes: nenhuma.
