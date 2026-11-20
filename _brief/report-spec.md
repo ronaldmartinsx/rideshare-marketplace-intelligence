@@ -1,4 +1,4 @@
-# Report Spec — Rideshare em NY (Fase 4, passo 8)
+# Report Spec — Rideshare em NY (Fase 4, passo 8; raia 5 na Fase 5, passo 8)
 
 > Especificação travada do relatório (página única com raias, ADR 0019). Escrita pelo Claude Code em 05/11/2026 a partir das decisões do Ronald; aguarda aprovação antes de qualquer edição no PBIR.
 
@@ -482,6 +482,42 @@ Base: posições do cabeçalho ajustadas pelo Ronald no Desktop (commit `96ff690
 | Nome da zona no mapa (pedido do Ronald) | O `shapeMap` não tem rótulos (e 263 nomes fixos seriam ilegíveis): o nome e o distrito entram na dica de ferramenta dos 3 mapas pela medida de apresentação `Nome da zona`; o código da zona aparece como "Código da zona". Zoom pela roda do mouse descartado (conflita com a rolagem da página) |
 
 Medidas de apresentação novas (regra de 07/11/2026 no CLAUDE.md: o Claude escreve as que só formatam texto/HTML): `Texto Periodo Dados`, `HTML Titulo`, `HTML Ficha Dados`, `HTML Rodape`; `HTML Cartoes KPI` reescrita. Evidências: `docs/validacao/img/fase-4-pagina-rev4-*.png`.
+
+## Revisão 5: raia 5, "Previsto × realizado" (Fase 5, 20/11/2026)
+
+A raia saiu da Fase 4 (decisão D3) porque dependia de o modelo existir. Base: guia
+`docs/guias/fase-5-continuar-no-windows.md`, seção 7. Antes de regenerar, o gerador foi rodado numa cópia e o
+conteúdo comparado com a página: só ruído do Desktop, nenhum ajuste manual a trazer.
+
+**Pergunta:** "Dá para prever a demanda?" **Resposta:** "Sim. O modelo errou 12,9% contra 14,1% do palpite
+sazonal (a média da mesma hora nas 4 semanas anteriores) e venceu nas 6 janelas de abril a setembro de 2026. A
+vantagem foi maior nos meses com feriado, como setembro (2,2 pp) e julho (1,2 pp)…". A frase do feriado se
+sustenta nos 6 meses (os 4 com feriado federal ganham mais que os 2 sem), mas é padrão observado, não causa
+provada. O baseline foi conferido no `ml_baseline_demanda.sql` (o primeiro rascunho dizia "um ano antes", errado).
+
+| Visual | Conteúdo | Por quê |
+|---|---|---|
+| Segmentação de execução | `dim_execucao`, lista suspensa, seleção única, `20261116T233529Z` pré-selecionada | Primeira camada contra somar execuções; a segunda é o `HASONEVALUE` nas medidas |
+| `HTML Execucao no Ar` | Execução no ar (data UTC), rodadas e execuções disponíveis; aviso se não houver uma só | O leitor sabe qual versão do modelo está vendo |
+| `HTML Cartoes Previsao` | 5 cartões: erro do modelo, erro do palpite, vantagem (pp e relativa), janelas vencidas, previsão do mês seguinte; explicação no hover | Revisão 5b: os cartões nativos cortavam o número; HTML segue o padrão da abertura |
+| Colunas por mês | `WAPE Modelo` (índigo) × `WAPE Baseline` (cinza), abr–set | O baseline é a régua, em cinza; o modelo é o protagonista |
+| Linha por dia | `Previsão Total` × `Realizado`, abr–out | O previsto acompanha o realizado e segue sozinho em outubro |
+| `HTML Limitacoes` | Viés (dinâmico, de `Viés %`), clima observado, atraso da TLC | Relatório que mostra só o número bom é propaganda |
+
+| Decisão (Ronald, recomendações aceitas) | Escolha |
+|---|---|
+| 1. O filtro de período alcança a raia 5? | Não (`NoFilter` da segmentação de período para os visuais da raia): o fim em set/2026 apagaria outubro |
+| 2. Visual diário | Todos os dias de abr a out, sem segmentação de mês |
+| 3. Cartões de resposta do cabeçalho | Cinco, fonte 14, altura 160 |
+| 4. Textos | Rascunhos do Claude, com o baseline corrigido |
+
+Pedidos do Ronald na revisão: números dos cartões cortados e vazio entre a abertura e os cartões. Solução: faixa
+de cartões em HTML e a raia posicionada em px (compacta); página de 5000 para 5944 px. Cor da raia: índigo
+`#4B5D99` (as cores livres da paleta ficavam perto das raias 1 e 2 ou sem contraste).
+
+Medidas de apresentação novas (Claude, exceção de 07/11/2026): `HTML Execucao no Ar`, `HTML Limitacoes`,
+`HTML Cartoes Previsao`, `Texto Rodadas Vencidas`; `HTML Titulo` passa a "Cinco respostas". As medidas que
+calculam métrica (12) são do Ronald (✍️).
 
 ## Implementation notes
 

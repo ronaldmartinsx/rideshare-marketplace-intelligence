@@ -4,15 +4,95 @@
 
 ---
 
-## Progresso no Windows (sessão de 19/11/2026, à noite)
+## ⏭️ Retomar aqui (próxima sessão no Windows)
+
+1. **Prints** `01-cabecalho.png` (substitui), `07-raia5-previsao.png` e `08-hover-previsao.png` em
+   `docs/img/relatorio/`. O `powerbi/README.md` já os referencia e está **sem commit**, esperando as imagens.
+2. **Pendência nova: textos dinâmicos** (abaixo).
+3. Depois: Mac, passo 9 (`fase-5.md` e gate).
+
+### Pendência: textos dinâmicos (pedido do Ronald, 20/11/2026)
+
+> "Nenhum texto pode ser chumbado; todos os textos devem conter valores dinâmicos. À medida que mais dados
+> chegarem, não precisamos nos preocupar em fazer ajustes."
+
+**Isso reverte a revisão 4 da Fase 4** ("o texto é fixo; o período fica explícito"), então pede ADR.
+
+Inventário dos textos fixos no `gerar_pagina.js` (32 linhas com número ou mês):
+
+| Onde | Exemplos | Dificuldade |
+|---|---|---|
+| 5 cartões de resposta do cabeçalho | "P90 de 8,1 para 10,1 min", "Leitura com dados até set/2026" | Número: fácil. Comparação "2024 × último período" precisa de regra de período |
+| 5 parágrafos de abertura das raias | "receita por milha +9% (US$ 5,16 → 5,65)", "Breezy Point, City Island" | Números e rankings dinâmicos são viáveis; frases qualitativas precisam de regra |
+| Subtítulos dos gráficos | "Breezy Point lidera, com P90 de 19 min", "a maior vantagem é em setembro (Labor Day)" | Líder e máximo: viáveis com `TOPN`/`MAXX` |
+| Nota da raia 1 e textos alternativos | "Acima de 15 min…", descrição dos visuais | Fatos de método: podem ficar fixos (decidir) |
+
+**A tensão a resolver junto:** número dinâmico é fácil; **afirmação** dinâmica não é. "A queda veio do resto de
+Manhattan" ou "puxado pela Uber" podem deixar de ser verdade com dados novos. Para cada frase há três caminhos:
+(a) calcular o sujeito (quem lidera, o sinal, o maior); (b) trocar por uma frase que vale para qualquer resultado;
+(c) tirar. E as comparações precisam de **períodos definidos por regra** (ex.: "primeiro ano completo × últimos
+12 meses"), não por datas fixas. Medidas de apresentação são do Claude; se faltar métrica, ela é ✍️ do Ronald.
+
+---
+
+## Progresso no Windows: passo 8 FECHADO (19 e 20/11/2026)
+
+**Depois da pendência acima: voltar ao Mac para o passo 9** (`docs/aprendizados/fase-5.md` e o gate de domínio).
+O registro abaixo é a matéria-prima dos dois.
 
 | Bloco | Estado |
 |---|---|
-| A. Importar as 2 tabelas | ✅ feito pelo Ronald |
+| A. Importar as 2 tabelas | ✅ Ronald |
 | B. Auditoria | ✅ contagens e somas batem (ver nota abaixo) |
-| C. 3 relacionamentos (seção 5) | ✅ criados pelo Claude via MCP; 0 chaves órfãs; filtro de mês chega nas duas tabelas |
-| D. Medidas ✍️ | ⏳ **retomar aqui**: o Ronald responde a tabela de 6 cenários (seção 6 + cenários 5 e 6 abaixo) |
-| E. Acabamento / F. Visuais / G. Fechar | pendentes |
+| C. 3 relacionamentos (seção 5) | ✅ Claude via MCP; 0 chaves órfãs; filtro de mês chega nas duas tabelas |
+| C2. `dim_execucao` (não previsto no guia) | ✅ Claude via MCP: refinamento da decisão 3.1 (abaixo) |
+| D. 12 medidas ✍️ | ✅ Ronald; `WAPE` (DAX) = `wape_modelo` (Python) nos 6 meses, até a 14ª casa |
+| E. Acabamento | ✅ Claude: nomes, formatos (`0.00%`, `0.00 "pp"`), pastas, descrições, chaves escondidas |
+| F. Raia 5 na página | ✅ gerador revisão 5 (commit `3e86e2a`); contrato em `_brief/report-spec.md`, "Revisão 5" |
+| G. README e prints | ✅ README; prints `01`, `07`, `08` em `docs/img/relatorio/` |
+
+### Refinamento da decisão 3.1: a `dim_execucao`
+
+A coluna `execucao` existe nas duas tabelas de ML, mas elas não se ligam entre si. Uma segmentação feita com
+`ml_forecast_demanda[execucao]` deixaria a `ml_backtest_metricas` somando as duas execuções (setembro duas vezes).
+Solução: `dim_execucao` (Referência da `ml_backtest_metricas` no Power Query, uma linha por execução), ligada às
+duas tabelas (N → 1, direção única). Não muda a decisão, então não abre ADR. Quem notou: o Claude, ao revisar onde
+o `HASONEVALUE` do Ronald ia perguntar.
+
+### Quem escreveu o quê (para o `fase-5.md`)
+
+| Peça | Quem desenhou | Quem escreveu |
+|---|---|---|
+| Regras das medidas (6 cenários) | Ronald | — |
+| 12 medidas que calculam métrica (DAX) | Ronald | Ronald. O filtro de backtest nas medidas de métricas foi esquecido e corrigido por ele depois da pista ("só uma está errada hoje; uma herda") |
+| `dim_execucao` e 5 relacionamentos | Claude, aprovado pelo Ronald | Claude, pelo MCP |
+| Formatos, pastas, descrições, renomeações | Plano aprovado pelo Ronald | Claude, pelo MCP |
+| Medidas de apresentação (`HTML Execucao no Ar`, `HTML Limitacoes`, `HTML Cartoes Previsao`, `Texto Rodadas Vencidas`; `HTML Titulo`) | Conteúdo aprovado pelo Ronald; cartões HTML a pedido dele | Claude (exceção de 07/11) |
+| Raia 5 no gerador | 4 decisões do Ronald (recomendações aceitas); revisão 5b a pedido dele | Claude |
+| Textos da raia | Rascunhos do Claude, aceitos pelo Ronald | Claude. O baseline do rascunho ("um ano antes") estava errado e foi corrigido pelo código antes de entrar |
+
+### O que o Ronald acertou e errou (para o gate)
+
+| Ponto | Resultado |
+|---|---|
+| Cenário 1: função que percorre linha a linha | ✅ `SUMX` |
+| Cenário 2: produção sem realizado | ✅ Regra ("ignorar"). ⚠️ Motivo impreciso: disse "meses que ainda estão por vir"; outubro já passou, o dado é que não chegou (atraso da TLC) |
+| Mecanismo do cenário 2 | ✅ "BLANK é igual a 0 no DAX" (numa conta). Não fez a conta do WAPE contaminado (30,5%); o Claude mostrou |
+| Cenário 3: nenhuma execução | ✅ Duas camadas: seleção única no visual + `HASONEVALUE`, com a justificativa certa ("não contar com uma camada só") |
+| Cenário 4: realizado zero | ❌ Primeiro respondeu que não precisava de proteção. Depois da pista: ✅ distinção excelente entre **0** (não houve corrida) e **BLANK** (desconhecido), e `DIVIDE` |
+| Cenário 5: linha de produção nas métricas | ✅ "Ignoram", filtro dentro da medida |
+| Cenário 6: régua do cartão | ✅ Média dos meses dos dois lados (maçã com maçã) |
+| Checagem: por que `HASONEVALUE` em todas as medidas de métricas | ✅ "Nenhuma reaproveita a outra". Parcial: a dele mesmo, `Rodadas Vencidas`, reaproveita `Rodadas Testadas` e herda a proteção |
+| `Ganho (pp)` ÷ 100 | ⚠️ Dividiu por 100 (mostraria "1,18%"); voltou para pontos depois da pergunta sobre o leitor |
+| Escala do WAPE das métricas (12,35 × 0,1235) | ✅ Resolveu sozinho com ÷ 100 |
+
+**Pontos para o gate:** WAPE agrupado × média dos meses (12,91% × 12,92%) e quando cada um vale; BLANK × 0 numa
+conta e numa divisão; por que a `dim_execucao` existe (filtro que precisa alcançar duas tabelas, como a
+`dim_zona_destino`); pp × %.
+
+**Do Claude (por honestidade):** o gerador rodou com o Desktop ainda aberto, porque a checagem estava no mesmo
+comando, em vez de vir antes. Nada se perdeu (o modelo já estava salvo; o Ronald fechou sem salvar). Combinado:
+conferir que o Desktop fechou **antes** de rodar o gerador.
 
 **Nota da auditoria:** o Power BI soma `qtd_corridas_real` do backtest oficial em **126.277.028**, não 126.277.020.
 Nenhuma linha tem fração, então a soma em Double é exata. Hipótese (não verificada): no Athena a coluna é `REAL`
