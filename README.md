@@ -10,6 +10,8 @@ Uma página única no Power BI que responde, com 672 milhões de viagens, onde f
 
 **[▶ Abrir o relatório interativo no Power BI](https://app.powerbi.com/view?r=eyJrIjoiMmMwODgyYjUtNjYxOS00MjlkLTg3ZTctNGNlZTQ0MDU1ZjE1IiwidCI6IjJhNWJlYTI4LWFkNmItNDYxNi05ZjBkLWFmN2U5M2U5MDQyZCJ9)** (público, sem login)
 
+Vídeo de 40 s gravado na Fase 4, antes da raia 5 e dos textos gerados pelos dados; o relatório interativo acima já tem as cinco respostas:
+
 https://github.com/user-attachments/assets/57491ecf-722b-4c4d-a495-e67a7a7986be
 
 ## Estrutura
