@@ -1,0 +1,259 @@
+/// Uma linha por execução × mês previsto, com o WAPE e o viés do modelo e do baseline sazonal lado a lado. WAPE gravado em pontos (12,35 = 12,35%). A linha tipo = producao não tem métricas. Fonte: gold.ml_backtest_metricas (Fase 5).
+table ml_backtest_metricas
+	lineageTag: 9aefd5d4-c2f5-4c99-ae4a-4393195cde2f
+
+	/// Média do WAPE do modelo nas rodadas de backtest (tipo = backtest), ÷ 100 para ficar na escala do [WAPE]. É a média dos meses (12,92%), a mesma régua do [WAPE Baseline]. Vazio sem exatamente uma execução.
+	measure 'WAPE Modelo' =
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        DIVIDE ( AVERAGE ( ml_backtest_metricas[wape_modelo] ), 100 ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+		formatString: 0.00%
+		displayFolder: Backtest
+		lineageTag: 6ba78d2c-a0a7-4324-b19c-b2b647a7af3a
+
+	/// Média do WAPE do baseline sazonal nas rodadas de backtest, ÷ 100. É a régua do modelo: métrica sem baseline ao lado é número solto.
+	measure 'WAPE Baseline' =
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        DIVIDE ( AVERAGE ( ml_backtest_metricas[wape_baseline] ), 100 ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+		formatString: 0.00%
+		displayFolder: Backtest
+		lineageTag: e999092b-4251-477c-9693-1d347df0a774
+
+	/// Média de ganho_pp: quantos pontos percentuais o WAPE do modelo fica abaixo do baseline. Em pontos, não em %: 1,18 pp não é "1,18% melhor" (a melhora relativa seria 1,18 / 14,09 = 8,3%).
+	measure 'Ganho (pp)' =
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        AVERAGE ( ml_backtest_metricas[ganho_pp] ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+		formatString: 0.00 "pp"
+		displayFolder: Backtest
+		lineageTag: a183a961-f3e9-4727-9383-9197856677a1
+
+	/// Rodadas de backtest em que o modelo errou menos que o baseline. Herda o filtro de backtest e a proteção de execução de [Rodadas Testadas].
+	measure 'Rodadas Vencidas' = CALCULATE( [Rodadas Testadas], ml_backtest_metricas[venceu_baseline] )
+		formatString: #,##0
+		displayFolder: Backtest
+		lineageTag: 515a4220-2b40-4754-b388-104e5288b0a8
+
+	/// Quantidade de rodadas de backtest da execução. A linha de produção fica fora (sem gabarito, venceu_baseline = FALSE).
+	measure 'Rodadas Testadas' =
+			VAR alvo = [Execucao Alvo]
+			RETURN
+			    CALCULATE (
+			        COUNTROWS ( ml_backtest_metricas ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+		formatString: #,##0
+		displayFolder: Backtest
+		lineageTag: 2859de22-32a4-4b70-b0db-99a581bbaabd
+
+	/// "X de Y" para o cartão da raia 5, a partir de [Rodadas Vencidas] e [Rodadas Testadas]. Vazio sem exatamente uma execução. Medida de apresentação (Claude).
+	measure 'Texto Rodadas Vencidas' =
+			VAR v = [Rodadas Vencidas]
+			VAR t = [Rodadas Testadas]
+			RETURN
+			    IF ( NOT ISBLANK ( t ), FORMAT ( COALESCE ( v, 0 ), "0" ) & " de " & FORMAT ( t, "0" ) )
+		displayFolder: Apresentacao
+		lineageTag: 05b307cc-91a3-4fb3-ac32-1db13b67d46e
+
+	/// Subtítulo do gráfico de erro por janela: em quantos meses o modelo vence e o mês de maior vantagem (com o feriado, se houver). Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo WAPE Janelas' =
+			VAR alvo = [Execucao Alvo]
+			VAR v = COALESCE ( [Rodadas Vencidas], 0 )
+			VAR test = [Rodadas Testadas]
+			VAR meses =
+			    CALCULATETABLE (
+			        ADDCOLUMNS (
+			            VALUES ( ml_backtest_metricas[mes_alvo] ),
+			            "@g", CALCULATE ( AVERAGE ( ml_backtest_metricas[ganho_pp] ) ),
+			            "@fer", VAR m = ml_backtest_metricas[mes_alvo]
+			                RETURN CALCULATE ( MIN ( dim_tempo_hora[nome_feriado] ), REMOVEFILTERS ( dim_mes ), TREATAS ( { m }, dim_mes[ano_mes] ), dim_tempo_hora[is_feriado] = TRUE () ),
+			            "@nome", VAR m = ml_backtest_metricas[mes_alvo]
+			                RETURN LOWER ( FORMAT ( DATE ( VALUE ( LEFT ( m, 4 ) ), VALUE ( RIGHT ( m, 2 ) ), 1 ), "MMMM", "pt-BR" ) )
+			        ),
+			        ml_backtest_metricas[tipo] = "backtest",
+			        dim_execucao[execucao] = alvo
+			    )
+			VAR topo = TOPN ( 1, FILTER ( meses, [@g] > 0 ), [@g], DESC )
+			VAR parte1 =
+			    SWITCH (
+			        TRUE (),
+			        test = 1 && v = 1, "O modelo vence no único mês testado",
+			        v = 0, "O modelo não vence em nenhum mês",
+			        v = test, "O modelo vence nos " & test & " meses",
+			        "O modelo vence em " & v & " de " & test & " meses"
+			    )
+			VAR parte2 =
+			    IF (
+			        test > 1 && NOT ISEMPTY ( topo ),
+			        "; a maior vantagem é em " & CONCATENATEX ( topo, [@nome] & IF ( NOT ISBLANK ( [@fer] ), " (" & [@fer] & ")" ) )
+			    )
+			RETURN
+			    IF ( NOT ISBLANK ( test ), parte1 & parte2 )
+		displayFolder: Apresentacao
+		lineageTag: a79146ae-cc4b-45da-8cb9-a524f8e2b684
+
+	/// Chave para a dim_execucao. Escondida: a segmentação usa dim_execucao[execucao].
+	column execucao
+		dataType: string
+		isHidden
+		lineageTag: 23b045f0-dbd5-4fb0-9423-5f827076b1d7
+		summarizeBy: none
+		sourceColumn: execucao
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Mês previsto pela rodada. Chave para a dim_mes[ano_mes]; use a dimensão nos visuais.
+	column mes_alvo
+		dataType: string
+		isHidden
+		lineageTag: 82dfab6d-dabd-4e05-9d77-b37d6767ccd5
+		summarizeBy: none
+		sourceColumn: mes_alvo
+
+		annotation SummarizationSetBy = Automatic
+
+	column corte
+		dataType: string
+		lineageTag: 9e7bb394-e506-41e5-a713-b417525e4d92
+		summarizeBy: none
+		sourceColumn: corte
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo
+		dataType: string
+		lineageTag: 01ef99fe-1864-4ac1-966b-ca75f980cb4f
+		summarizeBy: none
+		sourceColumn: tipo
+
+		annotation SummarizationSetBy = Automatic
+
+	column cortes_treino
+		dataType: int64
+		formatString: 0
+		lineageTag: aca5ee50-5cf8-4512-9d3f-7742238d4e06
+		summarizeBy: sum
+		sourceColumn: cortes_treino
+
+		annotation SummarizationSetBy = Automatic
+
+	column linhas_treino
+		dataType: int64
+		formatString: 0
+		lineageTag: 9e7e2235-4824-41c3-b854-ad22ad65bf07
+		summarizeBy: sum
+		sourceColumn: linhas_treino
+
+		annotation SummarizationSetBy = Automatic
+
+	column linhas_teste
+		dataType: int64
+		formatString: 0
+		lineageTag: 6745af0b-f2f3-4ab6-97fc-c3645b084800
+		summarizeBy: sum
+		sourceColumn: linhas_teste
+
+		annotation SummarizationSetBy = Automatic
+
+	column segundos_treino
+		dataType: double
+		lineageTag: 9b282666-a69a-45e4-99e1-37b4bb97be7d
+		summarizeBy: sum
+		sourceColumn: segundos_treino
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column wape_modelo
+		dataType: double
+		lineageTag: e664a63c-bee6-4661-a2e5-5dd8e775fb61
+		summarizeBy: sum
+		sourceColumn: wape_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column wape_baseline
+		dataType: double
+		lineageTag: 2a8b7c9f-cec1-44e7-ae55-99e2c29d9aa3
+		summarizeBy: sum
+		sourceColumn: wape_baseline
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ganho_pp
+		dataType: double
+		lineageTag: c06f69ef-6fd2-4ac2-9584-8d6eba451aff
+		summarizeBy: sum
+		sourceColumn: ganho_pp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column vies_modelo
+		dataType: double
+		lineageTag: 41d27c50-8d6c-4c28-a86e-7c90bb7311ba
+		summarizeBy: sum
+		sourceColumn: vies_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column vies_baseline
+		dataType: double
+		lineageTag: 43235680-5d47-402d-98ce-d16a2346c5c6
+		summarizeBy: sum
+		sourceColumn: vies_baseline
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column venceu_baseline
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4b53ff7c-cc25-46a7-84eb-5bd18af4568a
+		summarizeBy: none
+		sourceColumn: venceu_baseline
+
+		annotation SummarizationSetBy = Automatic
+
+	column versao_modelo
+		dataType: string
+		lineageTag: b5e439cb-c5c8-49d1-a495-bf5bb56a5b05
+		summarizeBy: none
+		sourceColumn: versao_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ml_backtest_metricas = m
+		mode: import
+		source =
+				let
+				    Source = AmazonAthena.Databases("rideshare-athena", null, []),
+				    AwsDataCatalog_Database = Source{[Name="AwsDataCatalog",Kind="Database"]}[Data],
+				    gold_Schema = AwsDataCatalog_Database{[Name="gold",Kind="Schema"]}[Data],
+				    ml_backtest_metricas_Table = gold_Schema{[Name="ml_backtest_metricas",Kind="Table"]}[Data]
+				in
+				    ml_backtest_metricas_Table
+

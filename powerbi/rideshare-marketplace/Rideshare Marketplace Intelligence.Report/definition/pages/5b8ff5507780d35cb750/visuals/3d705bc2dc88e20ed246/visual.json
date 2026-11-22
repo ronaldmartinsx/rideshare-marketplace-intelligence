@@ -6,8 +6,8 @@
     "y": 3888,
     "width": 664,
     "height": 880,
-    "z": 36000,
-    "tabOrder": 36000
+    "z": 40000,
+    "tabOrder": 40000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -345,8 +345,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Mais forte no sudoeste do Brooklyn (Windsor Terrace 36%); mais fraca em Midtown (21%)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Mapa Share"
                 }
               }
             },
@@ -383,7 +388,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterdb99cd55741bd847ac737900",
+        "name": "Filter9f61a74b88b5e59779f41d0b",
         "field": {
           "Column": {
             "Expression": {

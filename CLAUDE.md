@@ -3,10 +3,11 @@
 ## Contexto
 Projeto de portfólio de engenharia de dados (AWS S3 + Glue + Athena/Iceberg, dbt, Airflow, Power BI, IA).
 Especificação completa: docs/PROJECT_SPEC.md. Antes de cada fase, leia a Seção 1 e a fase atual na Seção 12.
-Fase atual: 5  ← atualizar ao avançar
-Fase 4 fechada em 08/11/2026. Pendências dela (Mac: ListDataCatalogs, DSN de volta ao papel de leitura, dbt parse):
-docs/aprendizados/fase-4.md, seção 6. No Windows, ler antes docs/guias/fase-4-continuar-no-windows.md (a memória do
-Claude Code fica no Mac).
+Fase atual: 6  ← atualizar ao avançar
+Fase 4 fechada em 08/11/2026, sem pendências. O Power BI lê a Gold pelo papel RideshareLeituraGold.
+Fase 5 fechada em 22/11/2026 (gate no Windows): modelo venceu o baseline em 6 de 6; raia 5 e textos dinâmicos
+(ADR 0023) no relatório. Registro: docs/aprendizados/fase-5.md. Pendência no Mac: confirmar no Athena o realizado
+126.277.028 (seção 6 do fase-5.md). Branch fase-5-ml em pull request para a main (merge pede OK do Ronald).
 
 ## Objetivo duplo (inegociável)
 1. Construir o sistema com qualidade de mercado.

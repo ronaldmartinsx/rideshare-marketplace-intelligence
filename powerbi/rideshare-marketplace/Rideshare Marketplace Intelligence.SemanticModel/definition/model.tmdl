@@ -9,7 +9,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["dim_mes","dim_operadora","dim_faixa_espera","dim_periodo_espera","dim_tempo_hora","dim_zona","fct_demanda_zona_hora","fct_espera_histograma","fct_od_mensal","dim_zona_destino"]
+annotation PBI_QueryOrder = ["dim_mes","dim_operadora","dim_faixa_espera","dim_periodo_espera","dim_tempo_hora","dim_zona","fct_demanda_zona_hora","fct_espera_histograma","fct_od_mensal","dim_zona_destino","ml_backtest_metricas","ml_forecast_demanda"]
 
 annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling","TMDLView_Desktop"]
 
@@ -23,6 +23,9 @@ ref table fct_demanda_zona_hora
 ref table fct_espera_histograma
 ref table fct_od_mensal
 ref table dim_zona_destino
+ref table ml_backtest_metricas
+ref table ml_forecast_demanda
+ref table dim_execucao
 
 ref cultureInfo en-US
 ref cultureInfo pt-BR

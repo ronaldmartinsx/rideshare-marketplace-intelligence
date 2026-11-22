@@ -67,7 +67,9 @@
 
 **Do Ronald:**
 - **Aula 1:** na pergunta rápida, não previu que o P90 ignoraria o filtro de data **em silêncio** sem ligação do histograma ao tempo. Virou a decisão D1 (ADR 0017).
-- **Aulas 2 a 4 (dadas no Mac):** o resultado das perguntas rápidas ficou na memória do Claude Code no Mac e não foi reproduzido aqui (pendência na seção 6).
+- **Aula 2 (consistência semântica):** acertou a pergunta rápida — reconheceu que calcular o take rate como média por linha (`AVERAGEX`) erra, porque a métrica é razão das somas (28,2% na razão × 20% na média por linha).
+- **Aula 3 (percentil em DAX):** acertou — num visual já quebrado por faixa, a medida precisa remover **só** o filtro da faixa, não todo o contexto.
+- **Aula 4 (TopoJSON):** na pergunta sobre uma zona em branco no mapa, respondeu "zona sem forma" e "recurso em preview". As duas estavam erradas. As causas reais são: a zona não teve corridas no recorte filtrado, a faixa 30+ ficou vazia, ou a chave não casa por tipo (`LocationID` texto × `zona_id` número). Lição: num mapa em branco, suspeitar primeiro dos **dados e da chave**, não da renderização.
 - **✍️ Bloco A/B:**
   - usou `DIVIDE(..., 0)`; chegou sozinho à versão sem o terceiro argumento depois da pista;
   - o `CALCULATE` das corridas entrando no CBD substituía a segmentação do usuário (52.448.518 com "origem no CBD"). A pista não bastou; o Claude explicou o `KEEPFILTERS`, e o Ronald acertou a pergunta de fixação sobre o share.
@@ -184,10 +186,25 @@ Formato híbrido (o mesmo das Fases 1 a 3), em 08/11/2026.
 
 ## 6. Pendências e melhorias anotadas
 
-- **Mac:**
-  - `athena:ListDataCatalogs` no `RideshareLeituraGold` (plan do Claude, apply do Ronald); depois, DSN de volta ao papel de leitura e uma atualização completa como teste;
-  - `dbt parse` para conferir o `_gold.yml` alterado na Fase 4 (receita por minuto e zona de destino).
-- **Mac:** completar a seção 3 com os erros das perguntas rápidas das Aulas 2 a 4, se estiverem na memória de lá.
+- ✅ **Mac, 09/11/2026 — `athena:ListDataCatalogs` no `RideshareLeituraGold`.** Resolvida. A ação é de nível de
+  conta: não recebe `datacatalog` como entrada, então **não aceita permissão por recurso** e exige
+  `Resource: "*"` numa declaração própria (`AthenaListarCatalogos`), conforme as políticas de exemplo da
+  documentação do Athena. Plan do Claude, apply do Ronald (0 add, 1 change, 0 destroy); `plan` seguinte voltou
+  `No changes`. O permission set foi reprovisionado pelo provider, **sem** intervenção no console do Identity
+  Center. Testado com o perfil `rideshare-bi`: `ListDataCatalogs` devolve só o `AwsDataCatalog`, a listagem de
+  bancos continua mostrando apenas `gold`, as 10 tabelas da Gold seguem legíveis e a Silver segue negada
+  (`AccessDeniedException`). O `ListWorkGroups`, citado na mesma nota da Fase 4, **não** foi acrescentado: vale a
+  mesma regra, entra só se a ferramenta pedir.
+- ✅ **Mac, 09/11/2026 — `dbt parse` do `_gold.yml`.** Passou limpo. Como o `parse` valida o YAML e o Jinja mas
+  **não** confere se as colunas documentadas existem no SQL, as 12 fórmulas do arquivo foram cruzadas com os
+  aliases dos modelos: todas as colunas citadas existem.
+- ✅ **Mac, 09/11/2026 — seção 3 completada** com as perguntas rápidas das Aulas 2 a 4, recuperadas da memória do
+  Claude Code no Mac.
+- ✅ **Windows, 09/11/2026 — DSN de volta ao papel de leitura.** Resolvida, e com ela **a Fase 4 não tem mais
+  nenhuma pendência**. O DSN `rideshare-athena` passou de `AdministratorAccess` para `RideshareLeituraGold`
+  (workgroup `rideshare-bi`, saída `s3://rmartins-rideshare-athena-results/bi/`) e a atualização completa das 9
+  tabelas funcionou. O caminho de leitura do Power BI passa a ser inteiramente de menor privilégio, encerrando o
+  uso provisório do papel de administrador que vinha desde 02/11.
 - **Windows:** apagar a reserva do cache (`cache.abf` de 548 MB, fora do repositório) só com a confirmação do Ronald.
 - **Fase 7:** versão do relatório em inglês (pedido do Ronald em 05/11/2026).
 - **Limitações aceitas:** formato `en-US` dos números nos gráficos para quem tem o sistema em inglês; respostas escritas fixas com dados até set/2026; relatório publicado sem atualização agendada.

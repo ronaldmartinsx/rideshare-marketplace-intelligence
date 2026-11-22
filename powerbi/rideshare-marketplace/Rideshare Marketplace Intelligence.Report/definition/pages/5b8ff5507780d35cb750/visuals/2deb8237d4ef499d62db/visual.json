@@ -4,10 +4,10 @@
   "position": {
     "x": 616,
     "y": 3184,
-    "z": 35000,
+    "z": 39000,
     "height": 480,
     "width": 776,
-    "tabOrder": 35000
+    "tabOrder": 39000
   },
   "visual": {
     "visualType": "lineChart",
@@ -412,8 +412,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Só Manhattan reduziu: −10%'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_od_mensal"
+                    }
+                  },
+                  "Property": "Subtitulo Origem CBD Distritos"
                 }
               }
             },
@@ -450,7 +455,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterc6fdafb9fda01035f01a2d3e",
+        "name": "Filter7c147b0842ca0b220f2eb170",
         "field": {
           "Column": {
             "Expression": {

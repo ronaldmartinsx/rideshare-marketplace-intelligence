@@ -110,7 +110,29 @@ Pendente para o passo 5 (Windows): trocar no DSN o Role name para `RideshareLeit
   1. Driver **2.4.0.0** com `UseSingleCatalogAndSchema=1`: mesmo erro. As release notes da **2.5.0.0** (28/10/2026) dizem que só nela o modo de catálogo único deixou de chamar o Athena e o Glue para listar catálogos (✅ documentação oficial).
   2. Driver atualizado para **2.5.0.0** (instalador assinado pela Amazon; DSN preservado): o navegador passou a mostrar o catálogo e o banco `gold`, mas **listar as tabelas** do `gold` ainda chama `ListDataCatalogs` (motivo não documentado; não verificado).
   3. Decisão (B2): Role name **provisório** `AdministratorAccess`, mantendo banco, workgroup e saída do BI. O código M guarda só o nome do DSN (`AmazonAthena.Databases("rideshare-athena", null, [])`), então trocar o papel não muda o projeto.
-  - **Pendente (Mac):** acrescentar `athena:ListDataCatalogs` ao `RideshareLeituraGold` (formato do `Resource` não verificado na referência do IAM), voltar o DSN para o papel de leitura e testar uma atualização completa.
+  4. **Resolvido (Mac, 09/11/2026):** `athena:ListDataCatalogs` acrescentado ao `RideshareLeituraGold` na
+     declaração `AthenaListarCatalogos`. O formato do `Resource`, que estava "não verificado", foi confirmado na
+     documentação oficial do Athena ("Data Catalog example policies"): a ação **não aceita permissão por
+     recurso**, porque não recebe `datacatalog` como entrada, e exige `Resource: "*"` numa declaração separada.
+     Apply do Ronald: `0 added, 1 changed, 0 destroyed`; o `plan` seguinte voltou `No changes`. O permission set
+     foi reprovisionado pelo provider do Terraform, sem intervenção no console do Identity Center (isso estava
+     marcado como não verificado e ficou confirmado na prática).
+
+     Matriz de regressão com o perfil `rideshare-bi` (papel `AWSReservedSSO_RideshareLeituraGold_...`):
+
+     | Teste | Esperado | Resultado |
+     |---|---|---|
+     | `athena list-data-catalogs` | só `AwsDataCatalog` | ✅ só `AwsDataCatalog` (tipo `GLUE`) |
+     | `athena list-databases --catalog-name AwsDataCatalog` | só `gold` | ✅ `["gold"]` |
+     | `glue get-tables --database-name gold` | as 10 tabelas | ✅ 10 tabelas |
+     | `glue get-tables --database-name silver` | negado | ✅ `AccessDeniedException` |
+
+     Custo da mudança: zero (IAM e Identity Center não cobram). O `athena:ListWorkGroups`, citado no item 3,
+     **não** foi acrescentado: segue a mesma regra, entra só se a ferramenta pedir.
+  5. **Resolvido (Windows, 09/11/2026):** DSN trocado para o papel `RideshareLeituraGold` e atualização completa
+     bem-sucedida, relatada pelo Ronald ("foi tranquilo, deu tudo certo"). Com isso o uso provisório do
+     `AdministratorAccess` termina e o caminho de leitura do Power BI passa a ser inteiramente de menor
+     privilégio, como projetado no ADR 0018. Sem medição de tempo da atualização registrada.
 
 **Importação (Import, 9 tabelas):** contagens idênticas à foto de 01/11/2026.
 

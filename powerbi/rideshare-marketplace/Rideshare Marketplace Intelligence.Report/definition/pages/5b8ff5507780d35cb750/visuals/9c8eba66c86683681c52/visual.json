@@ -4,10 +4,10 @@
   "position": {
     "x": 736,
     "y": 4288,
-    "z": 38000,
+    "z": 42000,
     "height": 480,
     "width": 664,
-    "tabOrder": 38000
+    "tabOrder": 42000
   },
   "visual": {
     "visualType": "tableEx",
@@ -416,8 +416,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Entre as maiores, Park Slope tem o maior share (34%)'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Tabela Lyft"
                 }
               }
             },
@@ -454,7 +459,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter1ad42be0d958d3ca937c52d5",
+        "name": "Filter34c193e4b8c8aef9869d5e49",
         "field": {
           "Column": {
             "Expression": {
@@ -508,7 +513,7 @@
         "howCreated": "User"
       },
       {
-        "name": "Filtere20ad64882b06caccd26ead6",
+        "name": "Filter69d2ecbe181e10e8932f7087",
         "field": {
           "Column": {
             "Expression": {

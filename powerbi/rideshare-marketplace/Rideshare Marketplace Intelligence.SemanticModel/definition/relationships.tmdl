@@ -50,3 +50,23 @@ relationship fct_od_mensal_licenca_operadora_dim_operadora_operadora_id
 	fromColumn: fct_od_mensal.licenca_operadora
 	toColumn: dim_operadora.operadora_id
 
+relationship ml_forecast_demanda_hora_alvo_dim_tempo_hora_hora
+	fromColumn: ml_forecast_demanda.hora_alvo
+	toColumn: dim_tempo_hora.hora
+
+relationship ml_forecast_demanda_zona_id_dim_zona_zona_id
+	fromColumn: ml_forecast_demanda.zona_id
+	toColumn: dim_zona.zona_id
+
+relationship ml_backtest_metricas_mes_alvo_dim_mes_ano_mes
+	fromColumn: ml_backtest_metricas.mes_alvo
+	toColumn: dim_mes.ano_mes
+
+relationship ml_forecast_demanda_execucao_dim_execucao_execucao
+	fromColumn: ml_forecast_demanda.execucao
+	toColumn: dim_execucao.execucao
+
+relationship ml_backtest_metricas_execucao_dim_execucao_execucao
+	fromColumn: ml_backtest_metricas.execucao
+	toColumn: dim_execucao.execucao
+

@@ -72,6 +72,8 @@ data/
 **/.pbi/cache.abf
 # Configuração local criptografada desta máquina (não vale em outra)
 **/.pbi/localSettings.json
+# Rascunhos da visão TMDL do Desktop (scripts soltos, não fazem parte do modelo)
+**/TMDLScripts/
 
 # =============================================================
 # Sistema operacional

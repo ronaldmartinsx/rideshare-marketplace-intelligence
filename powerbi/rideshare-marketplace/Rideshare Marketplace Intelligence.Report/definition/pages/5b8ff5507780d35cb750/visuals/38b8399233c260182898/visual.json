@@ -4,10 +4,10 @@
   "position": {
     "x": 48,
     "y": 1888,
-    "z": 28000,
+    "z": 32000,
     "height": 376,
     "width": 664,
-    "tabOrder": 28000
+    "tabOrder": 32000
   },
   "visual": {
     "visualType": "lineChart",
@@ -330,8 +330,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'O take rate da Lyft oscila bem mais que o da Uber'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Take Rate Operadoras"
                 }
               }
             },
@@ -368,7 +373,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter930a147a7d121cd1627ffbcb",
+        "name": "Filter8e8294aa8f9f1844902e76be",
         "field": {
           "Column": {
             "Expression": {

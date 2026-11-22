@@ -6,8 +6,8 @@
     "y": 784,
     "width": 544,
     "height": 840,
-    "z": 24000,
-    "tabOrder": 24000
+    "z": 28000,
+    "tabOrder": 28000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -345,8 +345,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Periferia e aeroportos esperam mais; Manhattan, menos'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_espera_histograma"
+                    }
+                  },
+                  "Property": "Subtitulo Mapa P90"
                 }
               }
             },
@@ -383,7 +388,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filterb2fa19ed242a3e9ed4c41faf",
+        "name": "Filterd556145b889ef8dfeeeb78d5",
         "field": {
           "Measure": {
             "Expression": {

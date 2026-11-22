@@ -3,11 +3,11 @@
   "name": "779acbec32799e50f20d",
   "position": {
     "x": 0,
-    "y": 4840,
+    "y": 5784,
     "width": 1440,
     "height": 160,
-    "z": 39000,
-    "tabOrder": 39000
+    "z": 49000,
+    "tabOrder": 49000
   },
   "visual": {
     "visualType": "shape",
@@ -75,6 +75,17 @@
           },
           "selector": {
             "id": "default"
+          }
+        },
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
           }
         }
       ]

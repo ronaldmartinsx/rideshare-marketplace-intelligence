@@ -172,8 +172,8 @@ table fct_demanda_zona_hora
 			RETURN
 			    "<div style='font-family:Segoe UI,sans-serif;color:#FFFFFF'>"
 			    & "<div style='font-size:12px;font-weight:700;color:#C9D6E8;letter-spacing:.04em'>RIDESHARE EM NOVA YORK · " & periodo & "</div>"
-			    & "<div style='font-size:30px;font-weight:700;line-height:1.15;margin:6px 0'>Quatro respostas para o time de Marketplace da Lyft</div>"
-			    & "<div style='font-size:13px;line-height:1.45;color:#C9D6E8'>Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento e a disputa com a Uber, a partir de "
+			    & "<div style='font-size:30px;font-weight:700;line-height:1.15;margin:6px 0'>Cinco respostas para o time de Marketplace da Lyft</div>"
+			    & "<div style='font-size:13px;line-height:1.45;color:#C9D6E8'>Onde falta oferta, quanto rende cada corrida, o efeito da taxa de congestionamento, a disputa com a Uber e a previsão da demanda, a partir de "
 			    & FORMAT ( viagens / 1e6, "#,##0", "pt-BR" ) & " milhões de viagens registradas pela TLC.</div></div>"
 		displayFolder: Apresentacao
 		lineageTag: fb017612-fd1c-4802-b6ac-70aff5c83f84
@@ -199,13 +199,15 @@ table fct_demanda_zona_hora
 		displayFolder: Apresentacao
 		lineageTag: 9b8f2701-9b67-44d3-afd0-2ba5df198dae
 
-	/// Texto do rodapé em linguagem de negócio, com o período dinâmico. Medida de apresentação (Claude).
+	/// Texto do rodapé em linguagem de negócio, com o período e as janelas das respostas dinâmicos (ADR 0023). Medida de apresentação (Claude).
 	measure 'HTML Rodape' =
 			VAR periodo = LOWER ( [Texto Periodo Dados] )
+			VAR atual = [Texto Janela Atual]
+			VAR anterior = [Texto Janela Anterior]
 			RETURN
 			    "<div style='font-family:Segoe UI,sans-serif;font-size:11px;line-height:1.55;color:#C9D6E8'>"
 			    & "Fonte: registros públicos de viagens de alto volume (Uber e Lyft) da Comissão de Táxis e Limusines de Nova York (TLC), " & periodo & ". "
-			    & "Os números foram conferidos contra a base de origem. As leituras em texto usam dados até set/2026; cartões e gráficos seguem o período escolhido.<br>"
+			    & "Os números foram conferidos contra a base de origem. As respostas comparam os últimos 12 meses (" & atual & ") aos 12 anteriores (" & anterior & "); a da taxa do CBD compara os 12 meses antes e depois de 05/01/2025. Cartões e gráficos seguem o período escolhido.<br>"
 			    & "<span style='color:#FFFFFF;font-weight:600'>Projeto de portfólio de engenharia de dados de Ronald Martins: código e documentação no GitHub.</span></div>"
 		displayFolder: Apresentacao
 		lineageTag: c9e02a0e-958b-418f-bd29-973daaa5ded0
@@ -218,6 +220,589 @@ table fct_demanda_zona_hora
 			    IF ( NOT ISBLANK ( nome ), nome & " · " & distrito )
 		displayFolder: Apresentacao
 		lineageTag: 371924f6-d32c-4251-bc45-045db804f582
+
+	/// Primeiro dia do último mês com corridas no modelo, ignorando qualquer filtro. É a âncora das janelas de 12 meses (ADR 0023): quando chega um mês novo, todas as janelas andam sozinhas.
+	measure 'Mes Fim Dados' =
+			VAR fim = CALCULATE ( MAX ( fct_demanda_zona_hora[source_month] ), REMOVEFILTERS () )
+			RETURN
+			    DATE ( VALUE ( LEFT ( fim, 4 ) ), VALUE ( RIGHT ( fim, 2 ) ), 1 )
+		formatString: mmm/yyyy
+		displayFolder: Janelas
+		lineageTag: 934679db-9b9d-408e-9b6b-fe5f1a5fe4db
+
+	/// Rótulo da janela dos últimos 12 meses com dados (ex.: out/2025–set/2026). Medida de apresentação (Claude).
+	measure 'Texto Janela Atual' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    LOWER ( FORMAT ( EDATE ( fim, -11 ), "MMM/yyyy", "pt-BR" ) & "–" & FORMAT ( fim, "MMM/yyyy", "pt-BR" ) )
+		displayFolder: Janelas
+		lineageTag: bed2fe21-db2f-4333-8ac8-db9c9057fcb9
+
+	/// Rótulo dos 12 meses anteriores à janela atual (ex.: out/2024–set/2025). Medida de apresentação (Claude).
+	measure 'Texto Janela Anterior' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    LOWER ( FORMAT ( EDATE ( fim, -11 ), "MMM/yyyy", "pt-BR" ) & "–" & FORMAT ( fim, "MMM/yyyy", "pt-BR" ) )
+		displayFolder: Janelas
+		lineageTag: fa45346b-1b0b-41b2-9992-53847f099183
+
+	/// Receita por milha nos últimos 12 meses com dados. Escrita pelo Claude (ADR 0023).
+	measure 'Receita por milha (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Receita por milha], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: "US$" #,##0.00
+		displayFolder: Janelas
+		lineageTag: b2da1963-a898-4e0c-a728-982d3713f2f5
+
+	/// Receita por milha nos 12 meses anteriores à janela atual. Escrita pelo Claude (ADR 0023).
+	measure 'Receita por milha (12m ant.)' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    CALCULATE ( [Receita por milha], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: "US$" #,##0.00
+		displayFolder: Janelas
+		lineageTag: 66fd1e15-cbab-4879-a974-2e32beeaae48
+
+	/// Repasse por hora de corrida nos últimos 12 meses com dados. Escrita pelo Claude (ADR 0023).
+	measure 'Repasse por hora (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Repasse por hora de corrida], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: "US$" #,##0.00
+		displayFolder: Janelas
+		lineageTag: 3c330c9e-f765-442c-8564-f0a674a4cf23
+
+	/// Repasse por hora de corrida nos 12 meses anteriores à janela atual. Escrita pelo Claude (ADR 0023).
+	measure 'Repasse por hora (12m ant.)' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    CALCULATE ( [Repasse por hora de corrida], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: "US$" #,##0.00
+		displayFolder: Janelas
+		lineageTag: c73b0613-1975-44e4-8f9f-bdf1f8815909
+
+	/// Take rate nos últimos 12 meses com dados (razão das somas). Escrita pelo Claude (ADR 0023).
+	measure 'Take rate (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Take rate], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: 0.0%
+		displayFolder: Janelas
+		lineageTag: f038aac4-6fa5-4543-a503-91658313aa41
+
+	/// Take rate nos 12 meses anteriores à janela atual. Escrita pelo Claude (ADR 0023).
+	measure 'Take rate (12m ant.)' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    CALCULATE ( [Take rate], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: 0.0%
+		displayFolder: Janelas
+		lineageTag: bf0899a5-f82c-465f-90a7-79ec57ed410b
+
+	/// Trecho da raia 2 sobre o take rate por operadora (12 meses × 12 anteriores, 1 pp = limite de estabilidade): "a exceção" só se o total ficou estável e uma única operadora mudou; senão, lista as duas. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R2 Operadoras' =
+			VAR fmt = "pt-BR"
+			VAR lim = 0.01
+			VAR ta = CALCULATE ( [Take rate (12m)], REMOVEFILTERS () )
+			VAR tb = CALCULATE ( [Take rate (12m ant.)], REMOVEFILTERS () )
+			VAR ops =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                VALUES ( dim_operadora[operadora_id] ),
+			                "@nome", CALCULATE ( MAX ( dim_operadora[operadora] ) ),
+			                "@a", [Take rate (12m)],
+			                "@b", [Take rate (12m ant.)]
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        NOT ISBLANK ( [@a] ) && NOT ISBLANK ( [@b] )
+			    )
+			VAR mudaram = FILTER ( ops, ABS ( [@a] - [@b] ) > lim )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISEMPTY ( mudaram ),
+			            " Por operadora, o take rate é de " & CONCATENATEX ( ops, FORMAT ( [@a], "0.0%", fmt ) & " na " & [@nome], " e ", [@nome], DESC ) & ".",
+			        ABS ( ta - tb ) <= lim && COUNTROWS ( mudaram ) = 1,
+			            " A exceção é a " & MAXX ( mudaram, [@nome] ) & ": take rate de " & FORMAT ( MAXX ( mudaram, [@b] ), "0.0%", fmt ) & " para " & FORMAT ( MAXX ( mudaram, [@a] ), "0.0%", fmt ) & ".",
+			        " Por operadora: " & CONCATENATEX ( ops, [@nome] & " de " & FORMAT ( [@b], "0.0%", fmt ) & " para " & FORMAT ( [@a], "0.0%", fmt ), "; ", [@nome], DESC ) & "."
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 77e2b8dc-9557-4c9f-a051-dc9ab6d61db0
+
+	/// Abertura da raia 2 gerada pelos dados: receita por milha e repasse por hora (12 meses × 12 anteriores; ±1% = mesmo patamar), take rate (±1 pp = estável) e a frase por operadora. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Abertura 2' =
+			VAR fmt = "pt-BR"
+			VAR rm_a = CALCULATE ( [Receita por milha (12m)], REMOVEFILTERS () )
+			VAR rm_b = CALCULATE ( [Receita por milha (12m ant.)], REMOVEFILTERS () )
+			VAR rp_a = CALCULATE ( [Repasse por hora (12m)], REMOVEFILTERS () )
+			VAR rp_b = CALCULATE ( [Repasse por hora (12m ant.)], REMOVEFILTERS () )
+			VAR ta = CALCULATE ( [Take rate (12m)], REMOVEFILTERS () )
+			VAR tb = CALCULATE ( [Take rate (12m ant.)], REMOVEFILTERS () )
+			VAR vm = DIVIDE ( rm_a, rm_b ) - 1
+			VAR vp = DIVIDE ( rp_a, rp_b ) - 1
+			VAR rende = SWITCH ( TRUE (), vm > 0.01, "Cada corrida rende mais", vm < -0.01, "Cada corrida rende menos", "Cada corrida rende o mesmo" )
+			VAR take =
+			    IF (
+			        ABS ( ta - tb ) <= 0.01,
+			        "take rate estável em ~" & FORMAT ( ta, "0.0%", fmt ),
+			        "take rate " & IF ( ta > tb, "subindo", "caindo" ) & " de " & FORMAT ( tb, "0.0%", fmt ) & " para " & FORMAT ( ta, "0.0%", fmt )
+			    )
+			VAR texto =
+			    rende & ": receita por milha " & FORMAT ( vm, "+0.0%;−0.0%", fmt ) & " (US$ " & FORMAT ( rm_b, "0.00", fmt ) & " → " & FORMAT ( rm_a, "0.00", fmt ) & ")"
+			        & " e repasse por hora de corrida " & FORMAT ( vp, "+0.0%;−0.0%", fmt ) & " (US$ " & FORMAT ( rp_b, "0", fmt ) & " → " & FORMAT ( rp_a, "0", fmt ) & ")"
+			        & " nos últimos 12 meses (" & [Texto Janela Atual] & ") contra os 12 anteriores, com " & take & "." & [Texto R2 Operadoras]
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:20px;font-weight:700;color:#005A8C'>RAIA 2 DE 5 · COMO EVOLUI A ECONOMIA UNITÁRIA?</div>"
+			    & "<div style='font-size:14px;line-height:1.45;color:#1F1F1F;margin-top:4px'>" & texto & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: 6839e7e8-899f-43fb-a17b-80ec721933f0
+
+	/// Cartão de resposta 2 do cabeçalho (curto), com as regras da [HTML Abertura 2] e o selo da janela. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Resposta 2' =
+			VAR fmt = "pt-BR"
+			VAR vm = DIVIDE ( CALCULATE ( [Receita por milha (12m)], REMOVEFILTERS () ), CALCULATE ( [Receita por milha (12m ant.)], REMOVEFILTERS () ) ) - 1
+			VAR vp = DIVIDE ( CALCULATE ( [Repasse por hora (12m)], REMOVEFILTERS () ), CALCULATE ( [Repasse por hora (12m ant.)], REMOVEFILTERS () ) ) - 1
+			VAR ta = CALCULATE ( [Take rate (12m)], REMOVEFILTERS () )
+			VAR tb = CALCULATE ( [Take rate (12m ant.)], REMOVEFILTERS () )
+			VAR rende = SWITCH ( TRUE (), vm > 0.01, "Cada corrida rende mais", vm < -0.01, "Cada corrida rende menos", "Cada corrida rende o mesmo" )
+			VAR take =
+			    IF ( ABS ( ta - tb ) <= 0.01, "take rate estável em ~" & FORMAT ( ta, "0%", fmt ),
+			        "take rate " & IF ( ta > tb, "subindo", "caindo" ) & " para " & FORMAT ( ta, "0.0%", fmt ) )
+			VAR texto =
+			    rende & ": receita por milha " & FORMAT ( vm, "+0.0%;−0.0%", fmt ) & " e repasse por hora " & FORMAT ( vp, "+0.0%;−0.0%", fmt ) & ", com " & take & "."
+			VAR selo = "Últimos 12 meses (" & [Texto Janela Atual] & ") × 12 anteriores"
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:12px;font-weight:700;color:#005A8C'>2 · ECONOMIA</div>"
+			    & "<div style='font-size:13px;line-height:1.35;color:#1F1F1F;margin:3px 0'>" & texto & "</div>"
+			    & "<div style='font-size:10px;color:#605E5C'>" & selo & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: f030c54a-b6d2-431b-b887-d3f1357b40e0
+
+	/// Subtítulo do take rate mensal por operadora: quem oscila mais, pela variação média de um mês para o outro no período escolhido (razão ≥ 1,5 = "bem mais"; ≥ 1,2 = "mais"; abaixo = parecido). Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Take Rate Operadoras' =
+			VAR fmt = "pt-BR"
+			VAR meses = FILTER ( VALUES ( dim_mes[mes_inicio] ), [Corridas] > 0 )
+			VAR ini = MINX ( meses, dim_mes[mes_inicio] )
+			VAR ops =
+			    FILTER (
+			        ADDCOLUMNS (
+			            VALUES ( dim_operadora[operadora_id] ),
+			            "@nome", CALCULATE ( MAX ( dim_operadora[operadora] ) ),
+			            "@osc",
+			                AVERAGEX (
+			                    FILTER ( meses, dim_mes[mes_inicio] > ini ),
+			                    VAR cur = dim_mes[mes_inicio]
+			                    VAR t1 = CALCULATE ( [Take rate] )
+			                    VAR t0 = CALCULATE ( [Take rate], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] = EDATE ( cur, -1 ) )
+			                    RETURN IF ( NOT ISBLANK ( t1 ) && NOT ISBLANK ( t0 ), ABS ( t1 - t0 ) )
+			                )
+			        ),
+			        NOT ISBLANK ( [@osc] )
+			    )
+			VAR mais = TOPN ( 1, ops, [@osc], DESC )
+			VAR menos = TOPN ( 1, ops, [@osc], ASC )
+			VAR o_mais = MAXX ( mais, [@osc] )
+			VAR o_menos = MAXX ( menos, [@osc] )
+			VAR razao = DIVIDE ( o_mais, o_menos )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        COUNTROWS ( ops ) < 2, BLANK (),
+			        razao >= 1.2,
+			            "A " & MAXX ( mais, [@nome] ) & " oscila " & IF ( razao >= 1.5, "bem mais", "mais" ) & ": muda em média " & FORMAT ( o_mais * 100, "0.0", fmt )
+			                & " pp de um mês para o outro, contra " & FORMAT ( o_menos * 100, "0.0", fmt ) & " pp da " & MAXX ( menos, [@nome] ),
+			        "As duas oscilam de forma parecida: ~" & FORMAT ( o_mais * 100, "0.0", fmt ) & " pp de um mês para o outro"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 94e6fe74-b31a-4b5a-adf0-9de1f9346be0
+
+	/// Subtítulo da receita por milha mensal: com 24+ meses no período escolhido, variação entre os primeiros e os últimos 12 (±1% = estável); com menos, a faixa do menor ao maior mês, porque mês contra mês mede sazonalidade, não tendência. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Receita Milha' =
+			VAR fmt = "pt-BR"
+			VAR meses = FILTER ( ADDCOLUMNS ( VALUES ( dim_mes[mes_inicio] ), "@v", [Receita por milha] ), NOT ISBLANK ( [@v] ) )
+			VAR n = COUNTROWS ( meses )
+			VAR ini = MINX ( meses, dim_mes[mes_inicio] )
+			VAR fim = MAXX ( meses, dim_mes[mes_inicio] )
+			VAR a0 = CALCULATE ( [Receita por milha], FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] <= EDATE ( ini, 11 ) ) )
+			VAR a1 = CALCULATE ( [Receita por milha], FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= EDATE ( fim, -11 ) ) )
+			VAR v = DIVIDE ( a1, a0 ) - 1
+			VAR rumo = SWITCH ( TRUE (), v > 0.01, "Alta de ", v < -0.01, "Queda de ", "Estável: " )
+			VAR lo = TOPN ( 1, meses, [@v], ASC )
+			VAR hi = TOPN ( 1, meses, [@v], DESC )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        n >= 24, rumo & FORMAT ( ABS ( v ), "0.0%", fmt ) & " entre os primeiros e os últimos 12 meses (US$ " & FORMAT ( a0, "0.00", fmt ) & " → " & FORMAT ( a1, "0.00", fmt ) & ")",
+			        n >= 2,
+			            "Entre US$ " & FORMAT ( MAXX ( lo, [@v] ), "0.00", fmt ) & " (" & LOWER ( FORMAT ( MAXX ( lo, dim_mes[mes_inicio] ), "MMM/yy", fmt ) ) & ") e US$ "
+			                & FORMAT ( MAXX ( hi, [@v] ), "0.00", fmt ) & " (" & LOWER ( FORMAT ( MAXX ( hi, dim_mes[mes_inicio] ), "MMM/yy", fmt ) ) & ") no período"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: cff63a76-e40c-42f5-b10d-cf04786a16a2
+
+	/// Subtítulo do repasse por hora de corrida mensal: com 24+ meses, variação entre os primeiros e os últimos 12, com a da receita ao lado; com menos, a faixa do menor ao maior mês. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Repasse Hora' =
+			VAR fmt = "pt-BR"
+			VAR meses = FILTER ( ADDCOLUMNS ( VALUES ( dim_mes[mes_inicio] ), "@v", [Repasse por hora de corrida] ), NOT ISBLANK ( [@v] ) )
+			VAR n = COUNTROWS ( meses )
+			VAR ini = MINX ( meses, dim_mes[mes_inicio] )
+			VAR fim = MAXX ( meses, dim_mes[mes_inicio] )
+			VAR primeiros = FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] <= EDATE ( ini, 11 ) )
+			VAR ultimos = FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= EDATE ( fim, -11 ) )
+			VAR v = DIVIDE ( CALCULATE ( [Repasse por hora de corrida], ultimos ), CALCULATE ( [Repasse por hora de corrida], primeiros ) ) - 1
+			VAR vr = DIVIDE ( CALCULATE ( [Receita por milha], ultimos ), CALCULATE ( [Receita por milha], primeiros ) ) - 1
+			VAR rumo = SWITCH ( TRUE (), v > 0.01, "Alta de ", v < -0.01, "Queda de ", "Estável: " )
+			VAR lo = TOPN ( 1, meses, [@v], ASC )
+			VAR hi = TOPN ( 1, meses, [@v], DESC )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        n >= 24, rumo & FORMAT ( ABS ( v ), "0.0%", fmt ) & " no mesmo período (receita por milha: " & FORMAT ( vr, "+0.0%;−0.0%", fmt ) & ")",
+			        n >= 2,
+			            "Entre US$ " & FORMAT ( MAXX ( lo, [@v] ), "0", fmt ) & " (" & LOWER ( FORMAT ( MAXX ( lo, dim_mes[mes_inicio] ), "MMM/yy", fmt ) ) & ") e US$ "
+			                & FORMAT ( MAXX ( hi, [@v] ), "0", fmt ) & " (" & LOWER ( FORMAT ( MAXX ( hi, dim_mes[mes_inicio] ), "MMM/yy", fmt ) ) & ") no período"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: a08b6dea-54d9-45e7-9f29-1b4a1f7f2971
+
+	/// Subtítulo da receita por minuto anual: primeiro × último ano do período escolhido, marcando os meses quando o ano está incompleto. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Receita Minuto' =
+			VAR fmt = "pt-BR"
+			VAR anos = FILTER ( VALUES ( dim_mes[ano] ), [Corridas] > 0 )
+			VAR a0 = MINX ( anos, dim_mes[ano] )
+			VAR a1 = MAXX ( anos, dim_mes[ano] )
+			VAR r0 = CALCULATE ( [Receita por minuto], dim_mes[ano] = a0 )
+			VAR r1 = CALCULATE ( [Receita por minuto], dim_mes[ano] = a1 )
+			VAR meses1 = FILTER ( CALCULATETABLE ( VALUES ( dim_mes[mes_inicio] ), dim_mes[ano] = a1 ), [Corridas] > 0 )
+			VAR n1 = COUNTROWS ( meses1 )
+			VAR parcial =
+			    IF ( n1 < 12,
+			        " (" & LOWER ( FORMAT ( MINX ( meses1, dim_mes[mes_inicio] ), "MMM", fmt ) ) & "–" & LOWER ( FORMAT ( MAXX ( meses1, dim_mes[mes_inicio] ), "MMM", fmt ) ) & ")" )
+			RETURN
+			    IF ( a1 > a0,
+			        "US$ " & FORMAT ( r0, "0.00", fmt ) & " em " & a0 & " → " & FORMAT ( r1, "0.00", fmt ) & " em " & a1 & parcial,
+			        "US$ " & FORMAT ( r1, "0.00", fmt ) & " em " & a1 & parcial )
+		displayFolder: Apresentacao
+		lineageTag: bc14fc78-ce83-4a05-aece-2852f9b86917
+
+	/// Início da taxa de congestionamento do CBD (MTA): 05/01/2025. É fato do mundo, não resultado: fica fixo aqui, num lugar só, e todas as janelas antes × depois da raia 3 saem dela (ADR 0023). O mês da taxa (jan/2025) conta como depois.
+	measure 'Data Taxa CBD' = DATE ( 2025, 1, 5 )
+		formatString: dd/mm/yyyy
+		displayFolder: Janelas
+		lineageTag: c8ba153d-099a-472e-b0c5-2695249ee342
+
+	/// Abertura da raia 3 gerada pelos dados: corridas com destino no CBD e total da cidade por dia (12 meses antes × depois de [Data Taxa CBD]; ±1% = estável), a fatia do CBD e a frase das origens. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Abertura 3' =
+			VAR fmt = "pt-BR"
+			VAR d = [Data Taxa CBD]
+			VAR m0 = DATE ( YEAR ( d ), MONTH ( d ), 1 )
+			VAR antes = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= EDATE ( m0, -12 ) && dim_mes[mes_inicio] < m0 )
+			VAR depois = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= m0 && dim_mes[mes_inicio] < EDATE ( m0, 12 ) )
+			VAR dias_a = SUMX ( antes, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR dias_d = SUMX ( depois, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR cbd_a = CALCULATE ( [Corridas com destino no CBD], REMOVEFILTERS (), antes ) / dias_a
+			VAR cbd_d = CALCULATE ( [Corridas com destino no CBD], REMOVEFILTERS (), depois ) / dias_d
+			VAR cid_a = CALCULATE ( [Corridas], REMOVEFILTERS (), antes ) / dias_a
+			VAR cid_d = CALCULATE ( [Corridas], REMOVEFILTERS (), depois ) / dias_d
+			VAR f_a = CALCULATE ( [% destino no CBD], REMOVEFILTERS (), antes )
+			VAR f_d = CALCULATE ( [% destino no CBD], REMOVEFILTERS (), depois )
+			VAR v_cbd = DIVIDE ( cbd_d, cbd_a ) - 1
+			VAR v_cid = DIVIDE ( cid_d, cid_a ) - 1
+			VAR verbo_cbd = SWITCH ( TRUE (), v_cbd < -0.01, "caíram ", v_cbd > 0.01, "subiram ", "ficaram estáveis " )
+			VAR verbo_cid = SWITCH ( TRUE (), v_cid > 0.01, "subiu ", v_cid < -0.01, "caiu ", "ficou estável " )
+			VAR texto =
+			    "Nos 12 meses depois de " & FORMAT ( d, "dd/mm/yyyy" ) & ", as corridas com destino no CBD " & verbo_cbd
+			        & IF ( ABS ( v_cbd ) > 0.01, FORMAT ( ABS ( v_cbd ), "0.0%", fmt ) & " por dia " )
+			        & "(" & FORMAT ( cbd_a / 1000, "0", fmt ) & " mil → " & FORMAT ( cbd_d / 1000, "0", fmt ) & " mil) enquanto o total da cidade " & verbo_cid
+			        & IF ( ABS ( v_cid ) > 0.01, FORMAT ( ABS ( v_cid ), "0.0%", fmt ) )
+			        & "; a fatia do CBD foi de " & FORMAT ( f_a, "0.0%", fmt ) & " para " & FORMAT ( f_d, "0.0%", fmt ) & ". " & [Texto R3 Origens] & "."
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:20px;font-weight:700;color:#00785A'>RAIA 3 DE 5 · QUAL FOI O IMPACTO DA TAXA DE CONGESTIONAMENTO?</div>"
+			    & "<div style='font-size:14px;line-height:1.45;color:#1F1F1F;margin-top:4px'>" & texto & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: a8751e5b-5067-4c1b-9ae3-d0e558df27f0
+
+	/// Cartão de resposta 3 do cabeçalho (curto), com as regras da [HTML Abertura 3] e o selo da janela ancorada na taxa. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Resposta 3' =
+			VAR fmt = "pt-BR"
+			VAR d = [Data Taxa CBD]
+			VAR m0 = DATE ( YEAR ( d ), MONTH ( d ), 1 )
+			VAR antes = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= EDATE ( m0, -12 ) && dim_mes[mes_inicio] < m0 )
+			VAR depois = FILTER ( ALL ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] >= m0 && dim_mes[mes_inicio] < EDATE ( m0, 12 ) )
+			VAR dias_a = SUMX ( antes, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR dias_d = SUMX ( depois, DAY ( EOMONTH ( dim_mes[mes_inicio], 0 ) ) )
+			VAR v_cbd = DIVIDE ( CALCULATE ( [Corridas com destino no CBD], REMOVEFILTERS (), depois ) / dias_d, CALCULATE ( [Corridas com destino no CBD], REMOVEFILTERS (), antes ) / dias_a ) - 1
+			VAR v_cid = DIVIDE ( CALCULATE ( [Corridas], REMOVEFILTERS (), depois ) / dias_d, CALCULATE ( [Corridas], REMOVEFILTERS (), antes ) / dias_a ) - 1
+			VAR cid = SWITCH ( TRUE (), v_cid > 0.01, "a cidade cresceu " & FORMAT ( v_cid, "0.0%", fmt ), v_cid < -0.01, "a cidade encolheu " & FORMAT ( -v_cid, "0.0%", fmt ), "a cidade ficou estável" )
+			VAR origens = [Texto R3 Origens]
+			VAR origem_curta = LEFT ( origens, SEARCH ( " (", origens, 1, LEN ( origens ) + 1 ) - 1 )
+			VAR texto =
+			    "Corridas para o centro " & FORMAT ( v_cbd, "+0.0%;−0.0%", fmt ) & " por dia enquanto " & cid
+			        & IF ( origem_curta <> "", "; " & LOWER ( LEFT ( origem_curta, 1 ) ) & MID ( origem_curta, 2, 999 ) ) & "."
+			VAR selo = "12 meses antes × 12 meses depois da taxa (" & FORMAT ( d, "dd/mm/yyyy" ) & ")"
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:12px;font-weight:700;color:#00785A'>3 · TAXA DO CBD</div>"
+			    & "<div style='font-size:13px;line-height:1.35;color:#1F1F1F;margin:3px 0'>" & texto & "</div>"
+			    & "<div style='font-size:10px;color:#605E5C'>" & selo & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: b8e47537-c037-4971-b9cf-0244cc66f3e4
+
+	/// Subtítulo da fatia mensal com destino no CBD: antes × depois de [Data Taxa CBD] dentro do período escolhido (±0,3 pp = estável); se o filtro não pega os dois lados, a fatia do período. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Fatia CBD' =
+			VAR fmt = "pt-BR"
+			VAR d = [Data Taxa CBD]
+			VAR m0 = DATE ( YEAR ( d ), MONTH ( d ), 1 )
+			VAR meses = FILTER ( VALUES ( dim_mes[mes_inicio] ), [Corridas] > 0 )
+			VAR antes = FILTER ( meses, dim_mes[mes_inicio] < m0 )
+			VAR depois = FILTER ( meses, dim_mes[mes_inicio] >= m0 )
+			VAR f_a = CALCULATE ( [% destino no CBD], antes )
+			VAR f_d = CALCULATE ( [% destino no CBD], depois )
+			VAR rumo = SWITCH ( TRUE (), f_d - f_a < -0.003, "cai", f_d - f_a > 0.003, "sobe", "fica estável" )
+			RETURN
+			    IF (
+			        NOT ISEMPTY ( antes ) && NOT ISEMPTY ( depois ),
+			        "A fatia " & rumo & " de " & FORMAT ( f_a, "0.0%", fmt ) & " para " & FORMAT ( f_d, "0.0%", fmt ) & " após a taxa (" & FORMAT ( d, "dd/mm/yyyy" ) & ")",
+			        "Fatia de " & FORMAT ( [% destino no CBD], "0.0%", fmt ) & " no período; a taxa começou em " & FORMAT ( d, "dd/mm/yyyy" )
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 859fb953-1764-4d35-b7c3-49ac20d5fb85
+
+	/// Share da operadora nos últimos 12 meses com dados (o filtro de operadora vem de fora). Escrita pelo Claude (ADR 0023).
+	measure 'Share da operadora (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Share da operadora], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: 0.0%
+		displayFolder: Janelas
+		lineageTag: f9402bb2-d0cc-4ad0-8855-d385037954de
+
+	/// Share da operadora nos 12 meses anteriores à janela atual. Escrita pelo Claude (ADR 0023).
+	measure 'Share da operadora (12m ant.)' =
+			VAR fim = EDATE ( [Mes Fim Dados], -12 )
+			RETURN
+			    CALCULATE ( [Share da operadora], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: 0.0%
+		displayFolder: Janelas
+		lineageTag: eae5f9fb-16ff-4b7a-8493-a22062a2fc5e
+
+	/// Corridas nos últimos 12 meses com dados. Base do corte de "maiores zonas" da raia 4. Escrita pelo Claude (ADR 0023).
+	measure 'Corridas (12m)' =
+			VAR fim = [Mes Fim Dados]
+			RETURN
+			    CALCULATE ( [Corridas], REMOVEFILTERS ( dim_mes ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+		formatString: #,##0
+		displayFolder: Janelas
+		lineageTag: cf2449e3-9af3-4f4a-97c1-3dd0a77d73a0
+
+	/// Trecho da raia 4: o distrito que puxou a variação do share da Lyft (5%+ das corridas, maior variação no sentido da cidade), com as 3 maiores zonas dele, e os distritos grandes que recuaram mais de 0,5 pp. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R4 Distritos' =
+			VAR fmt = "pt-BR"
+			VAR lim = 0.005
+			VAR a = CALCULATE ( [Share da operadora (12m)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR b = CALCULATE ( [Share da operadora (12m ant.)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR sinal = IF ( a >= b, 1, -1 )
+			VAR total = CALCULATE ( [Corridas (12m)], REMOVEFILTERS () )
+			VAR bor =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                VALUES ( dim_zona[borough] ),
+			                "@n", [Corridas (12m)],
+			                "@d", CALCULATE ( [Share da operadora (12m)] - [Share da operadora (12m ant.)], dim_operadora[operadora_id] = "HV0005" )
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        [@n] >= 0.05 * total
+			    )
+			VAR lider = TOPN ( 1, FILTER ( bor, [@d] * sinal > lim ), [@d] * sinal, DESC )
+			VAR nome_lider = MAXX ( lider, dim_zona[borough] )
+			VAR zonas =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			                "@nome", CALCULATE ( MAX ( dim_zona[zona] ) ),
+			                "@n", [Corridas (12m)],
+			                "@d", CALCULATE ( [Share da operadora (12m)] - [Share da operadora (12m ant.)], dim_operadora[operadora_id] = "HV0005" )
+			            ),
+			            REMOVEFILTERS (),
+			            dim_zona[borough] = nome_lider
+			        ),
+			        [@n] >= 250000
+			    )
+			VAR top3 = TOPN ( 3, zonas, [@d] * sinal, DESC )
+			VAR curto = ADDCOLUMNS ( top3, "@c", VAR br = SEARCH ( "/", [@nome], 1, 0 ) RETURN IF ( br > 0, LEFT ( [@nome], br - 1 ), [@nome] ) )
+			VAR lista = CONCATENATEX ( curto, [@c], ", ", [@d] * sinal, DESC )
+			VAR lista_e = IF ( COUNTROWS ( curto ) > 1, SUBSTITUTE ( lista, ", ", " e ", COUNTROWS ( curto ) - 1 ), lista )
+			VAR frase_lider =
+			    IF ( NOT ISEMPTY ( lider ),
+			        ", puxada pelo " & nome_lider & " (" & FORMAT ( MAXX ( lider, [@d] ) * 100, "+0.0;−0.0", fmt ) & " pp"
+			            & IF ( NOT ISEMPTY ( top3 ), "; até " & FORMAT ( MAXX ( TOPN ( 1, top3, [@d] * sinal, DESC ), [@d] ) * 100, "+0.0;−0.0", fmt ) & " pp em " & lista_e )
+			            & ")" )
+			VAR recuaram = FILTER ( bor, [@d] < -lim && dim_zona[borough] <> nome_lider )
+			VAR frase_recuo =
+			    IF ( NOT ISEMPTY ( recuaram ),
+			        ". Em " & CONCATENATEX ( recuaram, dim_zona[borough] & " como um todo, recuou " & FORMAT ( -[@d] * 100, "0.0", fmt ) & " pp", "; em ", [@d], ASC ) )
+			RETURN
+			    frase_lider & frase_recuo
+		displayFolder: Apresentacao
+		lineageTag: b14076e3-159f-4223-8e73-1cf7184188c0
+
+	/// Trecho da raia 4: em quantas das maiores zonas (250 mil+ corridas nos últimos 12 meses) a Lyft perdeu mais de 0,5 pp de share, onde se concentram (todas / N delas num distrito com mais da metade), as 3 maiores quedas e o tamanho máximo. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'Texto R4 Perdas' =
+			VAR fmt = "pt-BR"
+			VAR zonas =
+			    FILTER (
+			        CALCULATETABLE (
+			            ADDCOLUMNS (
+			                FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			                "@nome", CALCULATE ( MAX ( dim_zona[zona] ) ),
+			                "@bor", CALCULATE ( MAX ( dim_zona[borough] ) ),
+			                "@n", [Corridas (12m)],
+			                "@d", CALCULATE ( [Share da operadora (12m)] - [Share da operadora (12m ant.)], dim_operadora[operadora_id] = "HV0005" )
+			            ),
+			            REMOVEFILTERS ()
+			        ),
+			        [@n] >= 250000
+			    )
+			VAR n_maiores = COUNTROWS ( zonas )
+			VAR perdem = FILTER ( zonas, [@d] < -0.005 )
+			VAR n = COUNTROWS ( perdem )
+			VAR por_bor = GROUPBY ( perdem, [@bor], "@q", COUNTX ( CURRENTGROUP (), 1 ) )
+			VAR top_bor = TOPN ( 1, por_bor, [@q], DESC )
+			VAR bor1 = MAXX ( top_bor, [@bor] )
+			VAR q1 = MAXX ( top_bor, [@q] )
+			VAR onde = SWITCH ( TRUE (), q1 = n, ", todas em " & bor1, q1 * 2 > n, ", " & q1 & " delas em " & bor1, "" )
+			VAR top3 = TOPN ( 3, perdem, [@d], ASC )
+			VAR curto = ADDCOLUMNS ( top3, "@c", VAR br = SEARCH ( "/", [@nome], 1, 0 ) RETURN IF ( br > 0, LEFT ( [@nome], br - 1 ), [@nome] ) )
+			VAR lista = CONCATENATEX ( curto, [@c], ", ", [@d], ASC )
+			VAR pior = MINX ( perdem, [@d] )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        n = 0, "Não perde terreno (mais de 0,5 pp) em nenhuma das " & n_maiores & " maiores zonas",
+			        "Perde terreno (mais de 0,5 pp) em " & n & " das " & n_maiores & " maiores zonas" & onde
+			            & " (" & lista & "), em até " & FORMAT ( pior * 100, "+0.0;−0.0", fmt ) & " pp"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 1007ba3f-9fba-4a46-b836-5b7e749556bf
+
+	/// Abertura da raia 4 gerada pelos dados: share da Lyft (12 meses × 12 anteriores; ±0,5 pp = estável), o distrito que puxou, os que recuaram e as zonas onde perde terreno. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Abertura 4' =
+			VAR fmt = "pt-BR"
+			VAR a = CALCULATE ( [Share da operadora (12m)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR b = CALCULATE ( [Share da operadora (12m ant.)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR inicio =
+			    IF (
+			        ABS ( a - b ) <= 0.005,
+			        "O share da Lyft ficou estável em ~" & FORMAT ( a, "0.0%", fmt ) & " nos últimos 12 meses (" & [Texto Janela Atual] & ")",
+			        "A Lyft " & IF ( a > b, "subiu", "caiu" ) & " de " & FORMAT ( b, "0.0%", fmt ) & " (" & [Texto Janela Anterior] & ") para " & FORMAT ( a, "0.0%", fmt )
+			            & " de share (" & [Texto Janela Atual] & ")"
+			    )
+			VAR texto = inicio & [Texto R4 Distritos] & ". " & [Texto R4 Perdas] & "."
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:20px;font-weight:700;color:#9E4F80'>RAIA 4 DE 5 · ONDE A LYFT PERDE TERRENO PARA A UBER?</div>"
+			    & "<div style='font-size:14px;line-height:1.45;color:#1F1F1F;margin-top:4px'>" & texto & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: f8e96641-4437-47f2-a4a6-7ffd13778d88
+
+	/// Cartão de resposta 4 do cabeçalho (curto), com as regras da [HTML Abertura 4] e o selo da janela. Ignora filtros. Medida de apresentação (Claude, ADR 0023).
+	measure 'HTML Resposta 4' =
+			VAR fmt = "pt-BR"
+			VAR a = CALCULATE ( [Share da operadora (12m)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR b = CALCULATE ( [Share da operadora (12m ant.)], REMOVEFILTERS (), dim_operadora[operadora_id] = "HV0005" )
+			VAR dist = [Texto R4 Distritos]
+			VAR i_pelo = SEARCH ( "pelo ", dist, 1, 0 )
+			VAR lider = IF ( i_pelo > 0, MID ( dist, i_pelo + 5, SEARCH ( " (", dist, i_pelo, LEN ( dist ) + 1 ) - i_pelo - 5 ) )
+			VAR p = [Texto R4 Perdas]
+			VAR i = SEARCH ( "pp) ", p, 1, 0 )
+			VAR perdas = IF ( i > 0, "perde terreno " & MID ( p, i + 4, SEARCH ( " (", p, i + 4, LEN ( p ) + 1 ) - i - 4 ), LOWER ( LEFT ( p, 1 ) ) & MID ( p, 2, 999 ) )
+			VAR inicio =
+			    IF ( ABS ( a - b ) <= 0.005, "Share da Lyft estável em ~" & FORMAT ( a, "0.0%", fmt ),
+			        "Share da Lyft de " & FORMAT ( b, "0.0%", fmt ) & " para " & FORMAT ( a, "0.0%", fmt ) & IF ( NOT ISBLANK ( lider ), ", puxado pelo " & lider ) )
+			VAR texto = inicio & "; " & perdas & "."
+			VAR selo = "Últimos 12 meses (" & [Texto Janela Atual] & ") × 12 anteriores"
+			RETURN
+			    "<div style='font-family:Segoe UI,sans-serif'>"
+			    & "<div style='font-size:12px;font-weight:700;color:#9E4F80'>4 · UBER × LYFT</div>"
+			    & "<div style='font-size:13px;line-height:1.35;color:#1F1F1F;margin:3px 0'>" & texto & "</div>"
+			    & "<div style='font-size:10px;color:#605E5C'>" & selo & "</div></div>"
+		displayFolder: Apresentacao
+		lineageTag: 48a46754-ebe7-4084-ac0d-52c0537a44b1
+
+	/// Subtítulo do mapa do share da Lyft: a zona mais forte e a mais fraca no período escolhido, entre as zonas com 0,2%+ das corridas. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Mapa Share' =
+			VAR fmt = "pt-BR"
+			VAR total = CALCULATE ( [Corridas], REMOVEFILTERS ( dim_operadora ) )
+			VAR z =
+			    FILTER (
+			        ADDCOLUMNS (
+			            FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			            "@nome", CALCULATE ( MAX ( dim_zona[zona] ) ),
+			            "@bor", CALCULATE ( MAX ( dim_zona[borough] ) ),
+			            "@n", CALCULATE ( [Corridas], REMOVEFILTERS ( dim_operadora ) ),
+			            "@s", CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0005" )
+			        ),
+			        [@n] >= 0.002 * total && NOT ISBLANK ( [@s] )
+			    )
+			VAR forte = TOPN ( 1, z, [@s], DESC )
+			VAR fraca = TOPN ( 1, z, [@s], ASC )
+			VAR nf = MAXX ( forte, [@nome] )
+			VAR nf_c = VAR br = SEARCH ( "/", nf, 1, 0 ) RETURN IF ( br > 0, LEFT ( nf, br - 1 ), nf )
+			VAR nw = MAXX ( fraca, [@nome] )
+			VAR nw_c = VAR br = SEARCH ( "/", nw, 1, 0 ) RETURN IF ( br > 0, LEFT ( nw, br - 1 ), nw )
+			RETURN
+			    IF ( COUNTROWS ( z ) > 1,
+			        "Mais forte em " & nf_c & " (" & MAXX ( forte, [@bor] ) & ", " & FORMAT ( MAXX ( forte, [@s] ), "0%", fmt ) & "); mais fraca em "
+			            & nw_c & " (" & MAXX ( fraca, [@bor] ) & ", " & FORMAT ( MAXX ( fraca, [@s] ), "0%", fmt ) & ")" )
+		displayFolder: Apresentacao
+		lineageTag: 64e75960-9a82-4726-a72b-47a77e598089
+
+	/// Subtítulo do share mensal por operadora: com 24+ meses no período, a Lyft nos últimos 12 × nos 12 anteriores (±0,5 pp = estável); com menos, a faixa mensal. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Share Tendencia' =
+			VAR fmt = "pt-BR"
+			VAR meses = FILTER ( ADDCOLUMNS ( VALUES ( dim_mes[mes_inicio] ), "@s", CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0005" ) ), NOT ISBLANK ( [@s] ) )
+			VAR n = COUNTROWS ( meses )
+			VAR fim = MAXX ( meses, dim_mes[mes_inicio] )
+			VAR ult = FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] > EDATE ( fim, -12 ) && dim_mes[mes_inicio] <= fim )
+			VAR ant = FILTER ( VALUES ( dim_mes[mes_inicio] ), dim_mes[mes_inicio] > EDATE ( fim, -24 ) && dim_mes[mes_inicio] <= EDATE ( fim, -12 ) )
+			VAR a = CALCULATE ( [Share da operadora], ult, dim_operadora[operadora_id] = "HV0005" )
+			VAR b = CALCULATE ( [Share da operadora], ant, dim_operadora[operadora_id] = "HV0005" )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        n >= 24 && ABS ( a - b ) <= 0.005, "Lyft estável perto de " & FORMAT ( a, "0.0%", fmt ) & " nos últimos 12 meses",
+			        n >= 24, "Lyft " & IF ( a > b, "sobe", "cai" ) & " de " & FORMAT ( b, "0.0%", fmt ) & " para " & FORMAT ( a, "0.0%", fmt ) & " nos últimos 12 meses",
+			        n >= 2, "Lyft entre " & FORMAT ( MINX ( meses, [@s] ), "0.0%", fmt ) & " e " & FORMAT ( MAXX ( meses, [@s] ), "0.0%", fmt ) & " ao mês no período"
+			    )
+		displayFolder: Apresentacao
+		lineageTag: 13f8fe4f-07e2-4a7b-8330-3fbe1a48c0aa
+
+	/// Subtítulo da tabela das 20 zonas com mais corridas da Lyft: a de maior share entre elas, no período escolhido. Segue o filtro. Medida de apresentação (Claude, ADR 0023).
+	measure 'Subtitulo Tabela Lyft' =
+			VAR z =
+			    ADDCOLUMNS (
+			        FILTER ( VALUES ( dim_zona[zona_id] ), dim_zona[zona_id] <= 263 ),
+			        "@nome", CALCULATE ( MAX ( dim_zona[zona] ) ),
+			        "@n", CALCULATE ( [Corridas], dim_operadora[operadora_id] = "HV0005" ),
+			        "@s", CALCULATE ( [Share da operadora], dim_operadora[operadora_id] = "HV0005" )
+			    )
+			VAR top20 = TOPN ( 20, FILTER ( z, NOT ISBLANK ( [@n] ) ), [@n], DESC )
+			VAR melhor = TOPN ( 1, top20, [@s], DESC )
+			VAR nome = MAXX ( melhor, [@nome] )
+			VAR curto = VAR br = SEARCH ( "/", nome, 1, 0 ) RETURN IF ( br > 0, LEFT ( nome, br - 1 ), nome )
+			RETURN
+			    IF ( NOT ISEMPTY ( melhor ), "Entre as " & COUNTROWS ( top20 ) & " maiores, " & curto & " tem o maior share (" & FORMAT ( MAXX ( melhor, [@s] ), "0%", "pt-BR" ) & ")" )
+		displayFolder: Apresentacao
+		lineageTag: d0d467e1-0541-488f-8e89-0d8a2e987142
 
 	column hora_embarque
 		dataType: dateTime

@@ -6,8 +6,8 @@
     "y": 2784,
     "width": 544,
     "height": 880,
-    "z": 33000,
-    "tabOrder": 33000
+    "z": 37000,
+    "tabOrder": 37000
   },
   "visual": {
     "visualType": "shapeMap",
@@ -331,8 +331,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'O resto de Manhattan é a maior origem; Brooklyn e Queens vêm logo atrás'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_od_mensal"
+                    }
+                  },
+                  "Property": "Subtitulo Origem CBD Mapa"
                 }
               }
             },

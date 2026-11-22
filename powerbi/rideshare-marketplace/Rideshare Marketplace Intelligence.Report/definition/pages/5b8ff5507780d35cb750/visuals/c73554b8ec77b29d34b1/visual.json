@@ -4,10 +4,10 @@
   "position": {
     "x": 736,
     "y": 1888,
-    "z": 29000,
+    "z": 33000,
     "height": 376,
     "width": 664,
-    "tabOrder": 29000
+    "tabOrder": 33000
   },
   "visual": {
     "visualType": "lineChart",
@@ -245,8 +245,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Alta de ~9% em dois anos'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Receita Milha"
                 }
               }
             },

@@ -4,10 +4,10 @@
   "position": {
     "x": 736,
     "y": 3888,
-    "z": 37000,
+    "z": 41000,
     "height": 376,
     "width": 664,
-    "tabOrder": 37000
+    "tabOrder": 41000
   },
   "visual": {
     "visualType": "lineChart",
@@ -330,8 +330,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Lyft estável perto de 27% desde 2025'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_demanda_zona_hora"
+                    }
+                  },
+                  "Property": "Subtitulo Share Tendencia"
                 }
               }
             },
@@ -368,7 +373,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter094e725509c162673124ef02",
+        "name": "Filtered5e69ec5826fbcb52b3a606",
         "field": {
           "Column": {
             "Expression": {

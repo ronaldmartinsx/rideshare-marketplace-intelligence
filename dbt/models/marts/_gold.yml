@@ -342,3 +342,259 @@ models:
                 field: ano_mes
               config:
                 where: "source_month = '{{ var(\"source_month\", \"2025-01\") }}'"
+
+  - name: ml_demanda_hora_zona
+    description: >
+      A série limpa que o ML prevê (Fase 5, passo 2a). Grão: hora local de NY × zona de origem.
+      Soma as operadoras (o alvo da spec 9.1 é "todas as operadoras") e completa a grade com
+      `dim_tempo_hora` × zonas, para que hora sem corrida seja zero EXPLÍCITO e não linha ausente —
+      sem isso o modelo nunca veria demanda zero e o WAPE sairia só das horas movimentadas.
+      Recorte de zonas semântico (`is_zona_conhecida` e não `is_fora_de_nyc`), decidido no passo 1:
+      cobre 99,99% da demanda e, diferente de "top N por volume", não tem como vazar.
+      Cobre só os meses que existem na fato, nunca o intervalo entre o primeiro e o último.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [hora, zona_id]
+    columns:
+      - name: hora
+        description: "Hora local de Nova York. A 2h inexistente da virada de março não entra (ADR 0009)."
+        data_tests:
+          - not_null
+      - name: zona_id
+        description: "Zona de origem, só conhecidas e dentro de NYC."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: qtd_corridas
+        description: "ALVO da previsão: corridas válidas somadas sobre as operadoras. Zero onde não houve corrida."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: zero_por_ausencia
+        description: >
+          Verdadeiro quando a linha não existia na fato, ou seja, o zero vem de ausência e não de medição.
+          Depois do coalesce os dois ficam idênticos; esta marca preserva a diferença para auditoria.
+          Referência medida: ~3,3% das linhas em produção.
+      - name: hora_dobrada
+        description: >
+          Hora repetida da virada do horário de verão em novembro (acontece duas vezes, soma o movimento
+          de duas horas reais). É 1 hora em 26.304; marcada para poder ser tratada ou excluída no treino.
+      - name: ano_mes
+        description: "Mês (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
+
+  - name: ml_features_demanda
+    description: >
+      Tabela de features do modelo (Fase 5, passo 2b). Grão: **corte × hora-alvo × zona**.
+      O grão tem três partes porque os lags são medidos a partir do CORTE da previsão, não da hora-alvo
+      (decisão D1): o mesmo par (hora, zona) tem lags diferentes conforme o corte usado.
+      A intuição: no fim do mês você tira UMA foto da rua; perguntam sobre o dia 16 e sobre o dia 30, e
+      você olha a MESMA foto nas duas vezes. O que muda é só quanto ela ajuda, e isso é o
+      `horizonte_horas`. Medir o lag da hora-alvo seria o "jeito fácil": daria para fazer, porque o
+      histórico está no disco, mas treinaria o modelo com informação mais fresca do que a produção tem
+      — desalinhamento treino-produção, que é vazamento disfarçado de inconsistência.
+      O último corte é o "dia de valer": o mês-alvo ainda não aconteceu, `qtd_corridas` é nula e
+      `tem_alvo` é falso. É a previsão de verdade, a única que não dá para conferir.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [corte, hora_alvo, zona_id]
+    columns:
+      - name: corte
+        description: "Última hora do mês do corte. Tudo depois disso é desconhecido para o modelo."
+        data_tests:
+          - not_null
+      - name: hora_alvo
+        description: "Hora que se quer prever, sempre no mês seguinte ao corte."
+        data_tests:
+          - not_null
+      - name: zona_id
+        description: "Zona de origem, só conhecidas e dentro de NYC."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: horizonte_horas
+        description: >
+          Distância em horas entre o corte e a hora-alvo, de 1 a 744. Feature legítima: o modelo aprende
+          sozinho que previsão para 716 horas à frente merece menos confiança que para 380.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 744
+                inclusive: true
+      - name: qtd_corridas
+        description: "ALVO. Nulo no último corte, cujo mês-alvo ainda não aconteceu."
+      - name: tem_alvo
+        description: "Falso só nas linhas do 'dia de valer'. Separa o que serve para treino e backtest."
+        data_tests:
+          - not_null
+      - name: hora_lag_1
+        description: >
+          A data em que a foto foi tirada: hora da última ocorrência daquela hora da semana antes do
+          corte. Guardada para auditoria — é o que torna a ausência de vazamento testável
+          (`ml_features_lag_no_passado`). Os outros três lags são -168, -336 e -504 horas a partir dela.
+      - name: lag_1_semana
+        description: "Demanda naquela hora da semana e zona, 1 semana antes da foto (a própria foto)."
+      - name: lag_4_semanas
+        description: >
+          Demanda 4 semanas antes da foto. Nulo quando o lag aponta para a 2h inexistente da virada de
+          março (ADR 0009) — 1 hora por ano. O LightGBM trata nulo nativamente, então fica nulo de
+          propósito, em vez de virar zero falso.
+      - name: is_feriado_observado
+        description: >
+          Feriado federal pelo dia OBSERVADO, não pelo dia de calendário (decisão D2). Para demanda vale
+          o dia em que as pessoas não trabalharam: 4/7/2026 cai sábado e foi observado na sexta, 3/7.
+          A `dim_tempo_hora` marca o sábado (certo para o histograma de espera da Fase 3); aqui a sexta.
+      - name: clima_obs_chuva_mm
+        description: >
+          Chuva OBSERVADA. O prefixo `clima_obs_` é deliberado: este é o vazamento ACEITO e documentado
+          (spec 9.1). Em produção existiria apenas PREVISÃO do tempo, com erro; no backtest usamos o que
+          de fato aconteceu, o que deixa o resultado otimista. O nome da coluna é a documentação que não
+          se perde.
+      - name: mes_corte
+        description: "Mês do corte (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM), sempre o seguinte ao mes_corte."
+        data_tests:
+          - not_null
+
+  - name: ml_baseline_demanda
+    description: >
+      O baseline sazonal ingênuo (Fase 5, passo 3). Grão: corte × hora-alvo × zona, o mesmo da
+      `ml_features_demanda`. Uma linha de palpite por questão.
+      É a média da demanda na MESMA hora da semana, naquela zona, nas 4 semanas anteriores ao corte —
+      nenhum treino, nenhum parâmetro. Serve de **régua**: sem ela, "o modelo errou 13%" não é bom nem
+      ruim, é só um número. A spec 9.1 aceita as duas saídas da fase, o modelo vencendo o baseline ou um
+      relatório honesto de que não venceu, e é contra estes números que a comparação acontece.
+      ✍️ Peça do Ronald: a lógica é dele (array filtrado, regra do nulo e cast para double). O Claude fez
+      só o refactor pedido — CTE, comentários e caixa —, conferido como idêntico pela impressão digital.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [corte, hora_alvo, zona_id]
+    columns:
+      - name: corte
+        data_tests:
+          - not_null
+      - name: hora_alvo
+        data_tests:
+          - not_null
+      - name: zona_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zona')
+                field: zona_id
+      - name: previsao_baseline
+        description: >
+          O palpite: média dos lags que EXISTEM, não dos quatro. Nulo apenas se os quatro forem nulos,
+          o que hoje nunca ocorre (medido). Fracionário de propósito — arredondar jogaria informação
+          fora, e o WAPE lida bem com decimal. 73% dos valores têm casa decimal em dev.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: qtd_corridas
+        description: "O gabarito, carregado adiante para o cálculo do WAPE. Nulo no 'dia de valer'."
+      - name: tem_alvo
+        description: "Falso nas linhas do 'dia de valer'. Define o que é avaliável."
+        data_tests:
+          - not_null
+      - name: mes_corte
+        description: "Mês do corte (AAAA-MM). Partição da tabela."
+        data_tests:
+          - not_null
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM). Define a rodada do backtest."
+        data_tests:
+          - not_null
+
+  - name: ml_wape_baseline
+    description: >
+      O WAPE do baseline por rodada do backtest (Fase 5, passo 4). Grão: `mes_alvo`, uma linha por rodada.
+      WAPE = soma dos erros absolutos ÷ soma do real — **razão das somas**, nunca média das razões. A
+      forma errada, `avg(abs(real - previsto) / real)`, é o MAPE: além de responder outra pergunta, ela
+      estoura na divisão por zero das zonas-hora sem corrida, que aqui entram sem drama.
+      ✍️ Peça do Ronald. Autoria dele: a fórmula, as agregações condicionais e a coluna `vies_pct`, que
+      não estava no contrato. O Claude apontou dois erros (`countif` sem underscore e `previsao_baseline`
+      usado como booleano), a omissão das colunas de descarte no `select` final, e aplicou o `coalesce`
+      e os comentários a pedido dele.
+      As três colunas intermediárias não são enfeite: permitem auditar o `wape_pct` com uma divisão.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [mes_alvo]
+    columns:
+      - name: mes_alvo
+        description: "Mês previsto (AAAA-MM). Identifica a rodada do backtest."
+        data_tests:
+          - not_null
+      - name: mes_corte
+        description: "Mês do corte usado na rodada: de onde a foto foi tirada."
+        data_tests:
+          - not_null
+      - name: linhas_avaliadas
+        description: "Questões com gabarito E palpite. É o conjunto sobre o qual o WAPE foi calculado."
+        data_tests:
+          - not_null
+      - name: corridas_reais
+        description: >
+          Σ real, o denominador do WAPE. Restrito às linhas com palpite, para numerador e denominador
+          concordarem sobre quais linhas existem — a assimetria entre os dois era o bug encontrado em
+          14/11/2026, e ela deixava o WAPE artificialmente MENOR, sem dar erro nenhum.
+        data_tests:
+          - not_null
+      - name: corridas_previstas
+        description: "Σ previsto. Serve ao `vies_pct`; o WAPE não usa."
+      - name: erro_absoluto_total
+        description: "Σ |real − previsto|, o numerador do WAPE."
+        data_tests:
+          - not_null
+      - name: qtd_linhas_sem_baseline
+        description: >
+          Linhas descartadas por não terem palpite. Hoje 0 nas três rodadas. Existe para que o descarte
+          nunca seja silencioso: linha que sai da conta sem contador é a mesma doença, só mais discreta.
+        data_tests:
+          - not_null
+      - name: qtd_corridas_sem_baseline
+        description: >
+          Corridas nas linhas descartadas. 5 linhas descartadas é pouco; 5 linhas com 4.000 corridas é
+          muito, e só esta coluna distingue os dois casos. Com `coalesce` para devolver 0, e não nulo,
+          quando não há descarte — `count_if` sobre conjunto vazio dá 0, mas `sum` dá nulo.
+        data_tests:
+          - not_null
+      - name: wape_pct
+        description: >
+          O WAPE em percentual, 2 casas. Medido em dev: 14,37 (mar/2026), 13,18 (abr) e 13,08 (mai).
+          **É um baseline forte** — errar 13% prevendo demanda por hora e por zona um mês à frente, com
+          a média de quatro números. A barra para o LightGBM é esta.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: vies_pct
+        description: >
+          Erro COM sinal, em percentual: (Σ previsto − Σ real) ÷ Σ real. Coluna acrescentada pelo Ronald,
+          fora do contrato, e ela muda a leitura da fase. O WAPE é absoluto, então não distingue "errar
+          sempre 13% para cima" (viés sistemático, fácil de corrigir) de "errar 13% para lá e para cá"
+          (dispersão, difícil). Medido: −1,42%, +2,20% e −0,66% — viés pequeno e **alternando de sinal**,
+          ou seja, o baseline é praticamente não enviesado e aqueles 13% são ruído intrínseco do grão
+          hora × zona. Se o viés fosse +10% constante, o modelo ganharia só aprendendo a subtrair.
