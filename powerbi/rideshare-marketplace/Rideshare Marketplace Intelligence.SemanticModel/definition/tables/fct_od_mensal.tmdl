@@ -69,11 +69,16 @@ table fct_od_mensal
 			VAR top3 = TOPN ( 3, b, [@n], DESC )
 			VAR t = ADDCOLUMNS ( top3, "@r", RANKX ( top3, [@n], , DESC ), "@s", DIVIDE ( [@n], total ) )
 			VAR nome1 = MAXX ( FILTER ( t, [@r] = 1 ), dim_zona[borough] )
-			VAR rot1 = IF ( nome1 = "Manhattan", "O resto de Manhattan", nome1 )
-			VAR s1 = MAXX ( FILTER ( t, [@r] = 1 ), [@s] )
-			VAR outros = CONCATENATEX ( FILTER ( t, [@r] > 1 ), dim_zona[borough] & " (" & FORMAT ( [@s], "0%", fmt ) & ")", " e ", [@n], DESC )
+			-- formato curto (cabe nos ~546 px do mapa): "Maiores origens: resto de Manhattan 37%, Brooklyn 30%, Queens 27%"
+			VAR lista =
+			    CONCATENATEX (
+			        t,
+			        IF ( dim_zona[borough] = "Manhattan", "resto de Manhattan", dim_zona[borough] ) & " " & FORMAT ( [@s], "0%", fmt ),
+			        ", ",
+			        [@n], DESC
+			    )
 			RETURN
-			    IF ( NOT ISBLANK ( nome1 ), rot1 & " é a maior origem (" & FORMAT ( s1, "0%", fmt ) & ")" & IF ( outros <> "", "; depois " & outros ) )
+			    IF ( NOT ISBLANK ( nome1 ), IF ( COUNTROWS ( t ) > 1, "Maiores origens: ", "Maior origem: " ) & lista )
 		displayFolder: Apresentacao
 		lineageTag: 9878eb5a-9981-4be2-ac31-090346078d80
 
