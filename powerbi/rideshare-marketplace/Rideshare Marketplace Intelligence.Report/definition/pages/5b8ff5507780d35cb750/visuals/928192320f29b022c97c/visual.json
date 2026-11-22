@@ -4,9 +4,9 @@
   "position": {
     "x": 736,
     "y": 3888,
-    "z": 41000,
-    "height": 376,
     "width": 664,
+    "height": 376,
+    "z": 41000,
     "tabOrder": 41000
   },
   "visual": {
@@ -27,26 +27,7 @@
                 }
               },
               "queryRef": "dim_mes.mes_inicio",
-              "nativeQueryRef": "mes_inicio",
-              "active": true
-            }
-          ]
-        },
-        "Series": {
-          "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "dim_operadora"
-                    }
-                  },
-                  "Property": "operadora"
-                }
-              },
-              "queryRef": "dim_operadora.operadora",
-              "nativeQueryRef": "operadora"
+              "nativeQueryRef": "mes_inicio"
             }
           ]
         },
@@ -65,6 +46,24 @@
               },
               "queryRef": "fct_demanda_zona_hora.Share da operadora",
               "nativeQueryRef": "Share da operadora"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_operadora"
+                    }
+                  },
+                  "Property": "operadora"
+                }
+              },
+              "queryRef": "dim_operadora.operadora",
+              "nativeQueryRef": "operadora"
             }
           ]
         }
@@ -373,7 +372,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter9d5d9c085b8ca90a63ed59ec",
+        "name": "Filtered5e69ec5826fbcb52b3a606",
         "field": {
           "Column": {
             "Expression": {
@@ -385,6 +384,7 @@
           }
         },
         "type": "Categorical",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -430,8 +430,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

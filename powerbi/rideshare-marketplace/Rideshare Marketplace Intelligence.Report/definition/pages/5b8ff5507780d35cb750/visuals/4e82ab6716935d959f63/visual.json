@@ -4,9 +4,9 @@
   "position": {
     "x": 48,
     "y": 5222,
-    "z": 46000,
-    "height": 376,
     "width": 544,
+    "height": 376,
+    "z": 46000,
     "tabOrder": 46000
   },
   "visual": {
@@ -28,7 +28,6 @@
               },
               "queryRef": "dim_mes.ano_mes",
               "nativeQueryRef": "ano_mes",
-              "active": true,
               "displayName": "Mês"
             }
           ]
@@ -83,7 +82,8 @@
             },
             "direction": "Ascending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {

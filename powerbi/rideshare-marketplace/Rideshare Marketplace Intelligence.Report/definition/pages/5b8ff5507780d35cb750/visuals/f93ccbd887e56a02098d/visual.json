@@ -4,9 +4,9 @@
   "position": {
     "x": 1072,
     "y": 784,
-    "z": 30000,
-    "height": 840,
     "width": 320,
+    "height": 840,
+    "z": 30000,
     "tabOrder": 30000
   },
   "visual": {
@@ -27,8 +27,7 @@
                 }
               },
               "queryRef": "dim_zona.zona",
-              "nativeQueryRef": "zona",
-              "active": true
+              "nativeQueryRef": "zona"
             }
           ]
         },
@@ -66,7 +65,8 @@
             },
             "direction": "Descending"
           }
-        ]
+        ],
+        "isDefaultSort": false
       }
     },
     "objects": {
@@ -318,7 +318,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter4d45a491841f56ece2bdc763",
+        "name": "Filter8c0a95afdb1396688156070b",
         "field": {
           "Measure": {
             "Expression": {
@@ -330,6 +330,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -363,11 +364,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filter2890d9c92170e42876166ad7",
+        "name": "Filter1cffa232491f2d2b961785d8",
         "field": {
           "Measure": {
             "Expression": {
@@ -379,6 +379,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -412,11 +413,10 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       },
       {
-        "name": "Filterfae1d2292a4abab4b9d3ff2d",
+        "name": "Filter8de2a6f5f952109585d1e139",
         "field": {
           "Column": {
             "Expression": {
@@ -428,6 +428,7 @@
           }
         },
         "type": "Advanced",
+        "howCreated": "User",
         "filter": {
           "Version": 2,
           "From": [
@@ -461,8 +462,7 @@
               }
             }
           ]
-        },
-        "howCreated": "User"
+        }
       }
     ]
   }

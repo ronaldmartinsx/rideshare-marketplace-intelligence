@@ -381,13 +381,28 @@ const fy = FOOTER_Y;
 add('footer_band', 'deco', { x: 0, y: fy, width: W, height: PAGE_H - fy }, shape(C.navy));
 add('footer_text', 0, { x: M, y: fy + 20, width: 900, height: 80 }, htmlVis('HTML Rodape', 'Fonte dos dados e nota sobre o projeto.')); // revisão 4: texto para o usuário final
 const links = [['Portfólio', LINKS.portfolio], ['GitHub', LINKS.github], ['LinkedIn', LINKS.linkedin]].filter(([, u]) => u);
-links.forEach(([label, url], i) => add(`link_${label}`, 'deco', { x: W - M - (links.length - i) * 128, y: fy + 32, width: 112, height: 40 }, textbox(
-  [{ textRuns: [run(`${label} ↗`, 13, '#FFFFFF', true)], horizontalTextAlignment: 'center' }],
-  Object.assign(noChrome(), {
-    border: [{ properties: { show: lit('true'), color: fill(C.navyTxt), radius: lit('20D') } }],
-    padding: [{ properties: { top: lit('8D'), bottom: lit('8D'), left: lit('8D'), right: lit('8D') } }],
-    visualLink: [{ properties: { show: lit('true'), type: str('WebUrl'), webUrl: str(url) } }],
-    general: [{ properties: { altText: str(`Abrir ${label} de Ronald Martins`) } }] }))));
+// revisão 6b: os links eram caixas de texto com visualLink, que o Desktop/Service não executam (só botão e forma
+// disparam ação). Agora são botões (actionButton), no padrão de duas entradas da referência PBIR: "show" na
+// entrada sem seletor, estilo na entrada com selector default. Mesma aparência: texto branco, contorno claro, sem fundo.
+const bool = v => lit(v ? 'true' : 'false');
+links.forEach(([label, url], i) => add(`link_${label}`, 'deco', { x: W - M - (links.length - i) * 136, y: fy + 30, width: 124, height: 40 }, {
+  visualType: 'actionButton',
+  objects: {
+    text: [{ properties: { show: bool(true) } },
+      { properties: { text: str(`${label} ↗`), fontFamily: str(FONT), fontSize: lit('10D'), bold: bool(true), fontColor: fill('#FFFFFF'),
+        horizontalAlignment: str('center') }, selector: { id: 'default' } }],
+    icon: [{ properties: { show: bool(false) } }, { properties: { placement: str('left') }, selector: { id: 'default' } }],
+    fill: [{ properties: { show: bool(false) } }],
+    outline: [{ properties: { show: bool(true) } },
+      { properties: { lineColor: fill(C.navyTxt), weight: lit('1D'), transparency: lit('0D') }, selector: { id: 'default' } }],
+    shape: [{ properties: { tileShape: str('rectangleRounded'), roundEdge: lit('20L') } },
+      { properties: { tileShape: str('rectangleRounded') }, selector: { id: 'default' } }],
+  },
+  visualContainerObjects: {
+    background: [{ properties: { show: bool(false) } }], border: [{ properties: { show: bool(false) } }],
+    visualLink: [{ properties: { show: bool(true), type: str('WebUrl'), webUrl: str(url), tooltip: str(`Abrir ${label}`) } }],
+    general: [{ properties: { altText: str(`Abrir ${label} de Ronald Martins`) } }] },
+  drillFilterOtherVisuals: true }));
 
 // ---------- interações: clique só filtra a própria raia ----------
 const dataVisuals = visuals.filter(v => v.json.visual.query && v.lane !== 'slicer');
