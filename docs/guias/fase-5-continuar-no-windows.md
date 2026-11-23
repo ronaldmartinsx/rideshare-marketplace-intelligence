@@ -117,10 +117,19 @@ conta e numa divisão; por que a `dim_execucao` existe (filtro que precisa alcan
 comando, em vez de vir antes. Nada se perdeu (o modelo já estava salvo; o Ronald fechou sem salvar). Combinado:
 conferir que o Desktop fechou **antes** de rodar o gerador.
 
-**Nota da auditoria:** o Power BI soma `qtd_corridas_real` do backtest oficial em **126.277.028**, não 126.277.020.
-Nenhuma linha tem fração, então a soma em Double é exata. Hipótese (não verificada): no Athena a coluna é `REAL`
-(32 bits), a soma sai `REAL` e é exibida como `1.2627702E8`, com 8 dígitos significativos. Para confirmar no Mac:
-`sum(cast(qtd_corridas_real as double))`. Não muda decisão; corrigir o número aqui e na validação.
+**Nota da auditoria — CONFIRMADO no Athena em 23/11/2026.** O Power BI estava certo: o realizado do backtest
+oficial é **126.277.028**. O 126.277.020 era leitura ao pé da letra do `1.2627702E8` que o Athena imprime.
+
+A causa: `qtd_corridas_real` é `float` de 32 bits (o `DESCRIBE` confirma; a `previsao`, ao lado, é `double`).
+Somar `float` devolve `float`, e perto de 126 milhões os valores representáveis andam de **8 em 8** — o total
+exato não existe nessa régua e é empurrado para 126.277.024, que o Athena imprime como `1.2627702E8`, a forma
+decimal mais curta que identifica aquele valor. Ou seja, o 126.277.020 nunca existiu: não é o total exato nem o
+valor armazenado. No grão da linha não há perda nenhuma (máximo 1.686, zero frações, zero nulos em 1.150.704
+linhas), e o Power BI acerta porque importa a coluna como Double.
+
+**Regra prática:** somar `qtd_corridas_real` no Athena **sempre** com `cast(... as double)`. A mesma armadilha
+já havia deixado 4 valores errados por 1 corrida na seção 9.2 do relatório de validação (corrigidos).
+Evidência reproduzível: `scripts/fase-5/conferir_realizado_backtest.sql`.
 
 **O 12,92% é a média dos 6 WAPEs mensais.** O WAPE agrupado (Σ erro ÷ Σ real) dá **12,91%**. O viés de −2,38% é
 agrupado (a média mensal dá −2,39%). O baseline (14,09%) só existe como média mensal.
@@ -261,7 +270,7 @@ E filtrando `execucao = "20261116T233529Z"`:
 
 | `tipo_rodada` | Linhas | Meses | Σ `previsao` | Σ `qtd_corridas_real` |
 |---|---|---|---|---|
-| `backtest` | 1.150.704 | 6 | **123.265.954** | **126.277.020** |
+| `backtest` | 1.150.704 | 6 | **123.265.954** | **126.277.028** |
 | `producao` | 194.928 | 1 | **22.156.449** | (nulo) |
 
 Se esses números baterem, a importação está correta. Se não baterem, **pare** — é problema de importação, não de

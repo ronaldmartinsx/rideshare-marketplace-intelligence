@@ -668,12 +668,26 @@ linhas fixada em `(mes_corte, zona_id, hora_alvo)` na leitura (seção 7), e a r
 | Mês | Tipo | Previsto | Real |
 |---|---|---|---|
 | 2026-04 | backtest | 20.836.676 | 20.993.068 |
-| 2026-05 | backtest | 21.674.283 | 22.122.268 |
+| 2026-05 | backtest | 21.674.283 | 22.122.269 |
 | 2026-06 | backtest | 20.440.573 | 20.769.776 |
-| 2026-07 | backtest | 20.288.411 | 20.918.008 |
-| 2026-08 | backtest | 19.883.832 | 20.490.080 |
-| 2026-09 | backtest | 20.142.179 | 20.983.828 |
+| 2026-07 | backtest | 20.288.411 | 20.918.009 |
+| 2026-08 | backtest | 19.883.832 | 20.490.079 |
+| 2026-09 | backtest | 20.142.179 | 20.983.827 |
 | **2026-10** | **produção** | **22.156.449** | — (não aconteceu) |
+
+**Correção de 23/11/2026 — a coluna "Real" tinha 4 valores errados por 1 corrida.** Os números originais
+(22.122.268 / 20.918.008 / 20.490.080 / 20.983.828 em maio, julho, agosto e setembro) vieram de um
+`sum(qtd_corridas_real)` no Athena. Essa coluna é gravada como `float` de 32 bits, e somar `float` devolve
+`float`: perto de 20 milhões os valores representáveis andam de **2 em 2**, então todo total ímpar é empurrado
+para o par vizinho — para baixo em maio e julho, para cima em agosto e setembro. Nenhum dos valores errados era
+ímpar, o que descarta erro de digitação. Os valores acima são os exatos, de `sum(cast(qtd_corridas_real as
+double))`; no grão da linha não há perda nenhuma (máximo 1.686, zero frações, zero nulos em 1.150.704 linhas).
+Evidência: `scripts/fase-5/conferir_realizado_backtest.sql`. **Regra prática:** somar `qtd_corridas_real` no
+Athena sempre com `cast(... as double)`. O Power BI não sofre disso porque importa a coluna como Double.
+
+**O total do backtest é 126.277.028** (o guia do Windows dizia 126.277.020, que era o `1.2627702E8` do Athena
+lido ao pé da letra: a forma decimal curta do valor `float` 126.277.024). Curiosidade: a soma dos seis números
+errados também dava 126.277.028 — os arredondamentos se cancelaram, por sorte.
 
 **A previsão é 22.156.449 corridas para outubro de 2026**, em 194.928 linhas de hora × zona, nas 262 zonas.
 

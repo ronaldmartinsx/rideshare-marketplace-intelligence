@@ -220,13 +220,41 @@ Formato híbrido (o mesmo das fases anteriores), em 22/11/2026, no Windows.
 
 ## 6. Pendências e melhorias anotadas
 
-- **Confirmar no Athena** (no Mac): o realizado do backtest oficial é **126.277.028** (Power BI, soma exata de
-  inteiros) e não 126.277.020 (guia). Hipótese não verificada: a soma de um `REAL` de 32 bits exibida como
-  `1.2627702E8`. Consulta: `sum(cast(qtd_corridas_real as double))`. Não muda decisão; corrigir o número no guia e na
-  validação.
+- ~~Confirmar no Athena o realizado do backtest.~~ **FECHADO em 23/11/2026** (ver "O que a conferência achou",
+  abaixo). O realizado é **126.277.028**; guia e validação corrigidos.
+- **Gravar `qtd_corridas_real` como `bigint`** em vez de `float32`: é contagem de corridas, nunca tem fração, e o
+  tipo inteiro tira a armadilha da agregação de uma vez. Mexe em tabela de produção, então fica para uma fase
+  futura. Não é ADR: a decisão do `float32` ([config.py](../../airflow/include/ml/config.py) linha 131) continua
+  válida no grão da linha, onde ela foi tomada — o que é novo é o custo na soma, não um erro na escolha.
 - **Republicar no Power BI Service** depois de cada mudança do relatório (o link público é uma foto).
 - **Intervalos de previsão** (regressão quantílica): fora desta versão (D4).
 - **Clima previsto em vez de observado**, para tirar o vazamento aceito, se a previsão um dia for operacional.
 - **Vídeo do README:** o da Fase 4 ficou, com aviso; o limite de 10 MB do GitHub barrou a gravação nova.
 - **Versão em inglês do relatório:** backlog da Fase 7 (da Fase 4).
 - **Layout mobile:** considerado e descartado pelo Ronald (o gerador teria de escrever o `mobile.json`).
+
+### O que a conferência do realizado achou (23/11/2026)
+
+Era para ser um número trocado no guia. Virou uma aula sobre tipo de dado.
+
+`qtd_corridas_real` é `float` de 32 bits no Athena (a `previsao`, ao lado, é `double`). A régua do `float32` tem
+marcas que se afastam conforme o número cresce: perto de 1.686 (o valor máximo de uma linha) elas são de 0,0001;
+perto de 20 milhões são de 2 em 2; perto de 126 milhões, de 8 em 8. Então:
+
+| Momento | O que acontece | Perde? |
+|---|---|---|
+| Linha a linha, na gravação | Máximo 1.686; inteiro até 16,7 milhões cai exato | Não. As 1.150.704 linhas estão perfeitas |
+| `sum()` dentro do Athena | Somar `float` devolve `float`; o total é empurrado para a marca mais perto | Sim: 126.277.024 em vez de 126.277.028 |
+| Na impressão | O Athena escreve `1.2627702E8`, a forma decimal mais curta daquela marca | O olho lê "126.277.020" |
+
+**O 126.277.020 do guia nunca existiu**: nem o total exato, nem o valor armazenado. Era só o rótulo curto.
+
+**O achado que ninguém procurava:** a coluna "Real" da seção 9.2 do relatório de validação tinha **4 dos 6 meses
+errados por 1 corrida**, pela mesma causa. A prova de que não foi digitação: nenhum valor errado era ímpar — perto
+de 20 milhões a régua só tem marcas pares. Maio e julho foram empurrados para baixo, agosto e setembro para cima,
+e as somas se cancelaram, deixando o total certo por sorte. Corrigido.
+
+**Lição para carregar:** tipo de dado escolhido pela memória do treino volta como erro de relatório. A decisão do
+`float32` estava certa para o que ela resolvia (metade da memória, exata no grão da linha) e errada para o que
+ninguém olhou na hora: a agregação. Quem soma 1,15 milhão de linhas numa coluna `float` tem de pedir `cast(... as
+double)` — sempre.

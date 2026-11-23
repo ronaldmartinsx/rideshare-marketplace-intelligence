@@ -282,6 +282,7 @@ Termos técnicos do projeto, agrupados por afinidade. Dentro de cada grupo, a or
 | **Dictionary encoding** | Compressão que guarda cada texto distinto uma vez e substitui as repetições por números | "Manhattan" guardado uma vez; as linhas guardam só o código 1 | 1 |
 | **Small files problem** | Muitos arquivos pequenos deixam a leitura lenta e cara: cada arquivo exige abrir o rodapé e uma requisição ao S3 | Mil envelopes de uma folha × um fichário | 1 |
 | **CSV** | Texto separado por vírgulas: sem tipos, sem compressão inteligente, guardado por linha | Planilha exportada como texto | 1 |
+| **`float` (32 bits) × `double` (64 bits)** | Duas réguas para guardar número com casas decimais. As marcas se afastam conforme o número cresce: no `float` elas são de 0,0001 perto de 1.700, de 2 em 2 perto de 20 milhões e de 8 em 8 perto de 126 milhões; no `double` ainda medem de 1 em 1 nessa casa. Inteiro cabe exato até 16,7 milhões no `float` e 9 quatrilhões no `double`. A pegadinha: `sum()` de uma coluna `float` **devolve `float`**, então o total de muitas linhas pequenas e exatas sai arredondado — foi o que fez o realizado do backtest (126.277.028) virar 126.277.024 e sair impresso como `1.2627702E8`. Numa coluna `float`, somar sempre com `cast(... as double)` | O "Número Decimal" do Power BI é o `double`; o `float` é a versão econômica, com 7 dígitos confiáveis em vez de 15 | 5 |
 | **DuckDB** | Motor SQL que roda localmente e lê Parquet direto (inclusive pela internet). Usado só para inspeção; não faz parte da arquitetura | Um "Athena de bolso" | 1 |
 
 ---

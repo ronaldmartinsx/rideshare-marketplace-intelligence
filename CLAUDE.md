@@ -6,8 +6,8 @@ Especificação completa: docs/PROJECT_SPEC.md. Antes de cada fase, leia a Seç�
 Fase atual: 6  ← atualizar ao avançar
 Fase 4 fechada em 08/11/2026, sem pendências. O Power BI lê a Gold pelo papel RideshareLeituraGold.
 Fase 5 fechada em 22/11/2026 (gate no Windows): modelo venceu o baseline em 6 de 6; raia 5 e textos dinâmicos
-(ADR 0023) no relatório. Registro: docs/aprendizados/fase-5.md. Pendência no Mac: confirmar no Athena o realizado
-126.277.028 (seção 6 do fase-5.md). Branch fase-5-ml em pull request para a main (merge pede OK do Ronald).
+(ADR 0023) no relatório. Registro: docs/aprendizados/fase-5.md. PR #6 (fase-5-ml) mergeado na main em 22/11/2026,
+commit e065e6f. Sem pendências: a conferência do realizado (126.277.028) fechou em 23/11/2026.
 
 ## Objetivo duplo (inegociável)
 1. Construir o sistema com qualidade de mercado.
